@@ -1,42 +1,14 @@
-const { Hono } = require("hono");
-const { createClient } = require("@supabase/supabase-js");
+const express = require("express");
 const rateLimiter = require("../middleware/rateLimiter");
 const { RegisterSchema } = require("../validators/register");
+const supabase = require("../config/supabase");
 
-const router = new Hono();
-
-let supabaseInstance = null;
-
-function getSupabase(c) {
-  if (supabaseInstance) {
-    return supabaseInstance;
-  }
-  const url = c.env?.SUPABASE_URL || process.env.SUPABASE_URL;
-  const key = c.env?.SUPABASE_KEY || process.env.SUPABASE_KEY;
-  if (url && key) {
-    supabaseInstance = createClient(url, key);
-  }
-  return supabaseInstance;
-}
+const router = express.Router();
 
 // Route to handle user registrations with Zod validation, rate-limiting, and Supabase integration.
-router.post("/register", rateLimiter, async (c) => {
+router.post("/register", rateLimiter, async (req, res) => {
   try {
-    let body;
-    try {
-      body = await c.req.json();
-    } catch {
-      return c.json({
-        success: false,
-        error: {
-          code: "BAD_REQUEST",
-          message: "Malformed JSON body.",
-          details: null,
-        },
-      }, 400);
-    }
-
-    const validationResult = RegisterSchema.safeParse(body);
+    const validationResult = RegisterSchema.safeParse(req.body);
 
     // Validate the input parameters and map error messages to their corresponding fields.
     if (!validationResult.success) {
@@ -49,14 +21,14 @@ router.post("/register", rateLimiter, async (c) => {
         fieldErrors[path].push(err.message);
       });
 
-      return c.json({
+      return res.status(400).json({
         success: false,
         error: {
           code: "VALIDATION_ERROR",
           message: "Request parameters failed validation.",
           details: fieldErrors,
         },
-      }, 400);
+      });
     }
 
     const { name, email, phone, domain, team } = validationResult.data;
@@ -64,18 +36,17 @@ router.post("/register", rateLimiter, async (c) => {
     // Extract the part of the email before the '@' symbol to use as user_id.
     const userId = email.split("@")[0];
 
-    const supabase = getSupabase(c);
     // Connect to Supabase to insert values, or fall back to simulated response if variables are not present.
     if (!supabase) {
-      return c.json({
+      return res.status(503).json({
         success: false,
         error: {
           code: "SERVICE_UNAVAILABLE",
           message:
-            "Database service is uninitialized. Configure SUPABASE_URL and SUPABASE_KEY.",
+            "Database service is uninitialized. Configure SUPABASE_URL and SUPABASE_KEY in environment variables.",
           details: null,
         },
-      }, 503);
+      });
     }
 
     const { data, error } = await supabase
@@ -91,7 +62,7 @@ router.post("/register", rateLimiter, async (c) => {
           (error.message.includes("unique") ||
             error.message.includes("duplicate")))
       ) {
-        return c.json({
+        return res.status(409).json({
           success: false,
           error: {
             code: "CONFLICT_ERROR",
@@ -99,44 +70,43 @@ router.post("/register", rateLimiter, async (c) => {
               "This email address or user ID has already been registered.",
             details: null,
           },
-        }, 409);
+        });
       }
 
       throw error;
     }
 
-    return c.json({
+    return res.status(201).json({
       success: true,
       message: "Registration completed successfully.",
       data: data[0],
-    }, 201);
+    });
   } catch (error) {
     console.error("Server error during registration:", error);
-    return c.json({
+    return res.status(500).json({
       success: false,
       error: {
         code: "INTERNAL_SERVER_ERROR",
         message: "An unexpected error occurred. Please try again later.",
         details: null,
       },
-    }, 500);
+    });
   }
 });
 
 // Route to fetch and compile aggregated registration statistics for teams and individuals.
-router.get("/live-stats", async (c) => {
+router.get("/live-stats", async (req, res) => {
   try {
-    const supabase = getSupabase(c);
     if (!supabase) {
-      return c.json({
+      return res.status(503).json({
         success: false,
         error: {
           code: "SERVICE_UNAVAILABLE",
           message:
-            "Database service is uninitialized. Configure SUPABASE_URL and SUPABASE_KEY.",
+            "Database service is uninitialized. Configure SUPABASE_URL and SUPABASE_KEY in environment variables.",
           details: null,
         },
-      }, 503);
+      });
     }
 
     const { data: registrations, error } = await supabase
@@ -162,23 +132,23 @@ router.get("/live-stats", async (c) => {
       }
     });
 
-    return c.json({
+    return res.status(200).json({
       success: true,
       response: {
         organisation_count,
         referral_analytics,
       },
-    }, 200);
+    });
   } catch (error) {
     console.error("Error fetching live stats:", error);
-    return c.json({
+    return res.status(500).json({
       success: false,
       error: {
         code: "INTERNAL_SERVER_ERROR",
         message: "An unexpected error occurred while compiling live stats.",
         details: null,
       },
-    }, 500);
+    });
   }
 });
 
