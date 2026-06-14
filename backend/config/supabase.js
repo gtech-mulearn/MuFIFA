@@ -1,13 +1,32 @@
 const { createClient } = require("@supabase/supabase-js");
 
-const supabaseUrl = process.env.SUPABASE_URL;
-const supabaseKey = process.env.SUPABASE_KEY;
+let supabaseInstance = null;
+let initialized = false;
 
-let supabase = null;
+function getSupabaseClient() {
+  if (initialized) {
+    return supabaseInstance;
+  }
 
-// Initialize Supabase client if credentials exist; otherwise, run in mock database fallback mode.
-if (supabaseUrl && supabaseKey) {
-  supabase = createClient(supabaseUrl, supabaseKey);
+  const supabaseUrl = process.env.SUPABASE_URL;
+  const supabaseKey = process.env.SUPABASE_KEY;
+
+  if (supabaseUrl && supabaseKey) {
+    supabaseInstance = createClient(supabaseUrl, supabaseKey);
+  }
+  initialized = true;
+  return supabaseInstance;
 }
 
-module.exports = supabase;
+// Create a proxy that forwards everything to the dynamic supabase client
+const supabaseProxy = new Proxy({}, {
+  get(target, prop) {
+    const client = getSupabaseClient();
+    if (!client) {
+      return undefined;
+    }
+    return client[prop];
+  }
+});
+
+module.exports = supabaseProxy;

@@ -37,7 +37,7 @@ router.post("/register", rateLimiter, async (req, res) => {
     const userId = email.split("@")[0];
 
     // Connect to Supabase to insert values, or fall back to simulated response if variables are not present.
-    if (!supabase) {
+    if (!supabase || !supabase.from) {
       return res.status(503).json({
         success: false,
         error: {
@@ -97,7 +97,7 @@ router.post("/register", rateLimiter, async (req, res) => {
 // Route to fetch and compile aggregated registration statistics for teams and individuals.
 router.get("/live-stats", async (req, res) => {
   try {
-    if (!supabase) {
+    if (!supabase || !supabase.from) {
       return res.status(503).json({
         success: false,
         error: {

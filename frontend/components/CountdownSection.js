@@ -34,9 +34,9 @@ export default function CountdownSection() {
   useEffect(() => {
     setMounted(true);
 
-    // Target Date: June 16, 2026, 9:00 AM IST (UTC+5:30)
-    // Using UTC timestamp 1781580600000 to prevent WebKit / mobile Safari timezone parsing crashes
-    const targetDate = new Date(1781580600000);
+    // Target Date: June 17, 2026, 4:00 PM IST (UTC+5:30)
+    // Using UTC timestamp 1781692200000 to prevent WebKit / mobile Safari timezone parsing crashes
+    const targetDate = new Date(1781692200000);
 
     const updateCountdown = () => {
       const difference = targetDate.getTime() - Date.now();
