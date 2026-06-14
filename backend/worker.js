@@ -1,5 +1,3 @@
-const app = require("./app");
-
 module.exports = {
   async fetch(request, env, ctx) {
     // Populate process.env with the environment variables provided by Cloudflare
@@ -9,6 +7,9 @@ module.exports = {
       }
     }
 
+    // Defer requiring app.js until request invocation. This bypasses top-level environment
+    // check crashes (e.g. Supabase environment detection) during Cloudflare's upload-time validation.
+    const app = require("./app");
     return app.fetch(request, env, ctx);
   }
 };
