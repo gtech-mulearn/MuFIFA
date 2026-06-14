@@ -17,10 +17,10 @@ export default function BiddingBoard() {
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-base font-extrabold tracking-wide text-white">
-            Live Bidding Board
+            Live Voting Board
           </h2>
           <p className="text-xs text-slate-400 leading-tight">
-            Real-time multiplier cards via real-time multiplier.
+            Real-time votes count.
           </p>
         </div>
         <button className="text-[10px] font-bold text-slate-300 bg-white/5 border border-white/10 px-2.5 py-1 rounded-full hover:bg-white/10 transition-all cursor-pointer">
@@ -32,10 +32,16 @@ export default function BiddingBoard() {
       <div className="flex-grow flex flex-col items-center justify-center py-10 px-4 text-center bg-black/30 border border-white/5 rounded-xl min-h-[180px] relative overflow-hidden">
         {/* Glowing aura */}
         <div className="absolute w-24 h-24 bg-[#FF2E93]/10 rounded-full blur-xl animate-pulse" />
-        
+
         {/* Cyberpunk Lock icon */}
         <div className="relative mb-3 flex items-center justify-center w-12 h-12 rounded-full border border-pink-500/30 bg-pink-500/5 text-[#FF2E93] shadow-[0_0_15px_rgba(255,46,147,0.15)] animate-[pulse_2s_ease-in-out_infinite]">
-          <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+          <svg
+            className="w-5 h-5"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            viewBox="0 0 24 24"
+          >
             <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
             <path d="M7 11V7a5 5 0 0110 0v4" />
           </svg>
@@ -45,7 +51,7 @@ export default function BiddingBoard() {
           REGISTRATION IS ONGOING
         </span>
         <p className="text-[10px] text-slate-400 max-w-[200px] leading-relaxed">
-          Bidding arena will unlock once team registrations close.
+          Voting arena will unlock once team registrations close.
         </p>
       </div>
     </div>

@@ -1,5 +1,6 @@
 import React from "react";
 import Image from "next/image";
+import Link from "next/link";
 
 export default function Footer() {
   return (
@@ -12,19 +13,19 @@ export default function Footer() {
         <div className="grid grid-cols-1 md:grid-cols-12 gap-8 md:gap-12 items-center">
           {/* Left Column: Brand Details & Info (span 7) */}
           <div className="md:col-span-7 flex flex-col gap-4 text-left">
-            <div className="flex items-center gap-3">
-              <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#FF2E93] to-[#00E5FF] font-extrabold text-3xl">
+            <Link href="/" className="flex items-center gap-3 cursor-pointer group">
+              <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#FF2E93] to-[#00E5FF] font-extrabold text-3xl group-hover:scale-105 transition-transform duration-200">
                 μ
               </span>
               <div className="flex flex-col">
-                <span className="text-slate-100 font-bold text-base tracking-wider leading-tight uppercase">
+                <span className="text-slate-100 font-bold text-base tracking-wider leading-tight uppercase group-hover:text-white transition-colors duration-200">
                   μLearn World Cup
                 </span>
                 <span className="text-slate-400 font-semibold text-xs tracking-widest uppercase">
                   Fantasy '26
                 </span>
               </div>
-            </div>
+            </Link>
 
             <p className="text-xs text-slate-400 max-w-sm leading-relaxed">
               Bet Big. Build Bigger. Engage in the flagship gamified hackathon
@@ -123,14 +124,20 @@ export default function Footer() {
                 Platform
               </h4>
               <ul className="flex flex-col gap-2 text-xs text-slate-400">
-                {["Home", "Products", "Events", "Sevapalley"].map((link) => (
-                  <li key={link}>
-                    <a
-                      href="#"
+                {[
+                  { name: "Home", href: "/" },
+                  { name: "Register", href: "/register" },
+                  { name: "Products", href: "#" },
+                  { name: "Events", href: "#" },
+                  { name: "Sevapalley", href: "#" },
+                ].map((link) => (
+                  <li key={link.name}>
+                    <Link
+                      href={link.href}
                       className="hover:text-white transition-colors duration-200"
                     >
-                      {link}
-                    </a>
+                      {link.name}
+                    </Link>
                   </li>
                 ))}
               </ul>
@@ -141,18 +148,18 @@ export default function Footer() {
               </h4>
               <ul className="flex flex-col gap-2 text-xs text-slate-400">
                 {[
-                  "Leaderboard",
-                  "Rules & Tiers",
-                  "Privacy Policy",
-                  "Contact Support",
+                  { name: "Leaderboard", href: "/leaderboard" },
+                  { name: "Rules & Tiers", href: "#" },
+                  { name: "Privacy Policy", href: "#" },
+                  { name: "Contact Support", href: "#" },
                 ].map((link) => (
-                  <li key={link}>
-                    <a
-                      href="#"
+                  <li key={link.name}>
+                    <Link
+                      href={link.href}
                       className="hover:text-[#00E5FF] transition-colors duration-200"
                     >
-                      {link}
-                    </a>
+                      {link.name}
+                    </Link>
                   </li>
                 ))}
               </ul>

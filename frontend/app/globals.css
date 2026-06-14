@@ -113,3 +113,31 @@ body {
   animation: flowTrail 8s linear infinite;
 }
 
+@media print {
+  header,
+  footer,
+  video,
+  button,
+  a,
+  .no-print {
+    display: none !important;
+  }
+
+  body, html, main {
+    background-color: #04060d !important;
+    background-image: none !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+
+  #tournament-ticket {
+    margin: 3rem auto !important;
+    box-shadow: none !important;
+    border: 2px dashed rgba(0, 229, 255, 0.4) !important;
+    background-color: #080b15 !important;
+    color: #ffffff !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+}
+
