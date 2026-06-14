@@ -180,17 +180,22 @@ export default function Footer() {
             © 2026 μLearn Foundation. All rights reserved. Created and
             maintained for µFifa'26.
           </p>
-          {/* <div className="flex items-center gap-6 text-[10px] text-slate-500 font-medium">
-            <a href="#" className="hover:text-white transition-colors">
-              Privacy Policy
-            </a>
-            <a href="#" className="hover:text-white transition-colors">
-              Terms of Service
-            </a>
-            <a href="#" className="hover:text-white transition-colors">
-              Hackathon Rules
-            </a>
-          </div> */}
+          <div className="flex items-center gap-5">
+            <Image
+              src="/gtech.png"
+              alt="GTech Logo"
+              width={90}
+              height={28}
+              className="h-7 w-auto object-contain opacity-60 hover:opacity-100 transition-opacity duration-300"
+            />
+            <Image
+              src="/mulearnFoundation.png"
+              alt="μLearn Foundation Logo"
+              width={90}
+              height={28}
+              className="h-7 w-auto object-contain opacity-60 hover:opacity-100 transition-opacity duration-300"
+            />
+          </div>
         </div>
       </div>
 

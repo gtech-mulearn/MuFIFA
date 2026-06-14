@@ -321,7 +321,7 @@ export default function RegisterPage() {
                 Arena Registration
               </h1>
               <p className="text-xs text-slate-400">
-                Register as an agent, select your squad domain, and choose your
+                Register as an player, select your squad domain, and choose your
                 team.
               </p>
             </div>
@@ -340,7 +340,7 @@ export default function RegisterPage() {
                   htmlFor="agent-name-input"
                   className="text-[10px] font-black uppercase tracking-wider text-slate-300"
                 >
-                  Agent Full Name
+                  Player Full Name
                 </label>
                 <input
                   id="agent-name-input"
@@ -348,7 +348,7 @@ export default function RegisterPage() {
                   name="name"
                   value={formData.name}
                   onChange={handleInputChange}
-                  placeholder="e.g. Adhwaith AS"
+                  placeholder="e.g. Your Full Name"
                   aria-invalid={!!validationErrors.name}
                   aria-describedby={
                     validationErrors.name ? "name-error" : undefined
@@ -402,7 +402,7 @@ export default function RegisterPage() {
                   htmlFor="agent-phone-input"
                   className="text-[10px] font-black uppercase tracking-wider text-slate-300"
                 >
-                  Indian Phone Number
+                  Phone Number
                 </label>
                 <input
                   id="agent-phone-input"
@@ -593,7 +593,7 @@ export default function RegisterPage() {
               <div className="grid grid-cols-2 gap-3 sm:gap-4 border-b border-white/5 pb-4">
                 <div className="flex flex-col text-left">
                   <span className="text-[8px] font-black uppercase tracking-wider text-slate-500">
-                    Agent Name
+                    Player Name
                   </span>
                   <span className="text-xs sm:text-sm font-bold text-slate-100 truncate">
                     {registeredData.name}
@@ -601,7 +601,7 @@ export default function RegisterPage() {
                 </div>
                 <div className="flex flex-col text-left">
                   <span className="text-[8px] font-black uppercase tracking-wider text-slate-500">
-                    Agent ID
+                    Player ID
                   </span>
                   <span className="text-xs sm:text-sm font-bold text-[#00E5FF] truncate">
                     @{registeredData.user_id}

@@ -35,9 +35,9 @@ export default function HeroSection() {
           >
             Register For Arena
           </Link>
-          <button className="cursor-pointer bg-glass border border-white/20 text-white px-3 py-2.5 md:px-8 md:py-3 rounded-lg text-xs md:text-sm font-bold tracking-wider hover:bg-white/10 transition-all whitespace-nowrap flex-1 text-center">
+          {/* <button className="cursor-pointer bg-glass border border-white/20 text-white px-3 py-2.5 md:px-8 md:py-3 rounded-lg text-xs md:text-sm font-bold tracking-wider hover:bg-white/10 transition-all whitespace-nowrap flex-1 text-center">
             View
-          </button>
+          </button> */}
         </div>
 
         {/* Mobile-only Countdown Timer below buttons */}
