@@ -14,7 +14,10 @@ const corsOptions = {
     }
 
     const isLocalhost = /^https?:\/\/localhost(:\d+)?$/.test(origin) || /^https?:\/\/127\.0\.0\.1(:\d+)?$/.test(origin);
-    if (allowedOrigins.includes(origin) || isLocalhost) {
+    const isVercel = /^https?:\/\/.*\.vercel\.app$/.test(origin);
+    const isMulearn = /^https?:\/\/.*\.mulearn\.org$/.test(origin);
+
+    if (allowedOrigins.includes(origin) || isLocalhost || isVercel || isMulearn) {
       callback(null, true);
     } else {
       callback(null, false);
