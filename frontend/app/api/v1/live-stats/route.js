@@ -48,11 +48,33 @@ export async function GET(request) {
       }
     });
 
+    // Fetch squad points from the squads table
+    const squadsUrl = `${supabaseUrl}/rest/v1/squads?select=name,points`;
+    const squadsRes = await fetch(squadsUrl, {
+      method: "GET",
+      headers: {
+        "apikey": supabaseKey,
+        "Authorization": `Bearer ${supabaseKey}`,
+      },
+      next: { revalidate: 0 },
+    });
+
+    let squad_points = {};
+    if (squadsRes.ok) {
+      const squads = await squadsRes.json();
+      squads.forEach((s) => {
+        if (s.name) {
+          squad_points[s.name] = s.points || 0;
+        }
+      });
+    }
+
     return NextResponse.json({
       success: true,
       response: {
         organisation_count,
         referral_analytics,
+        squad_points,
       },
     }, { status: 200 });
 

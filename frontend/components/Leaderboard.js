@@ -26,6 +26,7 @@ const INITIAL_TEAMS = TEAMS.map((team, idx) => ({
   name: team,
   flag: FLAGS[team],
   count: 0,
+  points: 0,
   rankTrend: "stable",
 }));
 
@@ -43,19 +44,20 @@ export default function Leaderboard() {
         if (res.ok && data.success) {
           setDbStatus("connected");
           const orgs = data.response?.organisation_count || {};
+          const pts = data.response?.squad_points || {};
 
-          // Map all 12 teams to their counts from live database stats
+          // Map all 12 teams to their counts and points from live database stats
           const updatedTeams = TEAMS.map((teamName) => ({
             name: teamName,
             flag: FLAGS[teamName],
             count: orgs[teamName] ? Number(orgs[teamName]) : 0,
+            points: pts[teamName] ? Number(pts[teamName]) : 0,
           }));
 
-          // Sort by registrations descending, then alphabetically
+          // Sort by points descending, then by member count, then alphabetically
           updatedTeams.sort((a, b) => {
-            if (b.count !== a.count) {
-              return b.count - a.count;
-            }
+            if (b.points !== a.points) return b.points - a.points;
+            if (b.count !== a.count) return b.count - a.count;
             return a.name.localeCompare(b.name);
           });
 
@@ -98,7 +100,8 @@ export default function Leaderboard() {
     setTeamsData((prev) => 
       prev.map((t, idx) => ({
         ...t,
-        count: t.count === 0 ? [14, 12, 10, 8, 7, 6, 5, 4, 3, 2, 1, 0][idx] || 0 : t.count
+        count: t.count === 0 ? [14, 12, 10, 8, 7, 6, 5, 4, 3, 2, 1, 0][idx] || 0 : t.count,
+        points: t.points === 0 ? [140, 120, 100, 80, 70, 60, 50, 40, 30, 20, 10, 0][idx] || 0 : t.points
       }))
     );
 
@@ -106,15 +109,14 @@ export default function Leaderboard() {
       setTeamsData((prev) => {
         const updated = prev.map((t) => {
           if (Math.random() < 0.3) {
-            return { ...t, count: t.count + Math.floor(Math.random() * 2) + 1 };
+            return { ...t, points: t.points + Math.floor(Math.random() * 10) + 5 };
           }
           return t;
         });
 
         updated.sort((a, b) => {
-          if (b.count !== a.count) {
-            return b.count - a.count;
-          }
+          if (b.points !== a.points) return b.points - a.points;
+          if (b.count !== a.count) return b.count - a.count;
           return a.name.localeCompare(b.name);
         });
 
@@ -160,7 +162,7 @@ export default function Leaderboard() {
             </span>
           </h2>
           <p className="text-[9px] text-slate-400 leading-tight">
-            {isLiveFeed ? "Live registration count per country" : "Simulated squad standby mode"}
+            {isLiveFeed ? "Live squad points standings" : "Simulated squad standby mode"}
           </p>
         </div>
       </div>
@@ -196,10 +198,10 @@ export default function Leaderboard() {
               </span>
             </div>
 
-            <div className="flex items-center gap-1">
-              <span className="text-xs font-bold text-slate-100">{team.count}</span>
+            <div className="flex items-center gap-1.5">
+              <span className="text-xs font-bold text-[#00E5FF]">{team.points}</span>
               <span className="text-[8px] text-slate-500 uppercase tracking-wider">
-                members
+                pts
               </span>
             </div>
           </div>

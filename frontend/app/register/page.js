@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useRef } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import BackgroundVideo from "@/components/BackgroundVideo";
 import { getBackendUrl } from "@/utils/api";
 
@@ -518,15 +519,33 @@ export default function RegisterPage() {
 
               {/* Header Branding */}
               <div className="flex items-center justify-between border-b border-white/10 pb-4">
-                <div className="flex flex-col text-left">
-                  <span className="text-[9px] font-black uppercase tracking-widest text-[#FF2E93]">
-                    μLearn World Cup
-                  </span>
-                  <span className="text-sm font-black tracking-widest text-slate-100 uppercase">
-                    Arena Access Pass
-                  </span>
+                <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-1.5 shrink-0">
+                    <Image
+                      src="/trophy.png"
+                      alt="World Cup Trophy"
+                      width={9}
+                      height={24}
+                      priority
+                      className="h-6 w-auto object-contain filter drop-shadow-[0_0_6px_rgba(0,229,255,0.45)]"
+                    />
+                    <Image
+                      src="/logo.png"
+                      alt="μLearn Logo"
+                      width={53}
+                      height={24}
+                      priority
+                      className="h-6 w-auto object-contain"
+                    />
+                  </div>
+                  <div className="h-6 w-[1px] bg-white/20 mx-0.5" />
+                  <div className="flex flex-col text-left">
+                    <span className="text-[11px] font-black tracking-wider text-slate-100 uppercase leading-tight mt-0.5">
+                      Arena Access Pass
+                    </span>
+                  </div>
                 </div>
-                <div className="bg-[#00E5FF]/10 border border-[#00E5FF]/30 px-2 py-0.5 rounded text-[8px] font-black text-[#00E5FF] tracking-wider uppercase">
+                <div className="bg-[#00E5FF]/10 border border-[#00E5FF]/30 px-2 py-0.5 rounded text-[8px] font-black text-[#00E5FF] tracking-wider uppercase shrink-0">
                   CONFIRMED
                 </div>
               </div>
@@ -600,7 +619,7 @@ export default function RegisterPage() {
             </div>
 
             <Link
-              href="/"
+              href="/leaderboard"
               className="text-xs text-slate-500 hover:text-slate-300 transition-colors uppercase tracking-widest font-black"
             >
               Return to Lobby

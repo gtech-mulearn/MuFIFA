@@ -34,6 +34,79 @@ function isRateLimited(ip) {
   return false;
 }
 
+async function incrementSquadPoints(supabaseUrl, supabaseKey, team, pointsToAdd = 10) {
+  try {
+    // 1. Try RPC first (atomic)
+    const rpcUrl = `${supabaseUrl}/rest/v1/rpc/increment_squad_points`;
+    const rpcRes = await fetch(rpcUrl, {
+      method: "POST",
+      headers: {
+        "apikey": supabaseKey,
+        "Authorization": `Bearer ${supabaseKey}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        squad_name: team,
+        points_to_add: pointsToAdd,
+      }),
+    });
+
+    if (rpcRes.ok) {
+      console.log(`Successfully incremented points for squad ${team} via RPC.`);
+      return true;
+    }
+
+    const errorText = await rpcRes.text();
+    console.warn(`RPC increment failed (status ${rpcRes.status}): ${errorText}. Falling back to Read-Modify-Write.`);
+    
+    // 2. Fallback: Fetch current points
+    const getUrl = `${supabaseUrl}/rest/v1/squads?select=points&name=eq.${encodeURIComponent(team)}`;
+    const getRes = await fetch(getUrl, {
+      method: "GET",
+      headers: {
+        "apikey": supabaseKey,
+        "Authorization": `Bearer ${supabaseKey}`,
+      },
+    });
+
+    if (!getRes.ok) {
+      throw new Error(`Failed to fetch squad points: ${await getRes.text()}`);
+    }
+
+    const rows = await getRes.json();
+    if (!rows || rows.length === 0) {
+      throw new Error(`Squad not found: ${team}`);
+    }
+
+    const currentPoints = rows[0].points || 0;
+    const newPoints = currentPoints + pointsToAdd;
+
+    // 3. Fallback: Patch new points
+    const patchUrl = `${supabaseUrl}/rest/v1/squads?name=eq.${encodeURIComponent(team)}`;
+    const patchRes = await fetch(patchUrl, {
+      method: "PATCH",
+      headers: {
+        "apikey": supabaseKey,
+        "Authorization": `Bearer ${supabaseKey}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        points: newPoints,
+      }),
+    });
+
+    if (!patchRes.ok) {
+      throw new Error(`Failed to update squad points: ${await patchRes.text()}`);
+    }
+
+    console.log(`Successfully updated points for squad ${team} to ${newPoints} via PATCH fallback.`);
+    return true;
+  } catch (err) {
+    console.error(`Error in incrementSquadPoints for squad ${team}:`, err);
+    return false;
+  }
+}
+
 export async function POST(request) {
   try {
     const ip = request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "127.0.0.1";
@@ -129,6 +202,7 @@ export async function POST(request) {
         phone: trimmedPhone,
         domain,
         team,
+        mu_points: 10,
       }]),
     });
 
@@ -148,6 +222,10 @@ export async function POST(request) {
     }
 
     const data = await res.json();
+
+    // Increment points for the selected team
+    await incrementSquadPoints(supabaseUrl, supabaseKey, team, 10);
+
     return NextResponse.json({
       success: true,
       message: "Registration completed successfully.",

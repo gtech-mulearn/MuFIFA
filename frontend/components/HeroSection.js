@@ -12,7 +12,7 @@ export default function HeroSection() {
   return (
     <>
       {/* Center Trophy Spacer (hidden on mobile to allow vertical centering, shown on desktop) */}
-      <div className="hidden lg:flex lg:h-[44vh] w-full items-center justify-center relative">
+      <div className="hidden lg:flex lg:h-[30vh] w-full items-center justify-center relative">
         {/* Stadium Lights Flare Overlay */}
         <div className="absolute top-[20%] w-[100px] h-[100px] bg-white/20 rounded-full blur-2xl animate-pulse" />
       </div>
@@ -29,7 +29,10 @@ export default function HeroSection() {
 
         {/* Hero Buttons */}
         <div className="flex flex-row gap-3 md:gap-4 items-center justify-start w-full max-w-md px-2">
-          <Link href="/register" className="cursor-pointer bg-[#FF2E93] text-white px-3 py-2.5 md:px-8 md:py-3 rounded-lg text-xs md:text-sm font-bold tracking-wider hover:bg-[#e0207e] transition-all glow-pink-btn border border-[#FF2E93]/50 whitespace-nowrap flex-1 text-center block">
+          <Link
+            href="/register"
+            className="cursor-pointer bg-[#FF2E93] text-white px-3 py-2.5 md:px-8 md:py-3 rounded-lg text-xs md:text-sm font-bold tracking-wider hover:bg-[#e0207e] transition-all glow-pink-btn border border-[#FF2E93]/50 whitespace-nowrap flex-1 text-center block"
+          >
             Register For Arena
           </Link>
           <button className="cursor-pointer bg-glass border border-white/20 text-white px-3 py-2.5 md:px-8 md:py-3 rounded-lg text-xs md:text-sm font-bold tracking-wider hover:bg-white/10 transition-all whitespace-nowrap flex-1 text-center">

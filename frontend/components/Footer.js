@@ -13,18 +13,24 @@ export default function Footer() {
         <div className="grid grid-cols-1 md:grid-cols-12 gap-8 md:gap-12 items-center">
           {/* Left Column: Brand Details & Info (span 7) */}
           <div className="md:col-span-7 flex flex-col gap-4 text-left">
-            <Link href="/" className="flex items-center gap-3 cursor-pointer group">
-              <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#FF2E93] to-[#00E5FF] font-extrabold text-3xl group-hover:scale-105 transition-transform duration-200">
-                μ
-              </span>
-              <div className="flex flex-col">
-                <span className="text-slate-100 font-bold text-base tracking-wider leading-tight uppercase group-hover:text-white transition-colors duration-200">
-                  μLearn World Cup
-                </span>
-                <span className="text-slate-400 font-semibold text-xs tracking-widest uppercase">
-                  Fantasy '26
-                </span>
-              </div>
+            <Link
+              href="/"
+              className="flex items-center gap-1.5 cursor-pointer group"
+            >
+              <Image
+                src="/trophy.png"
+                alt="World Cup Trophy"
+                width={15}
+                height={40}
+                className="h-8 md:h-10 w-auto object-contain filter drop-shadow-[0_0_8px_rgba(0,229,255,0.45)] group-hover:scale-110 transition-transform duration-300"
+              />
+              <Image
+                src="/logo.png"
+                alt="μLearn Logo"
+                width={189}
+                height={60}
+                className="h-8 md:h-15 w-auto object-contain group-hover:scale-105 transition-transform duration-300"
+              />
             </Link>
 
             <p className="text-xs text-slate-400 max-w-sm leading-relaxed">
@@ -127,9 +133,10 @@ export default function Footer() {
                 {[
                   { name: "Home", href: "/" },
                   { name: "Register", href: "/register" },
-                  { name: "Products", href: "#" },
-                  { name: "Events", href: "#" },
-                  { name: "Sevapalley", href: "#" },
+                  { name: "LeaderBoard", href: "/leaderboard" },
+                  // { name: "Products", href: "#" },
+                  // { name: "Events", href: "#" },
+                  // { name: "Sevapalley", href: "#" },
                 ].map((link) => (
                   <li key={link.name}>
                     <Link
@@ -142,7 +149,7 @@ export default function Footer() {
                 ))}
               </ul>
             </div>
-            <div className="flex flex-col gap-2.5">
+            {/* <div className="flex flex-col gap-2.5">
               <h4 className="text-xs font-bold uppercase tracking-wider text-slate-200 border-b border-white/5 pb-1">
                 Hackathon
               </h4>
@@ -163,7 +170,7 @@ export default function Footer() {
                   </li>
                 ))}
               </ul>
-            </div>
+            </div> */}
           </div>
         </div>
 
@@ -171,9 +178,9 @@ export default function Footer() {
         <div className="mt-12 pt-6 border-t border-white/5 flex flex-col sm:flex-row items-center justify-between gap-4 text-left">
           <p className="text-[10px] text-slate-500">
             © 2026 μLearn Foundation. All rights reserved. Created and
-            maintained for World Cup Fantasy '26.
+            maintained for µFifa'26.
           </p>
-          <div className="flex items-center gap-6 text-[10px] text-slate-500 font-medium">
+          {/* <div className="flex items-center gap-6 text-[10px] text-slate-500 font-medium">
             <a href="#" className="hover:text-white transition-colors">
               Privacy Policy
             </a>
@@ -183,7 +190,7 @@ export default function Footer() {
             <a href="#" className="hover:text-white transition-colors">
               Hackathon Rules
             </a>
-          </div>
+          </div> */}
         </div>
       </div>
 

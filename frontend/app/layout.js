@@ -12,7 +12,7 @@ const outfit = Outfit({
 });
 
 export const metadata = {
-  title: "µLearn World Cup Fantasy '26",
+  title: "µFifa '26",
   description:
     "Bet Big. Build Bigger. A Flagship Gamified Hackathon by µLearn Foundation & µLearn MCE.",
 };
