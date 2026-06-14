@@ -34,9 +34,9 @@ const TEAM_WHATSAPP_LINKS = {
   Spain: "https://chat.whatsapp.com/DAIaHMOjt3P6DrAdaD3EDv",
   Netherlands: "https://chat.whatsapp.com/BFLIlE9IdenBzj7R4zfGW9",
   Belgium: "https://chat.whatsapp.com/H8ibvdnnBSaLORa4gguG5M",
-  Croatia: "https://chat.whatsapp.com/CroatiaSquad2026",
-  Uruguay: "https://chat.whatsapp.com/UruguaySquad2026",
-  Japan: "https://chat.whatsapp.com/JapanSquad2026",
+  Croatia: "https://chat.whatsapp.com/FkLUDYocKur6EWkSCSKNaN",
+  Uruguay: "https://chat.whatsapp.com/DEYKZdZ65NG15zhIaxpAcK",
+  Japan: "https://chat.whatsapp.com/Ccg1WGLaize3hgcVLUqZHF",
 };
 
 const TEAMS = Object.keys(TEAM_FLAGS);
