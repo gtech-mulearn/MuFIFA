@@ -86,27 +86,76 @@ function Sidebar({ admin, collapsed, setCollapsed }) {
   }
 
   return (
-    <aside
-      className={`fixed left-0 top-0 h-full border-r ${THEME.line} bg-white/90 backdrop-blur-xl flex flex-col z-40 transition-all duration-300 ${
-        collapsed ? "w-16" : "w-60"
-      }`}
-    >
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,_rgba(56,189,248,0.12),_transparent_36%),linear-gradient(180deg,_rgba(255,255,255,0.96),_rgba(248,250,252,0.92))] pointer-events-none" />
+    <>
+      {/* Desktop Sidebar */}
+      <aside
+        className={`hidden md:flex fixed left-0 top-0 h-full border-r ${THEME.line} bg-white/90 backdrop-blur-xl flex-col z-40 transition-all duration-300 ${
+          collapsed ? "w-16" : "w-60"
+        }`}
+      >
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,_rgba(56,189,248,0.12),_transparent_36%),linear-gradient(180deg,_rgba(255,255,255,0.96),_rgba(248,250,252,0.92))] pointer-events-none" />
 
-      <div className="relative h-16 flex items-center border-b border-slate-200/90 px-4 gap-3">
-        {!collapsed && (
-          <div className="flex flex-col">
-            <span className="text-sm font-semibold tracking-[0.18em] text-slate-900 uppercase">
-              µFifa Admin
-            </span>
-            <span className="text-[10px] uppercase tracking-[0.22em] text-slate-500">
-              Operations
-            </span>
-          </div>
-        )}
-      </div>
+        <div className="relative h-16 flex items-center border-b border-slate-200/90 px-4 gap-3">
+          {!collapsed && (
+            <div className="flex flex-col">
+              <span className="text-sm font-semibold tracking-[0.18em] text-slate-900 uppercase">
+                µFifa Admin
+              </span>
+              <span className="text-[10px] uppercase tracking-[0.22em] text-slate-500">
+                Operations
+              </span>
+            </div>
+          )}
+        </div>
 
-      <nav className="relative flex-1 flex flex-col gap-1.5 p-3 mt-2">
+        <nav className="relative flex-1 flex flex-col gap-1.5 p-3 mt-2">
+          {links.map((link) => {
+            const isActive =
+              link.href === "/admin"
+                ? pathname === "/admin"
+                : pathname.startsWith(link.href);
+
+            return (
+              <Link
+                key={link.name}
+                href={link.href}
+                className={`group flex items-center gap-3 rounded-xl border px-3 py-2.5 text-xs font-medium transition-all duration-200 ${
+                  isActive
+                    ? "border-sky-200 bg-sky-50 text-sky-700 shadow-[0_10px_24px_rgba(14,165,233,0.08)]"
+                    : "border-transparent text-slate-500 hover:border-slate-200 hover:bg-slate-50 hover:text-slate-900"
+                }`}
+                title={collapsed ? link.name : undefined}
+              >
+                <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-slate-100 text-current">
+                  {link.icon}
+                </span>
+                {!collapsed && <span>{link.name}</span>}
+              </Link>
+            );
+          })}
+        </nav>
+
+        <button
+          onClick={() => setCollapsed(!collapsed)}
+          className="relative h-12 flex items-center justify-center border-t border-slate-200/90 text-slate-500 hover:text-slate-900 transition-colors cursor-pointer"
+          aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
+        >
+          <svg
+            className={`w-4 h-4 transition-transform duration-200 ${collapsed ? "rotate-180" : ""}`}
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            viewBox="0 0 24 24"
+          >
+            <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5" />
+          </svg>
+        </button>
+      </aside>
+
+      {/* Mobile Bottom Tab Nav */}
+      <nav
+        className={`md:hidden fixed bottom-0 left-0 right-0 h-16 border-t ${THEME.line} bg-white/95 backdrop-blur-md flex items-center justify-around px-2 py-1 z-40 shadow-[0_-8px_30px_rgba(15,23,42,0.08)]`}
+      >
         {links.map((link) => {
           const isActive =
             link.href === "/admin"
@@ -117,38 +166,23 @@ function Sidebar({ admin, collapsed, setCollapsed }) {
             <Link
               key={link.name}
               href={link.href}
-              className={`group flex items-center gap-3 rounded-xl border px-3 py-2.5 text-xs font-medium transition-all duration-200 ${
+              className={`flex flex-col items-center justify-center flex-1 py-1 gap-1 text-[10px] font-medium transition-all duration-200 ${
                 isActive
-                  ? "border-sky-200 bg-sky-50 text-sky-700 shadow-[0_10px_24px_rgba(14,165,233,0.08)]"
-                  : "border-transparent text-slate-500 hover:border-slate-200 hover:bg-slate-50 hover:text-slate-900"
+                  ? "text-sky-600 font-semibold"
+                  : "text-slate-500 hover:text-slate-800"
               }`}
-              title={collapsed ? link.name : undefined}
             >
-              <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-slate-100 text-current">
+              <span className={`flex h-7 w-7 items-center justify-center rounded-lg transition-colors duration-200 ${
+                isActive ? "bg-sky-50 text-sky-600" : "bg-transparent text-current"
+              }`}>
                 {link.icon}
               </span>
-              {!collapsed && <span>{link.name}</span>}
+              <span>{link.name}</span>
             </Link>
           );
         })}
       </nav>
-
-      <button
-        onClick={() => setCollapsed(!collapsed)}
-        className="relative h-12 flex items-center justify-center border-t border-slate-200/90 text-slate-500 hover:text-slate-900 transition-colors cursor-pointer"
-        aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
-      >
-        <svg
-          className={`w-4 h-4 transition-transform duration-200 ${collapsed ? "rotate-180" : ""}`}
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="2"
-          viewBox="0 0 24 24"
-        >
-          <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5" />
-        </svg>
-      </button>
-    </aside>
+    </>
   );
 }
 
@@ -162,26 +196,26 @@ function TopBar({ admin, collapsed }) {
 
   return (
     <header
-      className={`fixed top-0 right-0 h-16 border-b ${THEME.line} bg-white/88 backdrop-blur-xl flex items-center justify-between px-6 z-30 transition-all duration-300 ${
-        collapsed ? "left-16" : "left-60"
+      className={`fixed top-0 right-0 h-16 border-b ${THEME.line} bg-white/88 backdrop-blur-xl flex items-center justify-between px-4 md:px-6 z-30 transition-all duration-300 left-0 ${
+        collapsed ? "md:left-16" : "md:left-60"
       }`}
     >
-      <div className="flex items-center gap-3">
-        <div className="h-9 w-px bg-slate-200" />
+      <div className="flex items-center gap-2 md:gap-3">
+        <div className="hidden md:block h-9 w-px bg-slate-200" />
         <div>
-          <h2 className="text-sm font-semibold tracking-[0.14em] text-slate-900 uppercase">
+          <h2 className="text-xs md:text-sm font-semibold tracking-[0.14em] text-slate-900 uppercase">
             Control Panel
           </h2>
-          <p className="text-[11px] text-slate-500">Administrative overview</p>
+          <p className="text-[10px] md:text-[11px] text-slate-500">Administrative overview</p>
         </div>
       </div>
 
-      <div className="flex items-center gap-4">
-        <div className="flex items-center gap-3 rounded-full border border-slate-200 bg-slate-50 px-3 py-1.5">
-          <span className="flex h-8 w-8 items-center justify-center rounded-full bg-slate-900 text-[11px] font-semibold uppercase tracking-wider text-white">
+      <div className="flex items-center gap-2 md:gap-4">
+        <div className="flex items-center gap-2 md:gap-3 rounded-full border border-slate-200 bg-slate-50 p-1 md:px-3 md:py-1.5">
+          <span className="flex h-7 w-7 md:h-8 md:w-8 items-center justify-center rounded-full bg-slate-900 text-[10px] md:text-[11px] font-semibold uppercase tracking-wider text-white">
             {admin?.username?.slice(0, 2) || "AD"}
           </span>
-          <div className="flex flex-col">
+          <div className="hidden sm:flex flex-col">
             <span className="text-xs text-slate-700">{admin?.username}</span>
             <span
               className={`w-fit text-[9px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full border ${
@@ -195,12 +229,13 @@ function TopBar({ admin, collapsed }) {
 
         <button
           onClick={handleLogout}
-          className="text-xs text-slate-500 hover:text-slate-900 transition-colors cursor-pointer flex items-center gap-2 px-3 py-2 rounded-xl border border-slate-200 hover:border-slate-300 hover:bg-slate-50"
+          className="text-xs text-slate-500 hover:text-slate-900 transition-colors cursor-pointer flex items-center gap-1.5 px-2.5 py-2 md:px-3 md:py-2 rounded-xl border border-slate-200 hover:border-slate-300 hover:bg-slate-50"
+          title="Sign out"
         >
           <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 9V5.25A2.25 2.25 0 0013.5 3h-6a2.25 2.25 0 00-2.25 2.25v13.5A2.25 2.25 0 007.5 21h6a2.25 2.25 0 002.25-2.25V15m3 0l3-3m0 0l-3-3m3 3H9" />
           </svg>
-          Sign out
+          <span className="hidden sm:inline">Sign out</span>
         </button>
       </div>
     </header>
@@ -218,8 +253,8 @@ export default function AdminLayout({ children }) {
 
   useEffect(() => {
     if (isLoginPage) {
-      setLoading(false);
-      return;
+      const timer = setTimeout(() => setLoading(false), 0);
+      return () => clearTimeout(timer);
     }
 
     async function checkAuth() {
@@ -275,11 +310,11 @@ export default function AdminLayout({ children }) {
         <Sidebar admin={admin} collapsed={collapsed} setCollapsed={setCollapsed} />
         <TopBar admin={admin} collapsed={collapsed} />
         <main
-          className={`relative pt-16 min-h-screen transition-all duration-300 ${
-            collapsed ? "pl-16" : "pl-60"
+          className={`relative pt-16 pb-16 md:pb-0 min-h-screen transition-all duration-300 pl-0 ${
+            collapsed ? "md:pl-16" : "md:pl-60"
           }`}
         >
-          <div className="p-6 md:p-8">{children}</div>
+          <div className="p-4 sm:p-6 md:p-8">{children}</div>
         </main>
       </div>
     </AdminContext.Provider>

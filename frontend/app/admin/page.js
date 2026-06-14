@@ -56,6 +56,20 @@ function StatCard({ label, value, icon, accent }) {
   );
 }
 
+function SortIcon({ col, sortKey, sortDir }) {
+  return (
+    <svg
+      className={`w-3 h-3 inline-block ml-1 transition-transform ${sortKey === col ? "text-sky-300" : "text-slate-600"} ${sortKey === col && sortDir === "asc" ? "rotate-180" : ""}`}
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2.5"
+      viewBox="0 0 24 24"
+    >
+      <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" />
+    </svg>
+  );
+}
+
 function TeamTable({ teamStats }) {
   const [sortKey, setSortKey] = useState("points");
   const [sortDir, setSortDir] = useState("desc");
@@ -74,18 +88,6 @@ function TeamTable({ teamStats }) {
     }
   };
 
-  const SortIcon = ({ col }) => (
-    <svg
-      className={`w-3 h-3 inline-block ml-1 transition-transform ${sortKey === col ? "text-sky-300" : "text-slate-600"} ${sortKey === col && sortDir === "asc" ? "rotate-180" : ""}`}
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2.5"
-      viewBox="0 0 24 24"
-    >
-      <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" />
-    </svg>
-  );
-
   return (
     <div className={`${THEME.panel} rounded-2xl overflow-hidden`}>
       <div className="px-5 py-4 border-b border-slate-200/90">
@@ -103,13 +105,13 @@ function TeamTable({ teamStats }) {
                 className="text-right px-5 py-3 font-bold uppercase tracking-wider cursor-pointer hover:text-slate-900 transition-colors select-none"
                 onClick={() => handleSort("count")}
               >
-                Members <SortIcon col="count" />
+                Members <SortIcon col="count" sortKey={sortKey} sortDir={sortDir} />
               </th>
               <th
                 className="text-right px-5 py-3 font-bold uppercase tracking-wider cursor-pointer hover:text-slate-900 transition-colors select-none"
                 onClick={() => handleSort("points")}
               >
-                Points <SortIcon col="points" />
+                Points <SortIcon col="points" sortKey={sortKey} sortDir={sortDir} />
               </th>
             </tr>
           </thead>

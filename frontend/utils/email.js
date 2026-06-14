@@ -39,13 +39,6 @@ function getTransporter() {
   return transporter;
 }
 
-function imageToDataUrl(filePath) {
-  const ext = path.extname(filePath).toLowerCase();
-  const mimeType = ext === ".png" ? "image/png" : "application/octet-stream";
-  const buffer = fs.readFileSync(filePath);
-  return `data:${mimeType};base64,${buffer.toString("base64")}`;
-}
-
 export async function sendRegistrationEmail(player) {
   const mailTransporter = getTransporter();
   if (!mailTransporter) {

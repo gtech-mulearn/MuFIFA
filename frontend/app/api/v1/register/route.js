@@ -281,7 +281,7 @@ export async function POST(request) {
       clearOtpSession(email);
 
       if (creation.data) {
-        sendRegistrationEmail(creation.data).catch((err) => {
+        await sendRegistrationEmail(creation.data).catch((err) => {
           console.error("Background registration email error:", err);
         });
       }

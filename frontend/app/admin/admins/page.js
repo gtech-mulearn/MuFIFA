@@ -70,7 +70,7 @@ export default function AdminManagementPage() {
 
   return (
     <div className="flex flex-col gap-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-xl font-bold tracking-[0.18em] text-slate-900 uppercase">
             Admin Accounts
@@ -82,7 +82,7 @@ export default function AdminManagementPage() {
 
         <button
           onClick={() => setShowCreate(!showCreate)}
-          className="cursor-pointer bg-sky-500/12 hover:bg-sky-500/18 border border-sky-500/25 text-sky-900 font-bold py-2.5 px-5 rounded-xl text-xs tracking-wider uppercase transition-all shadow-[0_14px_30px_rgba(14,165,233,0.10)]"
+          className="cursor-pointer bg-sky-500/12 hover:bg-sky-500/18 border border-sky-500/25 text-sky-900 font-bold py-2.5 px-5 rounded-xl text-xs tracking-wider uppercase transition-all shadow-[0_14px_30px_rgba(14,165,233,0.10)] w-full sm:w-auto text-center"
         >
           {showCreate ? "Close Form" : "Create Admin"}
         </button>
@@ -184,39 +184,41 @@ export default function AdminManagementPage() {
             No admin accounts found.
           </div>
         ) : (
-          <table className="w-full text-xs">
-            <thead>
-                <tr className="border-b border-slate-200/90 text-slate-500">
-                <th className="text-left px-5 py-3 font-bold uppercase tracking-wider">Username</th>
-                <th className="text-left px-5 py-3 font-bold uppercase tracking-wider">Email</th>
-                <th className="text-left px-5 py-3 font-bold uppercase tracking-wider">Role</th>
-                <th className="text-left px-5 py-3 font-bold uppercase tracking-wider">Created</th>
-              </tr>
-            </thead>
-            <tbody>
-              {admins.map((a) => (
-                <tr
-                  key={a.id}
-                  className="border-b border-slate-200/70 hover:bg-slate-50 transition-colors"
-                >
-                  <td className="px-5 py-3 text-slate-800 font-semibold">{a.username}</td>
-                  <td className="px-5 py-3 text-slate-400">{a.email}</td>
-                  <td className="px-5 py-3">
-                    <span
-                      className={`text-[9px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full border ${
-                        ROLE_COLORS[a.role] || ROLE_COLORS.viewer
-                      }`}
-                    >
-                      {a.role}
-                    </span>
-                  </td>
-                  <td className="px-5 py-3 text-slate-500 font-mono text-[10px]">
-                    {a.created_at ? new Date(a.created_at).toLocaleDateString() : "-"}
-                  </td>
+          <div className="overflow-x-auto">
+            <table className="w-full text-xs">
+              <thead>
+                  <tr className="border-b border-slate-200/90 text-slate-500">
+                  <th className="text-left px-5 py-3 font-bold uppercase tracking-wider whitespace-nowrap">Username</th>
+                  <th className="text-left px-5 py-3 font-bold uppercase tracking-wider whitespace-nowrap">Email</th>
+                  <th className="text-left px-5 py-3 font-bold uppercase tracking-wider whitespace-nowrap">Role</th>
+                  <th className="text-left px-5 py-3 font-bold uppercase tracking-wider whitespace-nowrap">Created</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {admins.map((a) => (
+                  <tr
+                    key={a.id}
+                    className="border-b border-slate-200/70 hover:bg-slate-50 transition-colors"
+                  >
+                    <td className="px-5 py-3 text-slate-800 font-semibold whitespace-nowrap">{a.username}</td>
+                    <td className="px-5 py-3 text-slate-400 whitespace-nowrap">{a.email}</td>
+                    <td className="px-5 py-3 whitespace-nowrap">
+                      <span
+                        className={`text-[9px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full border ${
+                          ROLE_COLORS[a.role] || ROLE_COLORS.viewer
+                        }`}
+                      >
+                        {a.role}
+                      </span>
+                    </td>
+                    <td className="px-5 py-3 text-slate-500 font-mono text-[10px] whitespace-nowrap">
+                      {a.created_at ? new Date(a.created_at).toLocaleDateString() : "-"}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         )}
       </div>
     </div>
