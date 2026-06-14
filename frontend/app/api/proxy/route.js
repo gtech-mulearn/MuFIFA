@@ -29,6 +29,12 @@ async function handleProxy(request) {
     const headers = new Headers();
     headers.set("Content-Type", request.headers.get("Content-Type") || "application/json");
 
+    // Forward the client's actual IP address to the backend for accurate rate-limiting
+    const clientIp = request.headers.get("x-forwarded-for") || request.ip || "";
+    if (clientIp) {
+      headers.set("X-Forwarded-For", clientIp);
+    }
+
     // Relay authorization headers if present
     const auth = request.headers.get("Authorization");
     if (auth) {
