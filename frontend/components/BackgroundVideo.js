@@ -4,12 +4,26 @@ const BackgroundVideo = memo(() => {
   const videoRef = useRef(null);
 
   useEffect(() => {
-    if (videoRef.current) {
-      videoRef.current.muted = true;
-      videoRef.current.loop = false;
-      videoRef.current.play().catch((err) => {
+    const video = videoRef.current;
+    if (video) {
+      video.muted = true;
+      video.loop = false;
+      video.play().catch((err) => {
         console.log("Autoplay prevented:", err);
       });
+
+      const handleTimeUpdate = () => {
+        if (video.duration && !isNaN(video.duration) && video.currentTime >= video.duration - 0.1) {
+          video.pause();
+          video.currentTime = video.duration - 0.1;
+          video.removeEventListener("timeupdate", handleTimeUpdate);
+        }
+      };
+
+      video.addEventListener("timeupdate", handleTimeUpdate);
+      return () => {
+        video.removeEventListener("timeupdate", handleTimeUpdate);
+      };
     }
   }, []);
 
