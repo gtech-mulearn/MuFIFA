@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import BackgroundVideo from "@/components/BackgroundVideo";
+import { getBackendUrl } from "@/utils/api";
 
 const DOMAINS = ["Maker", "Creative", "Coder", "Strategist"];
 
@@ -218,7 +219,7 @@ export default function RegisterPage() {
     setIsSubmitting(true);
 
     try {
-      const res = await fetch("/api/proxy?path=register", {
+      const res = await fetch(getBackendUrl("register"), {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

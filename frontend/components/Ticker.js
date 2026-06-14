@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useRef } from "react";
+import { getBackendUrl } from "../utils/api";
 
 const TEAM_METADATA = {
   Brazil: { code: "BRA", flag: "🇧🇷", baseShare: 25.0 },
@@ -39,7 +40,7 @@ export default function Ticker() {
   useEffect(() => {
     const fetchStats = async () => {
       try {
-        const res = await fetch("/api/proxy?path=live-stats");
+        const res = await fetch(getBackendUrl("live-stats"));
         const data = await res.json();
         
         if (res.ok && data.success) {

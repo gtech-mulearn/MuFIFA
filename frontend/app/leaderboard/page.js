@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import BackgroundVideo from "@/components/BackgroundVideo";
+import { getBackendUrl } from "@/utils/api";
 
 const FLAGS = {
   Brazil: "🇧🇷",
@@ -39,7 +40,7 @@ export default function LeaderboardPage() {
   useEffect(() => {
     const fetchStats = async () => {
       try {
-        const res = await fetch("/api/proxy?path=live-stats");
+        const res = await fetch(getBackendUrl("live-stats"));
         const data = await res.json();
 
         if (res.ok && data.success) {
