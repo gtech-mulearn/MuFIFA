@@ -23,6 +23,22 @@ const TEAM_FLAGS = {
   Japan: "🇯🇵",
 };
 
+// WhatsApp invite link configuration per squad country
+const TEAM_WHATSAPP_LINKS = {
+  Brazil: "https://chat.whatsapp.com/EV8id4d16MGIXdmmpDtx7g",
+  Argentina: "https://chat.whatsapp.com/BhddYg7jtG24SpEP9XmYvf",
+  Portugal: "https://chat.whatsapp.com/Ec6u5gbzXaBLsKJOVdMSgB",
+  Germany: "https://chat.whatsapp.com/KwNWCzEWyCJA24NmeacfLM",
+  France: "https://chat.whatsapp.com/LY2EOqz9pXYClO7ZfIwybU",
+  England: "https://chat.whatsapp.com/KnJcWM2Bb7M32TnT68LtUI",
+  Spain: "https://chat.whatsapp.com/DAIaHMOjt3P6DrAdaD3EDv",
+  Netherlands: "https://chat.whatsapp.com/BFLIlE9IdenBzj7R4zfGW9",
+  Belgium: "https://chat.whatsapp.com/H8ibvdnnBSaLORa4gguG5M",
+  Croatia: "https://chat.whatsapp.com/CroatiaSquad2026",
+  Uruguay: "https://chat.whatsapp.com/UruguaySquad2026",
+  Japan: "https://chat.whatsapp.com/JapanSquad2026",
+};
+
 const TEAMS = Object.keys(TEAM_FLAGS);
 
 function Select({
@@ -503,7 +519,30 @@ export default function RegisterPage() {
           </div>
         ) : (
           /* TOURNAMENT ENTRY PASS (TICKET) SUCCESS VIEW */
-          <div className="w-full max-w-md flex flex-col gap-6 items-center px-4 sm:px-0">
+          <div className="w-full max-w-md flex flex-col gap-4 items-center px-4 sm:px-0">
+            {/* Top Toolbar containing the print option on left top side */}
+            <div className="w-full flex justify-between items-center no-print px-1">
+              <button
+                onClick={() => window.print()}
+                className="cursor-pointer p-2.5 rounded-xl bg-glass border border-white/10 hover:border-white/30 text-slate-400 hover:text-white transition-all flex items-center justify-center"
+                title="Print Pass"
+              >
+                <svg
+                  className="w-4.5 h-4.5"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    d="M6.72 13.829c-.24.03-.48.062-.72.096m.72-.096a42.415 42.415 0 0 1 10.56 0m-10.56 0L6.34 18m10.94-4.171c.24.03.48.062.72.096m-.72-.096L17.66 18m0 0 .229 2.523a1.125 1.125 0 0 1-1.12 1.227H7.231c-.662 0-1.18-.568-1.12-1.227L6.34 18m11.318 0h1.091A2.25 2.25 0 0 0 21 15.75V9.456c0-1.081-.768-2.015-1.837-2.175a48.865 48.865 0 0 0-14.326 0C3.768 7.44 3 8.375 3 9.456v6.294a2.25 2.25 0 0 0 2.25 2.25h1.091M12 10.5h.008v.008H12V10.5Zm3 0h.008v.008H15V10.5ZM9 10.5h.008v.008H9V10.5ZM18 13.5h.008v.008H18V13.5ZM6 13.5h.008v.008H6V13.5M16.5 7.5v-3a3 3 0 0 0-3-3h-3a3 3 0 0 0-3 3v3m6 0h-6"
+                  />
+                </svg>
+              </button>
+            </div>
+
             {/* Ticket Card Container */}
             <div
               id="tournament-ticket"
@@ -609,13 +648,21 @@ export default function RegisterPage() {
             </div>
 
             {/* Actions */}
-            <div className="flex flex-col sm:flex-row gap-3 w-full max-w-sm justify-center">
-              <button
-                onClick={() => window.print()}
-                className="cursor-pointer bg-glass border border-white/20 hover:border-white/50 px-6 py-2.5 rounded-xl text-xs font-semibold text-slate-300 hover:text-white transition-all flex items-center justify-center gap-2 flex-1"
+            <div className="flex flex-col gap-3 w-full max-w-sm justify-center no-print mt-2">
+              <a
+                href={
+                  TEAM_WHATSAPP_LINKS[registeredData.team] ||
+                  "https://chat.whatsapp.com/"
+                }
+                target="_blank"
+                rel="noopener noreferrer"
+                className="cursor-pointer bg-[#25D366] text-white hover:bg-[#20ba5a] px-6 py-3 rounded-xl text-xs font-bold tracking-wider uppercase transition-all flex items-center justify-center gap-2 shadow-[0_0_20px_rgba(37,211,102,0.2)] hover:shadow-[0_0_35px_rgba(37,211,102,0.45)] transform hover:-translate-y-0.5"
               >
-                Print Pass
-              </button>
+                <svg className="w-4 h-4 fill-current" viewBox="0 0 24 24">
+                  <path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946C.06 5.348 5.397.01 12.008.01c3.202.001 6.212 1.246 8.477 3.514 2.266 2.268 3.507 5.28 3.505 8.484-.004 6.657-5.34 11.997-11.953 11.997-2.005-.001-3.973-.502-5.734-1.458L0 24zm6.59-4.846c1.66.986 3.284 1.48 4.961 1.481 5.41 0 9.809-4.385 9.811-9.78.001-2.592-1.01-5.033-2.85-6.877C16.726 2.133 14.29 1.13 11.75 1.13c-5.412 0-9.81 4.385-9.813 9.782-.001 1.77.462 3.5 1.341 5.024l-.993 3.626 3.762-.988zm11.521-7.82c-.29-.145-1.71-.845-1.975-.94-.266-.096-.46-.145-.652.146-.192.29-.74.94-.908 1.133-.167.193-.334.217-.624.072-2.905-1.45-4.103-2.5-5.748-5.323-.29-.497.29-.462.83-.984.096-.096.192-.217.29-.314.096-.096.13-.168.192-.29.06-.12.03-.229-.015-.314-.043-.086-.386-.94-.528-1.288-.138-.337-.278-.29-.386-.295-.098-.005-.213-.005-.33-.005a.633.633 0 0 0-.46.217c-.16.174-.608.596-.608 1.45s.62 1.69.708 1.81c.088.12 1.22 1.863 2.956 2.61.413.178.736.284.988.364.417.133.797.114 1.096.07.33-.05 1.71-.7 1.95-1.376.24-.678.24-1.259.17-1.376-.073-.117-.265-.164-.556-.31z" />
+                </svg>
+                <span>Join {registeredData.team} WhatsApp Group</span>
+              </a>
             </div>
 
             <Link

@@ -24,11 +24,11 @@ const BackgroundVideo = memo(() => {
         className="w-full h-full object-cover object-center"
       >
         <source
-          src="/change_the_trophy_to_fifa_worl.mp4"
+          src="/mobile_bg.mp4"
           type="video/mp4"
           media="(max-width: 1023px)"
         />
-        <source src="/use_the_fifa_world_cup_trophy.mp4" type="video/mp4" />
+        <source src="/desktop_bg.mp4" type="video/mp4" />
       </video>
     </div>
   );

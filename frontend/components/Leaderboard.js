@@ -10,7 +10,7 @@ const FLAGS = {
   Portugal: "🇵🇹",
   Germany: "🇩🇪",
   France: "🇫🇷",
-  England: "🏴",
+  England: "EN",
   Spain: "🇪🇸",
   Netherlands: "🇳🇱",
   Belgium: "🇧🇪",
@@ -40,7 +40,7 @@ export default function Leaderboard() {
       try {
         const res = await fetch(getBackendUrl("live-stats"));
         const data = await res.json();
-        
+
         if (res.ok && data.success) {
           setDbStatus("connected");
           const orgs = data.response?.organisation_count || {};
@@ -87,7 +87,7 @@ export default function Leaderboard() {
     };
 
     fetchStats();
-    
+
     // Poll the stats route every 30 seconds
     const interval = setInterval(fetchStats, 30000);
     return () => clearInterval(interval);
@@ -97,19 +97,28 @@ export default function Leaderboard() {
   useEffect(() => {
     if (isLiveFeed) return;
 
-    setTeamsData((prev) => 
+    setTeamsData((prev) =>
       prev.map((t, idx) => ({
         ...t,
-        count: t.count === 0 ? [14, 12, 10, 8, 7, 6, 5, 4, 3, 2, 1, 0][idx] || 0 : t.count,
-        points: t.points === 0 ? [140, 120, 100, 80, 70, 60, 50, 40, 30, 20, 10, 0][idx] || 0 : t.points
-      }))
+        count:
+          t.count === 0
+            ? [14, 12, 10, 8, 7, 6, 5, 4, 3, 2, 1, 0][idx] || 0
+            : t.count,
+        points:
+          t.points === 0
+            ? [140, 120, 100, 80, 70, 60, 50, 40, 30, 20, 10, 0][idx] || 0
+            : t.points,
+      })),
     );
 
     const simInterval = setInterval(() => {
       setTeamsData((prev) => {
         const updated = prev.map((t) => {
           if (Math.random() < 0.3) {
-            return { ...t, points: t.points + Math.floor(Math.random() * 10) + 5 };
+            return {
+              ...t,
+              points: t.points + Math.floor(Math.random() * 10) + 5,
+            };
           }
           return t;
         });
@@ -146,23 +155,28 @@ export default function Leaderboard() {
 
   return (
     <div className="lg:flex-1 bg-glass-card rounded-2xl p-5 border border-white/10 backdrop-blur-md shadow-2xl flex flex-col gap-4 select-none">
-      
       {/* Header Area */}
       <div className="flex items-center justify-between gap-2 border-b border-white/5 pb-2">
         <div className="flex flex-col">
           <h2 className="text-sm font-bold text-white flex items-center gap-2">
             Squad Standings
             <span className="flex items-center gap-1.5 ml-1">
-              <span className={`w-1.5 h-1.5 rounded-full ${
-                dbStatus === "connected" ? "bg-[#00E676] animate-ping" : "bg-[#FF8A00] animate-pulse"
-              }`} />
+              <span
+                className={`w-1.5 h-1.5 rounded-full ${
+                  dbStatus === "connected"
+                    ? "bg-[#00E676] animate-ping"
+                    : "bg-[#FF8A00] animate-pulse"
+                }`}
+              />
               <span className="text-[8px] font-bold text-slate-300">
                 {dbStatus === "connected" ? "LIVE" : "SYNCING"}
               </span>
             </span>
           </h2>
           <p className="text-[9px] text-slate-400 leading-tight">
-            {isLiveFeed ? "Live squad points standings" : "Simulated squad standby mode"}
+            {isLiveFeed
+              ? "Live squad points standings"
+              : "Simulated squad standby mode"}
           </p>
         </div>
       </div>
@@ -176,15 +190,21 @@ export default function Leaderboard() {
           >
             <div className="flex items-center gap-3">
               <div className="flex items-center gap-1.5">
-                <span className={`inline-flex items-center justify-center w-6 h-6 rounded-lg text-[10px] font-bold border ${getRankStyle(team.rank)}`}>
+                <span
+                  className={`inline-flex items-center justify-center w-6 h-6 rounded-lg text-[10px] font-bold border ${getRankStyle(team.rank)}`}
+                >
                   {team.rank}
                 </span>
                 <div className="w-2.5 flex items-center justify-center">
                   {team.rankTrend === "up" && (
-                    <span className="text-[#00E676] text-[9px] drop-shadow-[0_0_2px_#00E676]">▲</span>
+                    <span className="text-[#00E676] text-[9px] drop-shadow-[0_0_2px_#00E676]">
+                      ▲
+                    </span>
                   )}
                   {team.rankTrend === "down" && (
-                    <span className="text-[#FF2E93] text-[9px] drop-shadow-[0_0_2px_#FF2E93]">▼</span>
+                    <span className="text-[#FF2E93] text-[9px] drop-shadow-[0_0_2px_#FF2E93]">
+                      ▼
+                    </span>
                   )}
                   {team.rankTrend === "stable" && (
                     <span className="text-slate-700 text-[7px]">•</span>
@@ -199,7 +219,9 @@ export default function Leaderboard() {
             </div>
 
             <div className="flex items-center gap-1.5">
-              <span className="text-xs font-bold text-[#00E5FF]">{team.points}</span>
+              <span className="text-xs font-bold text-[#00E5FF]">
+                {team.points}
+              </span>
               <span className="text-[8px] text-slate-500 uppercase tracking-wider">
                 pts
               </span>
@@ -217,7 +239,6 @@ export default function Leaderboard() {
           View Detailed Standings <span className="text-xs">→</span>
         </Link>
       </div>
-
     </div>
   );
 }

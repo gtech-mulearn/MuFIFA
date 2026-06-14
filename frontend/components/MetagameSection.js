@@ -2,6 +2,7 @@ import React from "react";
 import Image from "next/image";
 import dynamic from "next/dynamic";
 import { CountdownSkeleton } from "./CountdownSection";
+import Link from "next/link";
 
 const CountdownSection = dynamic(() => import("./CountdownSection"), {
   ssr: false,
@@ -16,24 +17,28 @@ export default function MetagameSection() {
         {/* Logos */}
         <div className="flex items-center justify-center gap-3 w-full lg:w-auto pt-4 lg:pt-0">
           {/* MuLearn Foundation Logo */}
-          <Image
-            src="/mulearnFoundation.png"
-            alt="μLearn Foundation Logo"
-            width={135}
-            height={135}
-            priority
-            className="object-contain hover:scale-105 transition-transform duration-300"
-          />
+          <Link href="https://mulearn.org">
+            <Image
+              src="/mulearnFoundation.png"
+              alt="μLearn Foundation Logo"
+              width={135}
+              height={135}
+              priority
+              className="object-contain hover:scale-105 transition-transform duration-300"
+            />
+          </Link>
           <div className="text-slate-200 text-xs font-bold px-1">×</div>
           {/* MCE Logo */}
-          <Image
-            src="/mulearnMce.png"
-            alt="μLearn MCE Logo"
-            width={135}
-            height={135}
-            priority
-            className="object-contain rounded hover:scale-105 transition-transform duration-300"
-          />
+          <Link href="https://mu.org">
+            <Image
+              src="/mulearnMce.png"
+              alt="μLearn MCE Logo"
+              width={135}
+              height={135}
+              priority
+              className="object-contain rounded hover:scale-105 transition-transform duration-300"
+            />
+          </Link>
         </div>
 
         {/* Countdown Timer instead of Live Global Counter (desktop only) */}
@@ -61,16 +66,16 @@ export default function MetagameSection() {
             {
               id: 1,
               num: "01",
-              name: "The Initial Drills",
-              desc: "Start the journey to enter the orbital Drills.",
+              name: "Enter The Arena",
+              desc: "Start your journey in μfifa. Register & choose your country.",
               border: "border-pink-500/30",
               bar: "bg-pink-500",
             },
             {
               id: 2,
               num: "02",
-              name: "The High-Stakes Bet",
-              desc: "Similar to gameplay round to enter the High Stakes bet.",
+              name: "Find the GOAT",
+              desc: " Choose your captain. Build a goated team to enter the ground.",
               border:
                 "border-blue-500/40 shadow-[0_0_12px_rgba(0,229,255,0.15)]",
               bar: "bg-[#00E5FF]",
@@ -78,8 +83,8 @@ export default function MetagameSection() {
             {
               id: 3,
               num: "03",
-              name: "The Knockout Sprints",
-              desc: "Direct battles between teams to reach the final sprint.",
+              name: "Match Time",
+              desc: " The Sprint Begins. Battle for your team & get the μcup",
               border: "border-green-500/30",
               bar: "bg-[#00E676]",
             },

@@ -4,18 +4,18 @@ import React, { useState, useEffect, useRef } from "react";
 import { getBackendUrl } from "../utils/api";
 
 const TEAM_METADATA = {
-  Brazil: { code: "BRA", flag: "🇧🇷", baseShare: 25.0 },
-  Argentina: { code: "ARG", flag: "🇦🇷", baseShare: 20.0 },
-  Portugal: { code: "POR", flag: "🇵🇹", baseShare: 15.0 },
-  Germany: { code: "GER", flag: "🇩🇪", baseShare: 10.0 },
-  France: { code: "FRA", flag: "🇫🇷", baseShare: 8.0 },
-  England: { code: "ENG", flag: "EN", baseShare: 7.0 },
-  Spain: { code: "ESP", flag: "🇪🇸", baseShare: 5.0 },
-  Netherlands: { code: "NED", flag: "🇳🇱", baseShare: 4.0 },
-  Belgium: { code: "BEL", flag: "🇧🇪", baseShare: 2.0 },
-  Croatia: { code: "CRO", flag: "🇭🇷", baseShare: 1.5 },
-  Uruguay: { code: "URU", flag: "🇺🇾", baseShare: 1.5 },
-  Japan: { code: "JPN", flag: "🇯🇵", baseShare: 1.0 },
+  Brazil: { code: "BRA", flag: "🇧🇷", baseShare: 0.0 },
+  Argentina: { code: "ARG", flag: "🇦🇷", baseShare: 0.0 },
+  Portugal: { code: "POR", flag: "🇵🇹", baseShare: 0.0 },
+  Germany: { code: "GER", flag: "🇩🇪", baseShare: 0.0 },
+  France: { code: "FRA", flag: "🇫🇷", baseShare: 0.0 },
+  England: { code: "ENG", flag: "EN", baseShare: 0.0 },
+  Spain: { code: "ESP", flag: "🇪🇸", baseShare: 0.0 },
+  Netherlands: { code: "NED", flag: "🇳🇱", baseShare: 0.0 },
+  Belgium: { code: "BEL", flag: "🇧🇪", baseShare: 0.0 },
+  Croatia: { code: "CRO", flag: "🇭🇷", baseShare: 0.0 },
+  Uruguay: { code: "URU", flag: "🇺🇾", baseShare: 0.0 },
+  Japan: { code: "JPN", flag: "🇯🇵", baseShare: 0.0 },
 };
 
 const TEAMS = Object.keys(TEAM_METADATA);
@@ -131,63 +131,6 @@ export default function Ticker() {
     const interval = setInterval(fetchStats, 30000);
     return () => clearInterval(interval);
   }, []);
-
-  // Simulation loop for mock data when database is offline or registrations are empty
-  useEffect(() => {
-    if (isLiveFeed) return;
-
-    const simInterval = setInterval(() => {
-      setTeams((prevTeams) => {
-        const nextTeams = prevTeams.map((t) => ({ ...t, prevShare: t.share }));
-
-        // Fluctuate shares dynamically
-        const idxInc = Math.floor(Math.random() * nextTeams.length);
-        let idxDec = Math.floor(Math.random() * nextTeams.length);
-        while (idxDec === idxInc) {
-          idxDec = Math.floor(Math.random() * nextTeams.length);
-        }
-
-        const delta = Math.round((Math.random() * 0.3 + 0.1) * 10) / 10;
-        nextTeams[idxInc].share = Math.round((nextTeams[idxInc].share + delta) * 10) / 10;
-        nextTeams[idxDec].share = Math.max(0.1, Math.round((nextTeams[idxDec].share - delta) * 10) / 10);
-
-        nextTeams.forEach((t, i) => {
-          if (i === idxInc) t.trend = "up";
-          else if (i === idxDec) t.trend = "down";
-          else t.trend = "stable";
-        });
-
-        const sorted = [...nextTeams].sort((a, b) => b.share - a.share || a.name.localeCompare(b.name));
-
-        return sorted.map((t, index) => {
-          const newRank = index + 1;
-          const prevItem = prevTeams.find((p) => p.name === t.name);
-
-          if (prevItem && newRank < prevItem.rank) {
-            const overtakenTeam = prevTeams.find((pt) => pt.rank === newRank);
-            if (overtakenTeam && overtakenTeam.name !== t.name) {
-              const toastId = ++toastIdRef.current;
-              const newToast = {
-                id: toastId,
-                message: `🔥 ${t.flag} ${t.name} has overtaken ${overtakenTeam.flag} ${overtakenTeam.name} for Rank ${newRank}!`,
-              };
-              setToasts((p) => [newToast, ...p].slice(0, 3));
-              setTimeout(() => {
-                setToasts((p) => p.filter((toast) => toast.id !== toastId));
-              }, 4500);
-            }
-          }
-
-          return {
-            ...t,
-            rank: newRank,
-          };
-        });
-      });
-    }, 5000);
-
-    return () => clearInterval(simInterval);
-  }, [isLiveFeed]);
 
   return (
     <div className="w-full bg-black/60 border-y border-white/5 backdrop-blur-md relative z-40 overflow-hidden py-2 text-xs font-semibold select-none mt-[72px] md:mt-[88px] no-print">
