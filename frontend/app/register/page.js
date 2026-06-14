@@ -295,10 +295,10 @@ export default function RegisterPage() {
       <div className="absolute top-[30%] right-[-10%] w-[45vw] h-[45vw] pink-accent-glow pointer-events-none rounded-full opacity-55 no-print" />
       <div className="absolute bottom-[20%] left-[-15%] w-[45vw] h-[45vw] blue-accent-glow pointer-events-none rounded-full opacity-55 no-print" />
 
-      <div className="max-w-4xl mx-auto px-6 w-full relative z-10 flex-1 flex flex-col justify-center items-center">
+      <div className="max-w-4xl mx-auto px-4 sm:px-6 w-full relative z-10 flex-1 flex flex-col justify-center items-center">
         {!registeredData ? (
           /* REGISTRATION FORM VIEW */
-          <div className="w-full max-w-lg bg-glass-card rounded-2xl p-6 md:p-8 border border-white/10 backdrop-blur-md shadow-2xl flex flex-col gap-6 bg-[linear-gradient(115deg,rgba(255,255,255,0.02),rgba(255,46,147,0.015))]">
+          <div className="w-full max-w-lg bg-glass-card rounded-2xl p-5 sm:p-6 md:p-8 border border-white/10 backdrop-blur-md shadow-2xl flex flex-col gap-5 sm:gap-6 bg-[linear-gradient(115deg,rgba(255,255,255,0.02),rgba(255,46,147,0.015))]">
             {/* Header */}
             <div className="text-center flex flex-col gap-1.5">
               <h1 className="text-2xl md:text-3xl font-extrabold tracking-wider bg-gradient-to-r from-white to-slate-400 bg-clip-text text-transparent uppercase">
@@ -503,11 +503,11 @@ export default function RegisterPage() {
           </div>
         ) : (
           /* TOURNAMENT ENTRY PASS (TICKET) SUCCESS VIEW */
-          <div className="w-full max-w-md flex flex-col gap-6 items-center">
+          <div className="w-full max-w-md flex flex-col gap-6 items-center px-4 sm:px-0">
             {/* Ticket Card Container */}
             <div
               id="tournament-ticket"
-              className="w-full bg-[#080b15]/90 border-2 border-dashed border-[#00E5FF]/40 rounded-3xl p-6 shadow-[0_0_30px_rgba(0,229,255,0.15)] flex flex-col gap-5 relative overflow-hidden backdrop-blur-lg select-none"
+              className="w-full bg-[#080b15]/90 border-2 border-dashed border-[#00E5FF]/40 rounded-3xl p-4 sm:p-6 shadow-[0_0_30px_rgba(0,229,255,0.15)] flex flex-col gap-4 sm:gap-5 relative overflow-hidden backdrop-blur-lg select-none"
             >
               {/* Outer decorative card glows */}
               <div className="absolute -top-12 -left-12 w-28 h-28 bg-[#00E5FF]/20 rounded-full blur-2xl pointer-events-none" />
@@ -519,15 +519,15 @@ export default function RegisterPage() {
 
               {/* Header Branding */}
               <div className="flex items-center justify-between border-b border-white/10 pb-4">
-                <div className="flex items-center gap-2">
-                  <div className="flex items-center gap-1.5 shrink-0">
+                <div className="flex items-center gap-1.5 sm:gap-2">
+                  <div className="flex items-center gap-1 sm:gap-1.5 shrink-0">
                     <Image
                       src="/trophy.png"
                       alt="World Cup Trophy"
                       width={9}
                       height={24}
                       priority
-                      className="h-6 w-auto object-contain filter drop-shadow-[0_0_6px_rgba(0,229,255,0.45)]"
+                      className="h-5 sm:h-6 w-auto object-contain filter drop-shadow-[0_0_6px_rgba(0,229,255,0.45)]"
                     />
                     <Image
                       src="/logo.png"
@@ -535,28 +535,28 @@ export default function RegisterPage() {
                       width={53}
                       height={24}
                       priority
-                      className="h-6 w-auto object-contain"
+                      className="h-5 sm:h-6 w-auto object-contain"
                     />
                   </div>
-                  <div className="h-6 w-[1px] bg-white/20 mx-0.5" />
+                  <div className="h-5 sm:h-6 w-[1px] bg-white/20 mx-0.5" />
                   <div className="flex flex-col text-left">
-                    <span className="text-[11px] font-black tracking-wider text-slate-100 uppercase leading-tight mt-0.5">
+                    <span className="text-[9px] sm:text-[11px] font-black tracking-wider text-slate-100 uppercase leading-tight mt-0.5">
                       Arena Access Pass
                     </span>
                   </div>
                 </div>
-                <div className="bg-[#00E5FF]/10 border border-[#00E5FF]/30 px-2 py-0.5 rounded text-[8px] font-black text-[#00E5FF] tracking-wider uppercase shrink-0">
+                <div className="bg-[#00E5FF]/10 border border-[#00E5FF]/30 px-1.5 sm:px-2 py-0.5 rounded text-[7px] sm:text-[8px] font-black text-[#00E5FF] tracking-wider uppercase shrink-0">
                   CONFIRMED
                 </div>
               </div>
 
               {/* Ticket Meta Details */}
-              <div className="grid grid-cols-2 gap-4 border-b border-white/5 pb-4">
+              <div className="grid grid-cols-2 gap-3 sm:gap-4 border-b border-white/5 pb-4">
                 <div className="flex flex-col text-left">
                   <span className="text-[8px] font-black uppercase tracking-wider text-slate-500">
                     Agent Name
                   </span>
-                  <span className="text-sm font-bold text-slate-100 truncate">
+                  <span className="text-xs sm:text-sm font-bold text-slate-100 truncate">
                     {registeredData.name}
                   </span>
                 </div>
@@ -564,18 +564,18 @@ export default function RegisterPage() {
                   <span className="text-[8px] font-black uppercase tracking-wider text-slate-500">
                     Agent ID
                   </span>
-                  <span className="text-sm font-bold text-[#00E5FF] truncate">
+                  <span className="text-xs sm:text-sm font-bold text-[#00E5FF] truncate">
                     @{registeredData.user_id}
                   </span>
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-4 border-b border-white/5 pb-4">
+              <div className="grid grid-cols-2 gap-3 sm:gap-4 border-b border-white/5 pb-4">
                 <div className="flex flex-col text-left">
                   <span className="text-[8px] font-black uppercase tracking-wider text-slate-500">
                     Selected Team
                   </span>
-                  <span className="text-sm font-bold text-slate-100">
+                  <span className="text-xs sm:text-sm font-bold text-slate-100 truncate">
                     {registeredData.team}
                   </span>
                 </div>
@@ -583,7 +583,7 @@ export default function RegisterPage() {
                   <span className="text-[8px] font-black uppercase tracking-wider text-slate-500">
                     Squad Domain
                   </span>
-                  <span className="text-sm font-bold text-[#FF2E93]">
+                  <span className="text-xs sm:text-sm font-bold text-[#FF2E93] truncate">
                     {registeredData.domain}
                   </span>
                 </div>

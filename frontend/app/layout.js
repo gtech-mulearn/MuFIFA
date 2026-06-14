@@ -12,9 +12,71 @@ const outfit = Outfit({
 });
 
 export const metadata = {
-  title: "µFifa '26",
+  metadataBase: new URL("https://mufifa.mulearn.org"),
+  title: {
+    default: "µFifa '26",
+    template: "%s | µFifa '26",
+  },
   description:
-    "Bet Big. Build Bigger. A Flagship Gamified Hackathon by µLearn Foundation & µLearn MCE.",
+    "Bet Big. Build Bigger. A Flagship Gamified Hackathon by µLearn Foundation & µLearn MCE. Complete technical drills, wager µ-Coins, and lead your squad to the top of the standings.",
+  keywords: [
+    "µFifa",
+    "mulearn",
+    "hackathon",
+    "gamified",
+    "football",
+    "fifa",
+    "coding",
+    "challenges",
+    "MCE",
+    "sports",
+    "tech",
+    "squads",
+  ],
+  authors: [{ name: "µLearn MCE", url: "https://mulearn.org" }],
+  creator: "µLearn Foundation & µLearn MCE",
+  publisher: "µLearn MCE",
+  formatDetection: {
+    email: false,
+    address: false,
+    telephone: false,
+  },
+  openGraph: {
+    title: "µFifa '26 | Gamified Hackathon",
+    description:
+      "Bet Big. Build Bigger. A Flagship Gamified Hackathon by µLearn Foundation & µLearn MCE. Complete technical drills, wager µ-Coins, and lead your squad to the top of the standings.",
+    url: "https://mufifa.mulearn.org",
+    siteName: "µFifa '26",
+    locale: "en_US",
+    type: "website",
+    images: [
+      {
+        url: "/logo.png",
+        width: 800,
+        height: 600,
+        alt: "µFifa '26",
+      },
+    ],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "µFifa '26 | Gamified Hackathon",
+    description:
+      "Bet Big. Build Bigger. A Flagship Gamified Hackathon by µLearn Foundation & µLearn MCE. Complete technical drills, wager µ-Coins, and lead your squad to the top of the standings.",
+    images: ["/logo.png"],
+    creator: "@mulearn",
+  },
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      "max-video-preview": -1,
+      "max-image-preview": "large",
+      "max-snippet": -1,
+    },
+  },
 };
 
 export default function RootLayout({ children }) {
