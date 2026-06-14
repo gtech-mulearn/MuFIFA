@@ -1,16 +1,15 @@
-const express = require("express");
-const cors = require("cors");
-const helmet = require("helmet");
+const { Hono } = require("hono");
+const { cors } = require("hono/cors");
+const { secureHeaders } = require("hono/secure-headers");
 const registerRouter = require("./routes/register");
 
-const app = express();
+const app = new Hono();
 
 // Setup standard security and utility middlewares
-app.use(cors());
-app.use(helmet());
-app.use(express.json());
+app.use("*", cors());
+app.use("*", secureHeaders());
 
 // Mount the API routes
-app.use("/api/v1", registerRouter);
+app.route("/api/v1", registerRouter);
 
 module.exports = app;

@@ -1,7 +1,4 @@
-const serverless = require("serverless-http");
 const app = require("./app");
-
-const handler = serverless(app);
 
 module.exports = {
   async fetch(request, env, ctx) {
@@ -12,6 +9,6 @@ module.exports = {
       }
     }
 
-    return handler(request, env, ctx);
+    return app.fetch(request, env, ctx);
   }
 };
