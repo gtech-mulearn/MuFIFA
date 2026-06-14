@@ -1,9 +1,23 @@
 const { Hono } = require("hono");
+const { createClient } = require("@supabase/supabase-js");
 const rateLimiter = require("../middleware/rateLimiter");
 const { RegisterSchema } = require("../validators/register");
-const supabase = require("../config/supabase");
 
 const router = new Hono();
+
+let supabaseInstance = null;
+
+function getSupabase(c) {
+  if (supabaseInstance) {
+    return supabaseInstance;
+  }
+  const url = c.env?.SUPABASE_URL || process.env.SUPABASE_URL;
+  const key = c.env?.SUPABASE_KEY || process.env.SUPABASE_KEY;
+  if (url && key) {
+    supabaseInstance = createClient(url, key);
+  }
+  return supabaseInstance;
+}
 
 // Route to handle user registrations with Zod validation, rate-limiting, and Supabase integration.
 router.post("/register", rateLimiter, async (c) => {
@@ -50,14 +64,15 @@ router.post("/register", rateLimiter, async (c) => {
     // Extract the part of the email before the '@' symbol to use as user_id.
     const userId = email.split("@")[0];
 
+    const supabase = getSupabase(c);
     // Connect to Supabase to insert values, or fall back to simulated response if variables are not present.
-    if (!supabase || !supabase.from) {
+    if (!supabase) {
       return c.json({
         success: false,
         error: {
           code: "SERVICE_UNAVAILABLE",
           message:
-            "Database service is uninitialized. Configure SUPABASE_URL and SUPABASE_KEY in environment variables.",
+            "Database service is uninitialized. Configure SUPABASE_URL and SUPABASE_KEY.",
           details: null,
         },
       }, 503);
@@ -111,13 +126,14 @@ router.post("/register", rateLimiter, async (c) => {
 // Route to fetch and compile aggregated registration statistics for teams and individuals.
 router.get("/live-stats", async (c) => {
   try {
-    if (!supabase || !supabase.from) {
+    const supabase = getSupabase(c);
+    if (!supabase) {
       return c.json({
         success: false,
         error: {
           code: "SERVICE_UNAVAILABLE",
           message:
-            "Database service is uninitialized. Configure SUPABASE_URL and SUPABASE_KEY in environment variables.",
+            "Database service is uninitialized. Configure SUPABASE_URL and SUPABASE_KEY.",
           details: null,
         },
       }, 503);
