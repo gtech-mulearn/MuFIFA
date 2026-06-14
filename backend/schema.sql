@@ -72,3 +72,31 @@ BEGIN
   WHERE name = squad_name;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
+
+-- ============================================================
+-- Admin Users table for dashboard authentication
+-- ============================================================
+
+CREATE TABLE IF NOT EXISTS admin_users (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  username VARCHAR(50) UNIQUE NOT NULL,
+  email VARCHAR(255) UNIQUE NOT NULL,
+  password_hash VARCHAR(255) NOT NULL,
+  role VARCHAR(20) NOT NULL DEFAULT 'viewer',
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+ALTER TABLE admin_users ENABLE ROW LEVEL SECURITY;
+
+-- Only service_role can read/write admin_users
+CREATE POLICY "Service role full access on admin_users"
+ON admin_users
+USING (true)
+WITH CHECK (true);
+
+-- Seed a default superadmin for local development
+-- Password: admin123 (bcrypt hash with 10 rounds)
+INSERT INTO admin_users (username, email, password_hash, role) VALUES
+  ('admin', 'admin@mulearn.org', '$2a$10$mTOTOyhQ6R6BT/3TUm04mef1t3rpLNzNw55ljeA5lne45OOfeqyr2', 'superadmin')
+ON CONFLICT (username) DO NOTHING;

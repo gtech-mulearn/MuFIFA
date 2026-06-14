@@ -1,8 +1,19 @@
 import { NextResponse } from "next/server";
+import crypto from "crypto";
+import { z } from "zod";
+import { sendRegistrationEmail, sendRegistrationOtpEmail } from "@/utils/email";
+import { adjustSquadPoints } from "@/utils/squad";
+import {
+  OTP_MAX_ATTEMPTS,
+  clearOtpSession,
+  createOtpSession,
+  getOtpSession,
+  updateOtpSession,
+} from "@/utils/registerOtp";
 
 const rateLimitCache = new Map();
 const RATE_LIMIT_WINDOW_MS = 60 * 1000;
-const MAX_REQUESTS = 5;
+const MAX_REQUESTS = 8;
 
 const DOMAINS = ["Maker", "Creative", "Coder", "Strategist"];
 const TEAMS = [
@@ -20,12 +31,20 @@ const TEAMS = [
   "Japan",
 ];
 
+const registrationSchema = z.object({
+  name: z.string({ required_error: "Name is required." }).trim().min(2, "Name must be between 2 and 100 characters.").max(100, "Name must be between 2 and 100 characters."),
+  email: z.string({ required_error: "Email is required." }).trim().email("Please enter a valid email address.").toLowerCase(),
+  phone: z.string({ required_error: "Phone number is required." }).trim().regex(/^(?:\+91|91|0)?[6-9]\d{9}$/, "Please enter a valid 10-digit Indian phone number."),
+  domain: z.enum(DOMAINS, { errorMap: () => ({ message: "Invalid domain selected." }) }),
+  team: z.enum(TEAMS, { errorMap: () => ({ message: "Invalid team selected." }) }),
+});
+
 function isRateLimited(ip) {
   const now = Date.now();
   if (!rateLimitCache.has(ip)) {
     rateLimitCache.set(ip, []);
   }
-  const timestamps = rateLimitCache.get(ip).filter(t => now - t < RATE_LIMIT_WINDOW_MS);
+  const timestamps = rateLimitCache.get(ip).filter((t) => now - t < RATE_LIMIT_WINDOW_MS);
   rateLimitCache.set(ip, timestamps);
   if (timestamps.length >= MAX_REQUESTS) {
     return true;
@@ -34,77 +53,110 @@ function isRateLimited(ip) {
   return false;
 }
 
-async function incrementSquadPoints(supabaseUrl, supabaseKey, team, pointsToAdd = 10) {
-  try {
-    // 1. Try RPC first (atomic)
-    const rpcUrl = `${supabaseUrl}/rest/v1/rpc/increment_squad_points`;
-    const rpcRes = await fetch(rpcUrl, {
-      method: "POST",
-      headers: {
-        "apikey": supabaseKey,
-        "Authorization": `Bearer ${supabaseKey}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        squad_name: team,
-        points_to_add: pointsToAdd,
-      }),
+function validateRegistrationBody(body) {
+  const result = registrationSchema.safeParse(body);
+  if (!result.success) {
+    const errors = {};
+    result.error.errors.forEach((err) => {
+      const field = err.path[0];
+      if (!errors[field]) {
+        errors[field] = [];
+      }
+      errors[field].push(err.message);
     });
-
-    if (rpcRes.ok) {
-      console.log(`Successfully incremented points for squad ${team} via RPC.`);
-      return true;
-    }
-
-    const errorText = await rpcRes.text();
-    console.warn(`RPC increment failed (status ${rpcRes.status}): ${errorText}. Falling back to Read-Modify-Write.`);
-    
-    // 2. Fallback: Fetch current points
-    const getUrl = `${supabaseUrl}/rest/v1/squads?select=points&name=eq.${encodeURIComponent(team)}`;
-    const getRes = await fetch(getUrl, {
-      method: "GET",
-      headers: {
-        "apikey": supabaseKey,
-        "Authorization": `Bearer ${supabaseKey}`,
-      },
-    });
-
-    if (!getRes.ok) {
-      throw new Error(`Failed to fetch squad points: ${await getRes.text()}`);
-    }
-
-    const rows = await getRes.json();
-    if (!rows || rows.length === 0) {
-      throw new Error(`Squad not found: ${team}`);
-    }
-
-    const currentPoints = rows[0].points || 0;
-    const newPoints = currentPoints + pointsToAdd;
-
-    // 3. Fallback: Patch new points
-    const patchUrl = `${supabaseUrl}/rest/v1/squads?name=eq.${encodeURIComponent(team)}`;
-    const patchRes = await fetch(patchUrl, {
-      method: "PATCH",
-      headers: {
-        "apikey": supabaseKey,
-        "Authorization": `Bearer ${supabaseKey}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        points: newPoints,
-      }),
-    });
-
-    if (!patchRes.ok) {
-      throw new Error(`Failed to update squad points: ${await patchRes.text()}`);
-    }
-
-    console.log(`Successfully updated points for squad ${team} to ${newPoints} via PATCH fallback.`);
-    return true;
-  } catch (err) {
-    console.error(`Error in incrementSquadPoints for squad ${team}:`, err);
-    return false;
+    return { valid: false, errors };
   }
+
+  return {
+    valid: true,
+    payload: result.data,
+  };
+}
+
+
+async function ensureRegistrationNotTaken(supabaseUrl, supabaseKey, email, phone) {
+  const userId = email.split("@")[0];
+  const query = `${supabaseUrl}/rest/v1/registrations?select=id,email,phone,user_id&or=(email.eq.${encodeURIComponent(email)},phone.eq.${encodeURIComponent(phone)},user_id.eq.${encodeURIComponent(userId)})&limit=1`;
+  const res = await fetch(query, {
+    method: "GET",
+    headers: {
+      apikey: supabaseKey,
+      Authorization: `Bearer ${supabaseKey}`,
+    },
+  });
+
+  if (!res.ok) {
+    throw new Error(`Supabase lookup error: ${await res.text()}`);
+  }
+
+  const rows = await res.json();
+  if (!rows.length) {
+    return { available: true };
+  }
+
+  const existing = rows[0];
+  if (existing.email === email) {
+    return {
+      available: false,
+      code: "EMAIL_ALREADY_REGISTERED",
+      message: "This email address has already been registered.",
+    };
+  }
+
+  if (existing.phone === phone) {
+    return {
+      available: false,
+      code: "PHONE_ALREADY_REGISTERED",
+      message: "This phone number has already been registered.",
+    };
+  }
+
+  return {
+    available: false,
+    code: "CONFLICT_ERROR",
+    message: "This email address or user ID has already been registered.",
+  };
+}
+
+async function createRegistration(supabaseUrl, supabaseKey, payload) {
+  const userId = payload.email.split("@")[0];
+  const targetUrl = `${supabaseUrl}/rest/v1/registrations`;
+  const res = await fetch(targetUrl, {
+    method: "POST",
+    headers: {
+      apikey: supabaseKey,
+      Authorization: `Bearer ${supabaseKey}`,
+      "Content-Type": "application/json",
+      Prefer: "return=representation",
+    },
+    body: JSON.stringify([{
+      name: payload.name,
+      email: payload.email,
+      user_id: userId,
+      phone: payload.phone,
+      domain: payload.domain,
+      team: payload.team,
+      mu_points: 10,
+    }]),
+  });
+
+  if (!res.ok) {
+    const errorText = await res.text();
+    if (res.status === 409 || errorText.includes("duplicate") || errorText.includes("unique")) {
+      return { conflict: true };
+    }
+    throw new Error(`Supabase REST error: ${errorText}`);
+  }
+
+  const data = await res.json();
+  return { data: data[0] };
+}
+
+function jsonError(status, code, message, details = null) {
+  return NextResponse.json({
+    success: false,
+    error: { code, message, details },
+  }, { status });
 }
 
 export async function POST(request) {
@@ -112,135 +164,172 @@ export async function POST(request) {
     const ip = request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "127.0.0.1";
 
     if (isRateLimited(ip)) {
-      return NextResponse.json({
-        success: false,
-        error: {
-          code: "TOO_MANY_REQUESTS",
-          message: "Too many registration attempts. Please try again after 1 minute.",
-          details: null,
-        },
-      }, { status: 429 });
+      return jsonError(429, "TOO_MANY_REQUESTS", "Too many requests. Please try again after 1 minute.");
     }
 
     let body;
     try {
       body = await request.json();
     } catch {
-      return NextResponse.json({
-        success: false,
-        error: {
-          code: "BAD_REQUEST",
-          message: "Malformed JSON body.",
-          details: null,
-        },
-      }, { status: 400 });
+      return jsonError(400, "BAD_REQUEST", "Malformed JSON body.");
     }
 
-    const { name, email, phone, domain, team } = body || {};
-
-    const errors = {};
-    if (!name || typeof name !== "string" || name.trim().length < 2 || name.trim().length > 100) {
-      errors.name = ["Name must be between 2 and 100 characters."];
-    }
-    if (!email || typeof email !== "string" || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) {
-      errors.email = ["Please enter a valid email address."];
-    }
-    if (!phone || typeof phone !== "string" || !/^(?:\+91|91|0)?[6-9]\d{9}$/.test(phone.trim())) {
-      errors.phone = ["Please enter a valid 10-digit Indian phone number."];
-    }
-    if (!domain || !DOMAINS.includes(domain)) {
-      errors.domain = ["Invalid domain selected."];
-    }
-    if (!team || !TEAMS.includes(team)) {
-      errors.team = ["Invalid team selected."];
-    }
-
-    if (Object.keys(errors).length > 0) {
-      return NextResponse.json({
-        success: false,
-        error: {
-          code: "VALIDATION_ERROR",
-          message: "Request parameters failed validation.",
-          details: errors,
-        },
-      }, { status: 400 });
-    }
-
-    const trimmedName = name.trim();
-    const trimmedEmail = email.trim();
-    const trimmedPhone = phone.trim();
-    const userId = trimmedEmail.split("@")[0];
-
+    const { action = "request_otp" } = body || {};
     const supabaseUrl = process.env.SUPABASE_URL;
     const supabaseKey = process.env.SUPABASE_KEY;
 
     if (!supabaseUrl || !supabaseKey) {
-      return NextResponse.json({
-        success: false,
-        error: {
-          code: "SERVICE_UNAVAILABLE",
-          message: "Database credentials are not configured in environment variables.",
-          details: null,
-        },
-      }, { status: 503 });
+      return jsonError(503, "SERVICE_UNAVAILABLE", "Database credentials are not configured in environment variables.");
     }
 
-    // Call Supabase REST API directly (no client dependency needed)
-    const targetUrl = `${supabaseUrl}/rest/v1/registrations`;
-    const res = await fetch(targetUrl, {
-      method: "POST",
-      headers: {
-        "apikey": supabaseKey,
-        "Authorization": `Bearer ${supabaseKey}`,
-        "Content-Type": "application/json",
-        "Prefer": "return=representation",
-      },
-      body: JSON.stringify([{
-        name: trimmedName,
-        email: trimmedEmail,
-        user_id: userId,
-        phone: trimmedPhone,
-        domain,
-        team,
-        mu_points: 10,
-      }]),
-    });
-
-    if (!res.ok) {
-      const errorText = await res.text();
-      if (res.status === 409 || errorText.includes("duplicate") || errorText.includes("unique")) {
-        return NextResponse.json({
-          success: false,
-          error: {
-            code: "CONFLICT_ERROR",
-            message: "This email address or user ID has already been registered.",
-            details: null,
-          },
-        }, { status: 409 });
+    if (action === "request_otp" || action === "resend_otp") {
+      const validation = validateRegistrationBody(body);
+      if (!validation.valid) {
+        return jsonError(400, "VALIDATION_ERROR", "Request parameters failed validation.", validation.errors);
       }
-      throw new Error(`Supabase REST error: ${errorText}`);
+
+      const payload = validation.payload;
+      const existing = getOtpSession(payload.email);
+
+      if (action === "resend_otp") {
+        if (!existing) {
+          return jsonError(404, "OTP_SESSION_NOT_FOUND", "OTP session not found. Please submit the form again.");
+        }
+        if (Date.now() < existing.resendAvailableAt) {
+          const waitMs = existing.resendAvailableAt - Date.now();
+          return NextResponse.json({
+            success: false,
+            error: {
+              code: "OTP_RESEND_BLOCKED",
+              message: "You can request a new OTP after 2 minutes.",
+              details: { retryAfterMs: waitMs },
+            },
+          }, { status: 429 });
+        }
+      }
+
+      const availability = await ensureRegistrationNotTaken(
+        supabaseUrl,
+        supabaseKey,
+        payload.email,
+        payload.phone
+      );
+      if (!availability.available) {
+        return jsonError(409, availability.code, availability.message);
+      }
+
+      const otp = crypto.randomInt(100000, 1000000).toString();
+      const session = createOtpSession(payload.email, payload, otp);
+      const otpSent = await sendRegistrationOtpEmail({
+        email: payload.email,
+        name: payload.name,
+        otp,
+      });
+
+      if (!otpSent) {
+        clearOtpSession(payload.email);
+        return jsonError(503, "EMAIL_DELIVERY_FAILED", "Unable to send OTP email right now. Please try again.");
+      }
+
+      return NextResponse.json({
+        success: true,
+        message: action === "resend_otp" ? "A new OTP has been sent to your email." : "OTP sent to your email.",
+        data: {
+          email: payload.email,
+          resendAvailableAt: session.resendAvailableAt,
+          expiresAt: session.expiresAt,
+        },
+      }, { status: 200 });
     }
 
-    const data = await res.json();
+    if (action === "verify_otp") {
+      const email = typeof body?.email === "string" ? body.email.trim().toLowerCase() : "";
+      const otp = typeof body?.otp === "string" ? body.otp.trim() : "";
 
-    // Increment points for the selected team
-    await incrementSquadPoints(supabaseUrl, supabaseKey, team, 10);
+      if (!email || !otp) {
+        return jsonError(400, "VALIDATION_ERROR", "Email and OTP are required.", {
+          email: !email ? ["Email is required."] : undefined,
+          otp: !otp ? ["OTP is required."] : undefined,
+        });
+      }
 
-    return NextResponse.json({
-      success: true,
-      message: "Registration completed successfully.",
-      data: data[0],
-    }, { status: 201 });
+      const session = getOtpSession(email);
+      if (!session) {
+        return jsonError(404, "OTP_SESSION_NOT_FOUND", "OTP expired or session not found. Please request a new OTP.");
+      }
 
+      if (session.attempts >= OTP_MAX_ATTEMPTS) {
+        clearOtpSession(email);
+        return jsonError(429, "OTP_ATTEMPTS_EXCEEDED", "Too many incorrect OTP attempts. Please request a new OTP.");
+      }
+
+      if (session.otp !== otp) {
+        updateOtpSession(email, (current) => ({
+          ...current,
+          attempts: current.attempts + 1,
+        }));
+        return jsonError(400, "OTP_MISMATCH", "The OTP you entered is incorrect.");
+      }
+
+      const creation = await createRegistration(supabaseUrl, supabaseKey, session.payload);
+      if (creation.conflict) {
+        clearOtpSession(email);
+        return jsonError(409, "CONFLICT_ERROR", "This email address or user ID has already been registered.");
+      }
+
+      await adjustSquadPoints(supabaseUrl, supabaseKey, session.payload.team, 10);
+      clearOtpSession(email);
+
+      if (creation.data) {
+        sendRegistrationEmail(creation.data).catch((err) => {
+          console.error("Background registration email error:", err);
+        });
+      }
+
+      return NextResponse.json({
+        success: true,
+        message: "Registration completed successfully.",
+        data: creation.data,
+      }, { status: 201 });
+    }
+
+    if (action === "cancel_otp") {
+      const email = typeof body?.email === "string" ? body.email.trim().toLowerCase() : "";
+      if (email) {
+        clearOtpSession(email);
+      }
+      return NextResponse.json({
+        success: true,
+        message: "OTP session cancelled.",
+      });
+    }
+
+    return jsonError(400, "BAD_REQUEST", "Unsupported registration action.");
   } catch (error) {
     console.error("Next.js registration API error:", error);
-    return NextResponse.json({
-      success: false,
-      error: {
-        code: "INTERNAL_SERVER_ERROR",
-        message: "An unexpected error occurred. Please try again later.",
-        details: null,
-      },
-    }, { status: 500 });
+    return jsonError(500, "INTERNAL_SERVER_ERROR", "An unexpected error occurred. Please try again later.");
   }
+}
+
+export async function GET(request) {
+  const email = request.nextUrl.searchParams.get("email");
+  if (!email) {
+    return jsonError(400, "BAD_REQUEST", "Email is required.");
+  }
+
+  const session = getOtpSession(email);
+  if (!session) {
+    return jsonError(404, "OTP_SESSION_NOT_FOUND", "OTP session not found.");
+  }
+
+  return NextResponse.json({
+    success: true,
+    data: {
+      email: session.payload.email,
+      expiresAt: session.expiresAt,
+      resendAvailableAt: session.resendAvailableAt,
+      retryAfterMs: Math.max(session.resendAvailableAt - Date.now(), 0),
+      expiresInMs: Math.max(session.expiresAt - Date.now(), 0),
+    },
+  });
 }

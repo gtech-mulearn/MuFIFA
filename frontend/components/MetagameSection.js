@@ -12,11 +12,8 @@ const CountdownSection = dynamic(() => import("./CountdownSection"), {
 export default function MetagameSection() {
   return (
     <div className="relative z-20 flex flex-col gap-6 lg:gap-8 border-t border-white/5 pt-10 lg:pt-18 mt-auto w-full">
-      {/* Row 1: Logos & Countdown Timer */}
       <div className="flex flex-wrap items-center justify-center lg:justify-between gap-6 w-full">
-        {/* Logos */}
         <div className="flex items-center justify-center gap-3 w-full lg:w-auto pt-4 lg:pt-0">
-          {/* MuLearn Foundation Logo */}
           <Link href="https://mulearn.org">
             <Image
               src="/mulearnFoundation.png"
@@ -28,7 +25,6 @@ export default function MetagameSection() {
             />
           </Link>
           <div className="text-slate-200 text-xs font-bold px-1">×</div>
-          {/* MCE Logo */}
           <Link href="https://mu.org">
             <Image
               src="/mulearnMce.png"
@@ -41,13 +37,11 @@ export default function MetagameSection() {
           </Link>
         </div>
 
-        {/* Countdown Timer instead of Live Global Counter (desktop only) */}
         <div className="hidden lg:block w-full lg:w-auto">
           <CountdownSection />
         </div>
       </div>
 
-      {/* Row 2: 3-Tier Gameplay (placed below) */}
       <div className="flex flex-col w-full border-t border-white/5 pt-4">
         <div className="flex items-center justify-between mb-3">
           <div>
@@ -55,12 +49,11 @@ export default function MetagameSection() {
               3-Tier Gameplay
             </h3>
             <p className="text-xs text-slate-400">
-              Gamified pipeline with the pipeline gameplay
+              Join the race, build your squad, and claim the championship.
             </p>
           </div>
         </div>
 
-        {/* Tiers Grid */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
           {[
             {
@@ -75,7 +68,7 @@ export default function MetagameSection() {
               id: 2,
               num: "02",
               name: "Find the GOAT",
-              desc: " Choose your captain. Build a goated team to enter the ground.",
+              desc: "Choose your captain. Build a goated team to enter the ground.",
               border:
                 "border-blue-500/40 shadow-[0_0_12px_rgba(0,229,255,0.15)]",
               bar: "bg-[#00E5FF]",
@@ -84,7 +77,7 @@ export default function MetagameSection() {
               id: 3,
               num: "03",
               name: "Match Time",
-              desc: " The Sprint Begins. Battle for your team & get the μcup",
+              desc: "The Sprint Begins. Battle for your team & get the μcup",
               border: "border-green-500/30",
               bar: "bg-[#00E676]",
             },

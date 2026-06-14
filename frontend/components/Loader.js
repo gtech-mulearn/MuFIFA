@@ -8,7 +8,6 @@ export default function Loader() {
   const videoRef = useRef(null);
 
   useEffect(() => {
-    // Attempt to play the video on mount
     if (videoRef.current) {
       videoRef.current.muted = true;
       videoRef.current.play().catch((err) => {
@@ -16,13 +15,10 @@ export default function Loader() {
       });
     }
 
-    // Set a safety timeout to fade out after 3.2 seconds
-    // to guarantee the loader disappears even if the video fails to load or play
     const fadeTimeout = setTimeout(() => {
       setFadeOut(true);
     }, 3200);
 
-    // Completely remove the loader from DOM after the opacity transition completes (500ms)
     const removeTimeout = setTimeout(() => {
       setVisible(false);
     }, 3700);
@@ -42,7 +38,6 @@ export default function Loader() {
       }`}
     >
       <div className="relative w-full max-w-[280px] sm:max-w-[360px] aspect-square flex items-center justify-center">
-        {/* Subtle glowing ring backdrop */}
         <div className="absolute inset-0 bg-[#FF2E93]/5 rounded-full blur-3xl animate-pulse" />
         
         <video

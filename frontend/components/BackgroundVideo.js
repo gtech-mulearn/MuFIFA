@@ -13,7 +13,11 @@ const BackgroundVideo = memo(() => {
       });
 
       const handleTimeUpdate = () => {
-        if (video.duration && !isNaN(video.duration) && video.currentTime >= video.duration - 0.1) {
+        if (
+          video.duration &&
+          !isNaN(video.duration) &&
+          video.currentTime >= video.duration - 0.1
+        ) {
           video.pause();
           video.currentTime = video.duration - 0.1;
           video.removeEventListener("timeupdate", handleTimeUpdate);
@@ -35,6 +39,8 @@ const BackgroundVideo = memo(() => {
         muted
         playsInline
         preload="auto"
+        tabIndex="-1"
+        aria-hidden="true"
         className="w-full h-full object-cover object-center"
       >
         <source

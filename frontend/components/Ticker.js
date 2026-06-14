@@ -4,18 +4,18 @@ import React, { useState, useEffect, useRef } from "react";
 import { getBackendUrl } from "../utils/api";
 
 const TEAM_METADATA = {
-  Brazil: { code: "BRA", flag: "🇧🇷", baseShare: 0.0 },
-  Argentina: { code: "ARG", flag: "🇦🇷", baseShare: 0.0 },
-  Portugal: { code: "POR", flag: "🇵🇹", baseShare: 0.0 },
-  Germany: { code: "GER", flag: "🇩🇪", baseShare: 0.0 },
-  France: { code: "FRA", flag: "🇫🇷", baseShare: 0.0 },
-  England: { code: "ENG", flag: "EN", baseShare: 0.0 },
-  Spain: { code: "ESP", flag: "🇪🇸", baseShare: 0.0 },
-  Netherlands: { code: "NED", flag: "🇳🇱", baseShare: 0.0 },
-  Belgium: { code: "BEL", flag: "🇧🇪", baseShare: 0.0 },
-  Croatia: { code: "CRO", flag: "🇭🇷", baseShare: 0.0 },
-  Uruguay: { code: "URU", flag: "🇺🇾", baseShare: 0.0 },
-  Japan: { code: "JPN", flag: "🇯🇵", baseShare: 0.0 },
+  Brazil: { code: "BRA", flag: "🇧🇷", flagCode: "br", baseShare: 0.0 },
+  Argentina: { code: "ARG", flag: "🇦🇷", flagCode: "ar", baseShare: 0.0 },
+  Portugal: { code: "POR", flag: "🇵🇹", flagCode: "pt", baseShare: 0.0 },
+  Germany: { code: "GER", flag: "🇩🇪", flagCode: "de", baseShare: 0.0 },
+  France: { code: "FRA", flag: "🇫🇷", flagCode: "fr", baseShare: 0.0 },
+  England: { code: "ENG", flag: "EN", flagCode: "gb-eng", baseShare: 0.0 },
+  Spain: { code: "ESP", flag: "🇪🇸", flagCode: "es", baseShare: 0.0 },
+  Netherlands: { code: "NED", flag: "🇳🇱", flagCode: "nl", baseShare: 0.0 },
+  Belgium: { code: "BEL", flag: "🇧🇪", flagCode: "be", baseShare: 0.0 },
+  Croatia: { code: "CRO", flag: "🇭🇷", flagCode: "hr", baseShare: 0.0 },
+  Uruguay: { code: "URU", flag: "🇺🇾", flagCode: "uy", baseShare: 0.0 },
+  Japan: { code: "JPN", flag: "🇯🇵", flagCode: "jp", baseShare: 0.0 },
 };
 
 const TEAMS = Object.keys(TEAM_METADATA);
@@ -24,6 +24,7 @@ const INITIAL_TEAMS = TEAMS.map((team, idx) => ({
   name: team,
   code: TEAM_METADATA[team].code,
   flag: TEAM_METADATA[team].flag,
+  flagCode: TEAM_METADATA[team].flagCode,
   share: TEAM_METADATA[team].baseShare,
   prevShare: TEAM_METADATA[team].baseShare,
   trend: "stable",
@@ -60,6 +61,7 @@ export default function Ticker() {
                 name: teamName,
                 code: TEAM_METADATA[teamName].code,
                 flag: TEAM_METADATA[teamName].flag,
+                flagCode: TEAM_METADATA[teamName].flagCode,
                 share,
               };
             });
@@ -69,6 +71,7 @@ export default function Ticker() {
               name: teamName,
               code: TEAM_METADATA[teamName].code,
               flag: TEAM_METADATA[teamName].flag,
+              flagCode: TEAM_METADATA[teamName].flagCode,
               share: TEAM_METADATA[teamName].baseShare,
             }));
           }
@@ -96,7 +99,11 @@ export default function Ticker() {
                     const toastId = ++toastIdRef.current;
                     const newToast = {
                       id: toastId,
-                      message: `🔥 ${t.flag} ${t.name} has overtaken ${overtakenTeam.flag} ${overtakenTeam.name} for Rank ${newRank}!`,
+                      teamName: t.name,
+                      teamFlagCode: t.flagCode,
+                      overtakenName: overtakenTeam.name,
+                      overtakenFlagCode: overtakenTeam.flagCode,
+                      newRank,
                     };
                     setToasts((p) => [newToast, ...p].slice(0, 3));
                     setTimeout(() => {
@@ -161,23 +168,23 @@ export default function Ticker() {
                 className="flex items-center gap-2 text-slate-300 hover:text-white transition-colors duration-200"
               >
                 <span className="text-[10px] text-slate-500 font-bold">#{team.rank}</span>
-                <span>{team.flag}</span>
+                <span className={`fi fi-${team.flagCode} rounded-sm shadow-sm border border-white/10 shrink-0`} style={{ width: '16px', height: '12px' }} role="img" aria-label={`${team.code} flag`} />
                 <span className="font-extrabold tracking-wide uppercase text-[11px]">
                   {team.code}
                 </span>
                 <span className="text-slate-100 font-bold">{team.share.toFixed(1)}%</span>
                 {isUp && (
-                  <span className="text-[#00E676] animate-pulse drop-shadow-[0_0_4px_#00E676] text-[10px]">
+                  <span className="text-[#00E676] animate-pulse drop-shadow-[0_0_4px_#00E676] text-[10px]" aria-label="Rank increased">
                     ▲
                   </span>
                 )}
                 {isDown && (
-                  <span className="text-[#FF2E93] animate-pulse drop-shadow-[0_0_4px_#FF2E93] text-[10px]">
+                  <span className="text-[#FF2E93] animate-pulse drop-shadow-[0_0_4px_#FF2E93] text-[10px]" aria-label="Rank decreased">
                     ▼
                   </span>
                 )}
                 {team.trend === "stable" && (
-                  <span className="text-slate-600 text-[9px]">•</span>
+                  <span className="text-slate-600 text-[9px]" aria-label="Rank stable">•</span>
                 )}
                 <span className="text-white/10 px-1 font-light">|</span>
               </div>
@@ -198,7 +205,16 @@ export default function Ticker() {
               <span className="text-[9px] tracking-wider text-[#00E5FF] uppercase block mb-0.5">
                 // Overtaking Alert //
               </span>
-              <p className="text-slate-100 font-semibold">{toast.message}</p>
+              <p className="text-slate-100 font-semibold flex items-center gap-1.5 flex-wrap">
+                🔥 
+                <span className={`fi fi-${toast.teamFlagCode} rounded-sm shadow-sm border border-white/10 shrink-0`} style={{ width: '15px', height: '11.5px' }} role="img" aria-label={`${toast.teamName} flag`} />
+                <span>{toast.teamName}</span>
+                <span className="text-slate-400 font-medium">has overtaken</span>
+                <span className={`fi fi-${toast.overtakenFlagCode} rounded-sm shadow-sm border border-white/10 shrink-0`} style={{ width: '15px', height: '11.5px' }} role="img" aria-label={`${toast.overtakenName} flag`} />
+                <span>{toast.overtakenName}</span>
+                <span className="text-slate-400 font-medium">for Rank</span>
+                <span className="text-[#00E5FF]">{toast.newRank}!</span>
+              </p>
             </div>
             <button
               onClick={() => setToasts((prev) => prev.filter((t) => t.id !== toast.id))}

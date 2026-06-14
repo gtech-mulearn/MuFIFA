@@ -69,8 +69,15 @@ export default function CountdownSection() {
   }
 
   return (
-    <div className="relative z-20 w-full lg:w-auto my-4 lg:my-0 flex flex-col items-center justify-center lg:items-end text-center lg:text-right">
-      <div className="flex items-center gap-2.5 sm:gap-4 justify-center lg:justify-end">
+    <div
+      role="timer"
+      aria-live="polite"
+      className="relative z-20 w-full lg:w-auto my-4 lg:my-0 flex flex-col items-center justify-center lg:items-end text-center lg:text-right"
+    >
+      <span className="sr-only">
+        Time remaining: {timeLeft.days} days, {timeLeft.hours} hours, {timeLeft.minutes} minutes, and {timeLeft.seconds} seconds
+      </span>
+      <div className="flex items-center gap-2.5 sm:gap-4 justify-center lg:justify-end" aria-hidden="true">
         {[
           { value: timeLeft.days, label: "Days" },
           { value: timeLeft.hours, label: "Hours" },
@@ -85,7 +92,6 @@ export default function CountdownSection() {
             )}
             <div className="flex flex-col items-center">
               <div className="relative overflow-hidden w-14 sm:w-16 h-12 sm:h-14 flex items-center justify-center bg-black/40 border border-white/5 rounded-xl shadow-inner">
-                {/* Subtle top light overlay */}
                 <div className="absolute top-0 inset-x-0 h-[50%] bg-white/[0.03] border-b border-white/[0.03]" />
                 <span className="text-xl sm:text-2xl font-black text-transparent bg-clip-text bg-gradient-to-b from-white to-slate-300 font-mono tracking-wider">
                   {formatNum(item.value)}

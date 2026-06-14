@@ -16,7 +16,6 @@ export async function GET(request) {
       }, { status: 503 });
     }
 
-    // Call Supabase REST API directly (no client dependency needed)
     const targetUrl = `${supabaseUrl}/rest/v1/registrations?select=user_id,team`;
     const res = await fetch(targetUrl, {
       method: "GET",
@@ -24,7 +23,7 @@ export async function GET(request) {
         "apikey": supabaseKey,
         "Authorization": `Bearer ${supabaseKey}`,
       },
-      next: { revalidate: 0 }, // Prevent caching
+      next: { revalidate: 0 },
     });
 
     if (!res.ok) {
@@ -48,7 +47,6 @@ export async function GET(request) {
       }
     });
 
-    // Fetch squad points from the squads table
     const squadsUrl = `${supabaseUrl}/rest/v1/squads?select=name,points`;
     const squadsRes = await fetch(squadsUrl, {
       method: "GET",
@@ -69,13 +67,16 @@ export async function GET(request) {
       });
     }
 
+    const statsPayload = {
+      organisation_count,
+      referral_analytics,
+      squad_points,
+    };
+
     return NextResponse.json({
       success: true,
-      response: {
-        organisation_count,
-        referral_analytics,
-        squad_points,
-      },
+      response: statsPayload,
+      data: statsPayload,
     }, { status: 200 });
 
   } catch (error) {

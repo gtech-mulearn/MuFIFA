@@ -18,7 +18,6 @@ export default function Navbar() {
   return (
     <header className="absolute top-0 left-0 w-full z-50 border-b border-white/5 bg-transparent select-none">
       <div className="max-w-7xl mx-auto px-6 py-4 md:py-6 flex flex-wrap items-center justify-between gap-4">
-        {/* Brand Logo */}
         <Link
           href="/"
           className="flex items-center gap-1.5 cursor-pointer group"
@@ -41,7 +40,6 @@ export default function Navbar() {
           />
         </Link>
 
-        {/* Navigation Links */}
         <nav className="hidden md:flex items-center gap-8 text-sm font-medium text-slate-300">
           {navItems.map((item) => {
             const isActive =
@@ -67,7 +65,6 @@ export default function Navbar() {
           })}
         </nav>
 
-        {/* Action Button & Hamburger Toggle */}
         <div className="flex items-center gap-3">
           <Link
             href="/register"
@@ -80,6 +77,8 @@ export default function Navbar() {
             onClick={() => setMenuOpen(!menuOpen)}
             className="md:hidden text-slate-300 hover:text-white cursor-pointer p-2 w-10 h-10 flex items-center justify-center focus:outline-none relative z-50"
             aria-label="Toggle Menu"
+            aria-expanded={menuOpen}
+            aria-controls="mobile-nav-menu"
           >
             <div className="relative w-5 h-4 flex flex-col justify-between items-center">
               <span
@@ -95,8 +94,8 @@ export default function Navbar() {
           </button>
         </div>
 
-        {/* Mobile Responsive Dropdown Menu with Slide & Fade Transitions */}
         <div
+          id="mobile-nav-menu"
           className={`md:hidden w-full bg-[#080b15]/95 backdrop-blur-lg rounded-xl flex flex-col gap-3 z-50 relative transition-all duration-300 ease-in-out origin-top overflow-hidden border ${
             menuOpen
               ? "max-h-[420px] opacity-100 scale-y-100 mt-3 p-4 border-white/10 pointer-events-auto"
@@ -120,7 +119,6 @@ export default function Navbar() {
             );
           })}
 
-          {/* Mobile Action Button */}
           <Link
             href="/register"
             onClick={() => setMenuOpen(false)}

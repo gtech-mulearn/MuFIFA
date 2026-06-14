@@ -6,18 +6,18 @@ import BackgroundVideo from "@/components/BackgroundVideo";
 import { getBackendUrl } from "@/utils/api";
 
 const FLAGS = {
-  Brazil: "🇧🇷",
-  Argentina: "🇦🇷",
-  Portugal: "🇵🇹",
-  Germany: "🇩🇪",
-  France: "🇫🇷",
-  England: "🇬🇧",
-  Spain: "🇪🇸",
-  Netherlands: "🇳🇱",
-  Belgium: "🇧🇪",
-  Croatia: "🇭🇷",
-  Uruguay: "🇺🇾",
-  Japan: "🇯🇵",
+  Brazil: "br",
+  Argentina: "ar",
+  Portugal: "pt",
+  Germany: "de",
+  France: "fr",
+  England: "gb-eng",
+  Spain: "es",
+  Netherlands: "nl",
+  Belgium: "be",
+  Croatia: "hr",
+  Uruguay: "uy",
+  Japan: "jp",
 };
 
 const TEAMS = Object.keys(FLAGS);
@@ -231,23 +231,23 @@ export default function LeaderboardPage() {
                     {/* Trend Indicator */}
                     <div className="w-3 flex items-center justify-center">
                       {team.rankTrend === "up" && (
-                        <span className="text-[#00E676] text-[10px] drop-shadow-[0_0_2px_#00E676]">
+                        <span className="text-[#00E676] text-[10px] drop-shadow-[0_0_2px_#00E676]" aria-label="Rank increased">
                           ▲
                         </span>
                       )}
                       {team.rankTrend === "down" && (
-                        <span className="text-[#FF2E93] text-[10px] drop-shadow-[0_0_2px_#FF2E93]">
+                        <span className="text-[#FF2E93] text-[10px] drop-shadow-[0_0_2px_#FF2E93]" aria-label="Rank decreased">
                           ▼
                         </span>
                       )}
                       {team.rankTrend === "stable" && (
-                        <span className="text-slate-700 text-[8px]">•</span>
+                        <span className="text-slate-700 text-[8px]" aria-label="Rank stable">•</span>
                       )}
                     </div>
 
                     {/* Team Flag & Name */}
                     <span className="text-xs font-semibold text-slate-200 group-hover:text-white transition-colors flex items-center gap-2">
-                      <span className="text-sm">{team.flag}</span>
+                      <span className={`fi fi-${team.flag} rounded-sm shadow-sm border border-white/10 shrink-0`} style={{ width: '18px', height: '13.5px' }} role="img" aria-label={`${team.name} flag`} />
                       <span>{team.name}</span>
                     </span>
                   </div>

@@ -1,9 +1,8 @@
 import { Outfit } from "next/font/google";
 import "./globals.css";
-import Navbar from "@/components/Navbar";
-import Ticker from "@/components/Ticker";
-import Footer from "@/components/Footer";
+import "flag-icons/css/flag-icons.min.css";
 import Script from "next/script";
+import LayoutContent from "@/components/LayoutContent";
 
 const outfit = Outfit({
   variable: "--font-outfit",
@@ -79,7 +78,7 @@ export const metadata = {
   },
 };
 
-export default function RootLayout({ children }) {
+function LayoutShell({ children }) {
   return (
     <html lang="en" className={`${outfit.variable} h-full antialiased`}>
       <body className="min-h-full flex flex-col bg-[#04060d] text-slate-100 font-sans relative">
@@ -92,11 +91,16 @@ export default function RootLayout({ children }) {
             })(window, document, "clarity", "script", "x70gvmvnxk");
           `}
         </Script>
-        <Navbar />
-        <Ticker />
-        <main className="flex-1 flex flex-col w-full relative">{children}</main>
-        <Footer />
+        {children}
       </body>
     </html>
+  );
+}
+
+export default function RootLayout({ children }) {
+  return (
+    <LayoutShell>
+      <LayoutContent>{children}</LayoutContent>
+    </LayoutShell>
   );
 }

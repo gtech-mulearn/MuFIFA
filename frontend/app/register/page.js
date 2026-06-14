@@ -9,18 +9,18 @@ import { getBackendUrl } from "@/utils/api";
 const DOMAINS = ["Maker", "Creative", "Coder", "Strategist"];
 
 const TEAM_FLAGS = {
-  Brazil: "🇧🇷",
-  Argentina: "🇦🇷",
-  Portugal: "🇵🇹",
-  Germany: "🇩🇪",
-  France: "🇫🇷",
-  England: "🇬🇧",
-  Spain: "🇪🇸",
-  Netherlands: "🇳🇱",
-  Belgium: "🇧🇪",
-  Croatia: "🇭🇷",
-  Uruguay: "🇺🇾",
-  Japan: "🇯🇵",
+  Brazil: "br",
+  Argentina: "ar",
+  Portugal: "pt",
+  Germany: "de",
+  France: "fr",
+  England: "gb-eng",
+  Spain: "es",
+  Netherlands: "nl",
+  Belgium: "be",
+  Croatia: "hr",
+  Uruguay: "uy",
+  Japan: "jp",
 };
 
 // WhatsApp invite link configuration per squad country
@@ -115,7 +115,7 @@ function Select({
           role="listbox"
           className="absolute z-50 mt-1.5 w-full bg-[#080b15] border border-white/10 rounded-xl shadow-2xl max-h-60 overflow-y-auto py-1 backdrop-blur-xl animate-in fade-in slide-in-from-top-1 duration-100"
         >
-          {options.map((option) => {
+          {options?.map((option) => {
             const isSelected = optionRenderer
               ? value === optionRenderer(option)
               : value === option;
@@ -161,7 +161,6 @@ function Select({
 }
 
 export default function RegisterPage() {
-  // Form input states
   const [formData, setFormData] = useState({
     name: "",
     email: "",
@@ -171,14 +170,50 @@ export default function RegisterPage() {
     consent: false,
   });
 
-  // UI state management
   const [validationErrors, setValidationErrors] = useState({});
   const [apiError, setApiError] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [registeredData, setRegisteredData] = useState(null); // stores response object on success
+  const [registeredData, setRegisteredData] = useState(null);
   const [isPrivacyModalOpen, setIsPrivacyModalOpen] = useState(false);
+  const [otpModal, setOtpModal] = useState({
+    open: false,
+    email: "",
+    otp: "",
+    error: "",
+    message: "",
+    resendAvailableAt: 0,
+    expiresAt: 0,
+  });
+  const [isVerifyingOtp, setIsVerifyingOtp] = useState(false);
+  const [isResendingOtp, setIsResendingOtp] = useState(false);
+  const [otpCountdownMs, setOtpCountdownMs] = useState(0);
 
-  // Client-side validations matching Zod rules
+  useEffect(() => {
+    if (isPrivacyModalOpen) {
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "";
+    }
+    return () => {
+      document.body.style.overflow = "";
+    };
+  }, [isPrivacyModalOpen]);
+
+  useEffect(() => {
+    if (!otpModal.open) {
+      setOtpCountdownMs(0);
+      return;
+    }
+
+    const updateCountdown = () => {
+      setOtpCountdownMs(Math.max(otpModal.resendAvailableAt - Date.now(), 0));
+    };
+
+    updateCountdown();
+    const interval = setInterval(updateCountdown, 1000);
+    return () => clearInterval(interval);
+  }, [otpModal.open, otpModal.resendAvailableAt]);
+
   const validateForm = () => {
     const errors = {};
     if (!formData.name.trim()) {
@@ -222,13 +257,37 @@ export default function RegisterPage() {
       ...prev,
       [name]: type === "checkbox" ? checked : value,
     }));
-    // Clear the specific validation error on change
     if (validationErrors[name]) {
       setValidationErrors((prev) => ({
         ...prev,
         [name]: "",
       }));
     }
+  };
+
+  const formatCountdown = (ms) => {
+    const totalSeconds = Math.ceil(ms / 1000);
+    const minutes = String(Math.floor(totalSeconds / 60)).padStart(2, "0");
+    const seconds = String(totalSeconds % 60).padStart(2, "0");
+    return `${minutes}:${seconds}`;
+  };
+
+  const applyApiErrors = (data) => {
+    if (
+      data.error &&
+      data.error.code === "VALIDATION_ERROR" &&
+      data.error.details
+    ) {
+      const errors = {};
+      Object.entries(data.error.details).forEach(([field, msgs]) => {
+        if (msgs) {
+          errors[field] = Array.isArray(msgs) ? msgs[0] : msgs;
+        }
+      });
+      setValidationErrors(errors);
+      return true;
+    }
+    return false;
   };
 
   const handleSubmit = async (e) => {
@@ -248,6 +307,7 @@ export default function RegisterPage() {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
+          action: "request_otp",
           name: formData.name.trim(),
           email: formData.email.trim(),
           phone: formData.phone.trim(),
@@ -259,21 +319,20 @@ export default function RegisterPage() {
       const data = await res.json();
 
       if (res.ok && data.success) {
-        setRegisteredData(data.data);
+        setOtpModal({
+          open: true,
+          email: data.data.email,
+          otp: "",
+          error: "",
+          message: data.message || "OTP sent to your email.",
+          resendAvailableAt: data.data.resendAvailableAt,
+          expiresAt: data.data.expiresAt,
+        });
       } else {
-        // Handle server-side validation or conflict errors
-        if (
-          data.error &&
-          data.error.code === "VALIDATION_ERROR" &&
-          data.error.details
-        ) {
-          // Flatten standard array format if necessary
-          const errors = {};
-          Object.entries(data.error.details).forEach(([field, msgs]) => {
-            errors[field] = Array.isArray(msgs) ? msgs[0] : msgs;
-          });
-          setValidationErrors(errors);
-        } else if (data.error && data.error.code === "CONFLICT_ERROR") {
+        if (applyApiErrors(data)) {
+          return;
+        }
+        if (data.error && data.error.code === "CONFLICT_ERROR") {
           setApiError(data.error.message);
         } else {
           setApiError(
@@ -292,6 +351,148 @@ export default function RegisterPage() {
     }
   };
 
+  const handleOtpChange = (e) => {
+    const nextOtp = e.target.value.replace(/\D/g, "").slice(0, 6);
+    setOtpModal((prev) => ({
+      ...prev,
+      otp: nextOtp,
+      error: "",
+    }));
+  };
+
+  const closeOtpModal = async () => {
+    if (otpModal.email) {
+      try {
+        await fetch(getBackendUrl("register"), {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            action: "cancel_otp",
+            email: otpModal.email,
+          }),
+        });
+      } catch (error) {
+        console.error("Failed to cancel OTP session:", error);
+      }
+    }
+
+    setOtpModal({
+      open: false,
+      email: "",
+      otp: "",
+      error: "",
+      message: "",
+      resendAvailableAt: 0,
+      expiresAt: 0,
+    });
+  };
+
+  const handleVerifyOtp = async (e) => {
+    e.preventDefault();
+
+    if (otpModal.otp.length !== 6) {
+      setOtpModal((prev) => ({
+        ...prev,
+        error: "Please enter the 6-digit OTP sent to your email.",
+      }));
+      return;
+    }
+
+    setIsVerifyingOtp(true);
+
+    try {
+      const res = await fetch(getBackendUrl("register"), {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "verify_otp",
+          email: otpModal.email,
+          otp: otpModal.otp,
+        }),
+      });
+
+      const data = await res.json();
+
+      if (res.ok && data.success) {
+        setRegisteredData(data.data);
+        setOtpModal({
+          open: false,
+          email: "",
+          otp: "",
+          error: "",
+          message: "",
+          resendAvailableAt: 0,
+          expiresAt: 0,
+        });
+      } else {
+        setOtpModal((prev) => ({
+          ...prev,
+          error:
+            data.error?.message || "OTP verification failed. Please try again.",
+        }));
+      }
+    } catch (error) {
+      console.error("OTP verification error:", error);
+      setOtpModal((prev) => ({
+        ...prev,
+        error: "Could not verify OTP right now. Please try again.",
+      }));
+    } finally {
+      setIsVerifyingOtp(false);
+    }
+  };
+
+  const handleResendOtp = async () => {
+    if (otpCountdownMs > 0) {
+      return;
+    }
+
+    setIsResendingOtp(true);
+
+    try {
+      const res = await fetch(getBackendUrl("register"), {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "resend_otp",
+          name: formData.name.trim(),
+          email: formData.email.trim(),
+          phone: formData.phone.trim(),
+          domain: formData.domain,
+          team: formData.team,
+        }),
+      });
+
+      const data = await res.json();
+
+      if (res.ok && data.success) {
+        setOtpModal((prev) => ({
+          ...prev,
+          otp: "",
+          error: "",
+          message: data.message || "A new OTP has been sent to your email.",
+          resendAvailableAt: data.data.resendAvailableAt,
+          expiresAt: data.data.expiresAt,
+        }));
+      } else {
+        setOtpModal((prev) => ({
+          ...prev,
+          error:
+            data.error?.message ||
+            "Could not resend OTP right now. Please try again.",
+        }));
+      }
+    } catch (error) {
+      console.error("OTP resend error:", error);
+      setOtpModal((prev) => ({
+        ...prev,
+        error: "Could not resend OTP right now. Please try again.",
+      }));
+    } finally {
+      setIsResendingOtp(false);
+    }
+  };
+
   const resetForm = () => {
     setFormData({
       name: "",
@@ -304,10 +505,19 @@ export default function RegisterPage() {
     setValidationErrors({});
     setApiError("");
     setRegisteredData(null);
+    setOtpModal({
+      open: false,
+      email: "",
+      otp: "",
+      error: "",
+      message: "",
+      resendAvailableAt: 0,
+      expiresAt: 0,
+    });
   };
 
   return (
-    <div className="w-full min-h-screen bg-[#04060d] text-white flex flex-col font-sans relative select-none pb-16 pt-8 md:pt-12">
+    <div className="w-full min-h-screen bg-[#04060d] text-white flex flex-col font-sans relative select-none pb-16 pt-8 md:pt-12 ">
       {/* Background Stadium Video */}
       <div className="no-print">
         <BackgroundVideo />
@@ -315,7 +525,7 @@ export default function RegisterPage() {
 
       {/* Retro Theme Overlay and accent glows */}
       <div className="absolute inset-0 z-0 bg-[radial-gradient(circle_at_center,rgba(20,10,35,0.2)_25%,#04060d_95%)] opacity-85 pointer-events-none no-print" />
-      <div className="absolute top-[30%] right-[-10%] w-[45vw] h-[45vw] pink-accent-glow pointer-events-none rounded-full opacity-55 no-print" />
+      <div className="absolute top-[30%] right-[10%] w-[45vw] h-[45vw] pink-accent-glow pointer-events-none rounded-full opacity-55 no-print" />
       <div className="absolute bottom-[20%] left-[-15%] w-[45vw] h-[45vw] blue-accent-glow pointer-events-none rounded-full opacity-55 no-print" />
 
       <div className="max-w-4xl mx-auto px-4 sm:px-6 w-full relative z-10 flex-1 flex flex-col justify-center items-center">
@@ -481,9 +691,18 @@ export default function RegisterPage() {
                   <Select
                     id="team-select-btn"
                     value={
-                      formData.team
-                        ? `${TEAM_FLAGS[formData.team]} ${formData.team}`
-                        : ""
+                      formData.team ? (
+                        <span className="flex items-center gap-2">
+                          <span
+                            className={`fi fi-${TEAM_FLAGS[formData.team]} rounded-sm shadow-sm border border-white/10 shrink-0`}
+                            style={{ width: "16px", height: "12px" }}
+                            aria-hidden="true"
+                          />
+                          <span>{formData.team}</span>
+                        </span>
+                      ) : (
+                        ""
+                      )
                     }
                     onChange={(val) => {
                       setFormData((prev) => ({ ...prev, team: val }));
@@ -491,9 +710,18 @@ export default function RegisterPage() {
                         setValidationErrors((prev) => ({ ...prev, team: "" }));
                       }
                     }}
-                    options={TEAMS}
-                    optionRenderer={(team) => `${TEAM_FLAGS[team]} ${team}`}
+                    optionRenderer={(team) => (
+                      <span className="flex items-center gap-2">
+                        <span
+                          className={`fi fi-${TEAM_FLAGS[team]} rounded-sm shadow-sm border border-white/10 shrink-0`}
+                          style={{ width: "16px", height: "12px" }}
+                          aria-hidden="true"
+                        />
+                        <span>{team}</span>
+                      </span>
+                    )}
                     placeholder="Select Team"
+                    options={TEAMS}
                     error={!!validationErrors.team}
                   />
                   {validationErrors.team && (
@@ -573,7 +801,6 @@ export default function RegisterPage() {
                 )}
               </div>
 
-              {/* Submit Button */}
               <button
                 type="submit"
                 disabled={isSubmitting}
@@ -582,7 +809,7 @@ export default function RegisterPage() {
                 {isSubmitting ? (
                   <>
                     <span className="w-3.5 h-3.5 rounded-full border-2 border-[#FF2E93] border-t-transparent animate-spin" />
-                    Transmitting...
+                    Submitting...
                   </>
                 ) : (
                   "ENTER THE ARENA"
@@ -591,9 +818,7 @@ export default function RegisterPage() {
             </form>
           </div>
         ) : (
-          /* TOURNAMENT ENTRY PASS (TICKET) SUCCESS VIEW */
           <div className="w-full max-w-md flex flex-col gap-4 items-center px-4 sm:px-0">
-            {/* Top Toolbar containing the print option on left top side */}
             <div className="w-full flex justify-between items-center no-print px-1">
               <button
                 onClick={() => window.print()}
@@ -616,20 +841,16 @@ export default function RegisterPage() {
               </button>
             </div>
 
-            {/* Ticket Card Container */}
             <div
               id="tournament-ticket"
               className="w-full bg-[#080b15]/90 border-2 border-dashed border-[#00E5FF]/40 rounded-3xl p-4 sm:p-6 shadow-[0_0_30px_rgba(0,229,255,0.15)] flex flex-col gap-4 sm:gap-5 relative overflow-hidden backdrop-blur-lg select-none"
             >
-              {/* Outer decorative card glows */}
               <div className="absolute -top-12 -left-12 w-28 h-28 bg-[#00E5FF]/20 rounded-full blur-2xl pointer-events-none" />
               <div className="absolute -bottom-12 -right-12 w-28 h-28 bg-[#FF2E93]/20 rounded-full blur-2xl pointer-events-none" />
 
-              {/* Ticket Side Semi-circles for classic ticket punch design */}
               <div className="absolute top-1/2 -translate-y-1/2 -left-[10px] w-5 h-5 bg-[#04060d] border-r-2 border-dashed border-[#00E5FF]/40 rounded-full" />
               <div className="absolute top-1/2 -translate-y-1/2 -right-[10px] w-5 h-5 bg-[#04060d] border-l-2 border-dashed border-[#00E5FF]/40 rounded-full" />
 
-              {/* Header Branding */}
               <div className="flex items-center justify-between border-b border-white/10 pb-4">
                 <div className="flex items-center gap-1.5 sm:gap-2">
                   <div className="flex items-center gap-1 sm:gap-1.5 shrink-0">
@@ -687,8 +908,13 @@ export default function RegisterPage() {
                   <span className="text-[8px] font-black uppercase tracking-wider text-slate-500">
                     Selected Team
                   </span>
-                  <span className="text-xs sm:text-sm font-bold text-slate-100 truncate">
-                    {registeredData.team}
+                  <span className="text-xs sm:text-sm font-bold text-slate-100 truncate flex items-center gap-2">
+                    <span
+                      className={`fi fi-${TEAM_FLAGS[registeredData.team]} rounded-sm shadow-sm border border-white/10 shrink-0`}
+                      style={{ width: "16px", height: "12px" }}
+                      aria-hidden="true"
+                    />
+                    <span>{registeredData.team}</span>
                   </span>
                 </div>
                 <div className="flex flex-col text-left">
@@ -731,8 +957,12 @@ export default function RegisterPage() {
                 rel="noopener noreferrer"
                 className="cursor-pointer bg-[#25D366] text-white hover:bg-[#20ba5a] px-6 py-3 rounded-xl text-xs font-bold tracking-wider uppercase transition-all flex items-center justify-center gap-2 shadow-[0_0_20px_rgba(37,211,102,0.2)] hover:shadow-[0_0_35px_rgba(37,211,102,0.45)] transform hover:-translate-y-0.5"
               >
-                <svg className="w-4 h-4 fill-current" viewBox="0 0 24 24">
-                  <path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946C.06 5.348 5.397.01 12.008.01c3.202.001 6.212 1.246 8.477 3.514 2.266 2.268 3.507 5.28 3.505 8.484-.004 6.657-5.34 11.997-11.953 11.997-2.005-.001-3.973-.502-5.734-1.458L0 24zm6.59-4.846c1.66.986 3.284 1.48 4.961 1.481 5.41 0 9.809-4.385 9.811-9.78.001-2.592-1.01-5.033-2.85-6.877C16.726 2.133 14.29 1.13 11.75 1.13c-5.412 0-9.81 4.385-9.813 9.782-.001 1.77.462 3.5 1.341 5.024l-.993 3.626 3.762-.988zm11.521-7.82c-.29-.145-1.71-.845-1.975-.94-.266-.096-.46-.145-.652.146-.192.29-.74.94-.908 1.133-.167.193-.334.217-.624.072-2.905-1.45-4.103-2.5-5.748-5.323-.29-.497.29-.462.83-.984.096-.096.192-.217.29-.314.096-.096.13-.168.192-.29.06-.12.03-.229-.015-.314-.043-.086-.386-.94-.528-1.288-.138-.337-.278-.29-.386-.295-.098-.005-.213-.005-.33-.005a.633.633 0 0 0-.46.217c-.16.174-.608.596-.608 1.45s.62 1.69.708 1.81c.088.12 1.22 1.863 2.956 2.61.413.178.736.284.988.364.417.133.797.114 1.096.07.33-.05 1.71-.7 1.95-1.376.24-.678.24-1.259.17-1.376-.073-.117-.265-.164-.556-.31z" />
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  viewBox="0 0 32 32"
+                  className="w-4 h-4 fill-current"
+                >
+                  <path d="M16.004 3C8.82 3 3 8.82 3 16.004c0 2.293.598 4.532 1.734 6.504L3 29l6.676-1.706a12.95 12.95 0 0 0 6.328 1.636C23.18 28.93 29 23.11 29 15.926 29 8.82 23.18 3 16.004 3zm0 23.798a10.74 10.74 0 0 1-5.47-1.496l-.392-.232-3.96 1.01 1.056-3.86-.254-.4a10.72 10.72 0 0 1-1.646-5.816c0-5.94 4.83-10.77 10.766-10.77 2.878 0 5.584 1.12 7.617 3.154a10.69 10.69 0 0 1 3.148 7.612c0 5.94-4.83 10.798-10.766 10.798zm5.906-8.052c-.322-.16-1.904-.94-2.198-1.046-.294-.106-.508-.16-.722.16-.214.32-.83 1.046-1.018 1.26-.186.214-.374.24-.694.08-.32-.16-1.35-.498-2.572-1.586-.95-.846-1.59-1.89-1.776-2.21-.188-.32-.02-.492.14-.65.144-.144.32-.374.48-.56.16-.188.214-.32.32-.534.106-.214.054-.4-.026-.56-.08-.16-.722-1.74-.99-2.386-.26-.626-.524-.54-.722-.55l-.614-.01c-.214 0-.56.08-.854.4-.294.32-1.122 1.096-1.122 2.674 0 1.578 1.15 3.102 1.31 3.316.16.214 2.262 3.454 5.48 4.842.766.33 1.364.526 1.83.674.77.244 1.47.21 2.024.128.618-.092 1.904-.778 2.172-1.53.268-.752.268-1.396.188-1.53-.08-.132-.294-.212-.616-.372z" />
                 </svg>
                 <span>Join {registeredData.team} WhatsApp Group</span>
               </a>
@@ -750,10 +980,10 @@ export default function RegisterPage() {
 
       {/* Privacy Policy Modal */}
       {isPrivacyModalOpen && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-in fade-in duration-200">
-          <div className="relative w-full max-w-lg bg-[#080b15] border border-white/10 rounded-2xl p-6 shadow-2xl flex flex-col gap-4 text-left max-h-[90vh] overflow-y-auto bg-[linear-gradient(115deg,rgba(255,255,255,0.01),rgba(0,229,255,0.01))] animate-in zoom-in-95 duration-200">
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-in fade-in duration-200 overflow-hidden">
+          <div className="relative w-full max-w-lg bg-[#080b15] border border-white/10 rounded-2xl p-5 sm:p-6 shadow-2xl flex flex-col gap-4 text-left h-auto max-h-[85vh] bg-[linear-gradient(115deg,rgba(255,255,255,0.01),rgba(0,229,255,0.01))] animate-in zoom-in-95 duration-200 overflow-hidden">
             {/* Header */}
-            <div className="flex items-center justify-between border-b border-white/10 pb-3">
+            <div className="flex items-center justify-between border-b border-white/10 pb-3 shrink-0">
               <h3 className="text-sm font-black uppercase tracking-wider text-slate-100 flex items-center gap-2">
                 Privacy Policy
               </h3>
@@ -767,7 +997,7 @@ export default function RegisterPage() {
             </div>
 
             {/* Policy Content */}
-            <div className="text-slate-300 text-[11px] leading-relaxed flex flex-col gap-4 max-h-[60vh] overflow-y-auto pr-2">
+            <div className="text-slate-300 text-[11px] leading-relaxed flex flex-col gap-4 overflow-y-auto pr-2 flex-1 min-h-0 scrollbar-thin break-words">
               <div className="flex flex-col gap-1 border-b border-white/5 pb-2">
                 <span className="text-[10px] font-black uppercase tracking-wider text-slate-400">
                   Last Updated: September 2025
@@ -1071,7 +1301,7 @@ export default function RegisterPage() {
                     href="https://policies.google.com/privacy"
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="underline text-[#00E5FF]"
+                    className="underline text-[#00E5FF] break-all"
                   >
                     https://policies.google.com/privacy
                   </a>
@@ -1169,7 +1399,7 @@ export default function RegisterPage() {
             </div>
 
             {/* Actions */}
-            <div className="flex gap-3 pt-3 border-t border-white/5">
+            <div className="flex gap-3 pt-3 border-t border-white/5 shrink-0">
               <button
                 type="button"
                 onClick={() => setIsPrivacyModalOpen(false)}
@@ -1191,6 +1421,89 @@ export default function RegisterPage() {
                 I Agree
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {otpModal.open && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-md">
+          <div className="w-full max-w-md bg-[#080b15] border border-white/10 rounded-2xl p-6 shadow-2xl flex flex-col gap-4">
+            <div className="flex flex-col gap-1">
+              <h2 className="text-lg font-extrabold tracking-wider text-white uppercase">
+                Verify OTP
+              </h2>
+              <p className="text-xs text-slate-400">
+                We sent a 6-digit OTP to{" "}
+                <span className="text-slate-200">{otpModal.email}</span>. Your
+                registration will be saved only after successful verification.
+              </p>
+            </div>
+
+            {otpModal.message && (
+              <div className="bg-[#00E5FF]/10 border border-[#00E5FF]/20 text-[#00E5FF] text-xs py-2.5 px-3 rounded-xl">
+                {otpModal.message}
+              </div>
+            )}
+
+            {otpModal.error && (
+              <div className="bg-red-500/10 border border-red-500/30 text-red-400 text-xs py-2.5 px-3 rounded-xl">
+                {otpModal.error}
+              </div>
+            )}
+
+            <form onSubmit={handleVerifyOtp} className="flex flex-col gap-4">
+              <div className="flex flex-col gap-1.5">
+                <label
+                  htmlFor="otp-input"
+                  className="text-[10px] font-black uppercase tracking-wider text-slate-300"
+                >
+                  One-Time Password
+                </label>
+                <input
+                  id="otp-input"
+                  type="text"
+                  inputMode="numeric"
+                  autoComplete="one-time-code"
+                  value={otpModal.otp}
+                  onChange={handleOtpChange}
+                  placeholder="Enter 6-digit OTP"
+                  className="bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-sm tracking-[0.4em] text-slate-100 placeholder-slate-500 focus:outline-none focus:border-[#FF2E93] transition-colors text-center"
+                />
+                <div className="flex items-center justify-between text-[10px] text-slate-500">
+                  <span>Valid for 10 minutes</span>
+                  <span>
+                    {otpCountdownMs > 0
+                      ? `Resend in ${formatCountdown(otpCountdownMs)}`
+                      : "You can resend OTP now"}
+                  </span>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-3 gap-3">
+                <button
+                  type="button"
+                  onClick={closeOtpModal}
+                  className="cursor-pointer bg-white/5 hover:bg-white/10 border border-white/10 text-slate-300 font-bold py-2.5 rounded-xl text-xs tracking-wider uppercase transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  onClick={handleResendOtp}
+                  disabled={otpCountdownMs > 0 || isResendingOtp}
+                  className="cursor-pointer bg-[#00E5FF]/10 border border-[#00E5FF]/30 text-[#00E5FF] disabled:opacity-40 disabled:cursor-not-allowed font-bold py-2.5 rounded-xl text-xs tracking-wider uppercase transition-colors"
+                >
+                  {isResendingOtp ? "Sending" : "Resend"}
+                </button>
+                <button
+                  type="submit"
+                  disabled={isVerifyingOtp}
+                  className="cursor-pointer bg-glass border border-[#FF2E93]/40 hover:border-[#FF2E93]/90 text-[#FF2E93] hover:text-white font-bold py-2.5 rounded-xl text-xs tracking-wider uppercase glow-pink-btn bg-gradient-to-r from-pink-500/10 to-transparent transition-colors disabled:opacity-50"
+                >
+                  {isVerifyingOtp ? "Verifying" : "Verify"}
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}
