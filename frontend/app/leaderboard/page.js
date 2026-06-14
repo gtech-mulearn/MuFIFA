@@ -11,7 +11,7 @@ const FLAGS = {
   Portugal: "🇵🇹",
   Germany: "🇩🇪",
   France: "🇫🇷",
-  England: "EN",
+  England: "🇬🇧",
   Spain: "🇪🇸",
   Netherlands: "🇳🇱",
   Belgium: "🇧🇪",
@@ -164,7 +164,7 @@ export default function LeaderboardPage() {
       {/* Clean dark backdrop with no unusual colorful gradients */}
       <div className="absolute inset-0 z-0 bg-[#04060d]/85 pointer-events-none" />
 
-      <div className="max-w-2xl mx-auto px-6 w-full relative z-10 flex-1 flex flex-col gap-6">
+      <div className="max-w-2xl mx-auto px-2 sm:px-4 w-full relative z-10 flex-1 flex flex-col gap-6">
         {/* Header and Back Link */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-white/5 pb-4">
           <div className="flex flex-col gap-1">
@@ -200,23 +200,25 @@ export default function LeaderboardPage() {
         </div>
 
         {/* Squad Leaderboard Card */}
-        <div className="bg-glass-card rounded-xl p-5 border border-white/10 backdrop-blur-md shadow-xl flex flex-col gap-4">
+        <div className="bg-glass-card rounded-xl py-5 px-0 border border-white/10 backdrop-blur-md shadow-xl flex flex-col gap-4">
           {/* Search Input */}
-          <input
-            type="text"
-            placeholder="Search squad country..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="bg-black/40 border border-white/10 rounded-lg px-3 py-2 text-xs text-slate-200 placeholder-slate-600 focus:outline-none focus:border-[#00E5FF] w-full transition-colors"
-          />
+          <div className="px-2 sm:px-3">
+            <input
+              type="text"
+              placeholder="Search squad country..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="bg-black/40 border border-white/10 rounded-lg px-3 py-2 text-xs text-slate-200 placeholder-slate-600 focus:outline-none focus:border-[#00E5FF] w-full transition-colors"
+            />
+          </div>
 
           {/* Leaderboard Table List */}
-          <div className="flex flex-col gap-2">
+          <div className="flex flex-col">
             {filteredTeams.length > 0 ? (
               filteredTeams.map((team) => (
                 <div
                   key={team.name}
-                  className="flex items-center justify-between p-3 rounded-lg border border-white/5 bg-white/[0.005] hover:bg-white/[0.02] transition-colors group"
+                  className="flex items-center justify-between py-3 px-2 sm:px-3 border-b border-white/5 hover:bg-white/[0.02] transition-colors group last:border-b-0"
                 >
                   <div className="flex items-center gap-3">
                     {/* Rank Indicator */}
@@ -273,7 +275,7 @@ export default function LeaderboardPage() {
                 </div>
               ))
             ) : (
-              <div className="py-12 text-center text-slate-500 text-xs font-bold border border-white/5 rounded-lg bg-white/[0.005]">
+              <div className="py-12 mx-2 sm:mx-3 text-center text-slate-500 text-xs font-bold border border-white/5 rounded-lg bg-white/[0.005]">
                 No squad matches your search query.
               </div>
             )}

@@ -50,7 +50,7 @@ export default function Footer() {
               {[
                 {
                   name: "Discord",
-                  url: "https://discord.gg/mulearn",
+                  url: "https://discord.com/invite/gtech-mulearn-771670169691881483",
                   icon: (
                     <svg
                       className="w-4 h-4"
@@ -63,7 +63,7 @@ export default function Footer() {
                 },
                 {
                   name: "Twitter",
-                  url: "https://twitter.com/mulearn",
+                  url: "https://x.com/mulearnofficial",
                   icon: (
                     <svg
                       className="w-4 h-4"
@@ -93,7 +93,7 @@ export default function Footer() {
                 },
                 {
                   name: "GitHub",
-                  url: "https://github.com/mulearn",
+                  url: "https://github.com/gtech-mulearn",
                   icon: (
                     <svg
                       className="w-4 h-4"
@@ -149,28 +149,34 @@ export default function Footer() {
                 ))}
               </ul>
             </div>
-            {/* <div className="flex flex-col gap-2.5">
+            <div className="flex flex-col gap-2.5">
               <h4 className="text-xs font-bold uppercase tracking-wider text-slate-200 border-b border-white/5 pb-1">
-                Hackathon
+                Legal
               </h4>
               <ul className="flex flex-col gap-2 text-xs text-slate-400">
                 {[
-                  { name: "Leaderboard", href: "/leaderboard" },
-                  { name: "Rules & Tiers", href: "#" },
-                  { name: "Privacy Policy", href: "#" },
-                  { name: "Contact Support", href: "#" },
+                  {
+                    name: "Privacy Policy",
+                    href: "https://mulearn.org/privacypolicy",
+                  },
+                  {
+                    name: "Terms & Conditions",
+                    href: "https://mulearn.org/termsandconditions",
+                  },
                 ].map((link) => (
                   <li key={link.name}>
-                    <Link
+                    <a
                       href={link.href}
-                      className="hover:text-[#00E5FF] transition-colors duration-200"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="hover:text-white transition-colors duration-200"
                     >
                       {link.name}
-                    </Link>
+                    </a>
                   </li>
                 ))}
               </ul>
-            </div> */}
+            </div>
           </div>
         </div>
 

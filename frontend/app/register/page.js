@@ -14,7 +14,7 @@ const TEAM_FLAGS = {
   Portugal: "🇵🇹",
   Germany: "🇩🇪",
   France: "🇫🇷",
-  England: "EN",
+  England: "🇬🇧",
   Spain: "🇪🇸",
   Netherlands: "🇳🇱",
   Belgium: "🇧🇪",
@@ -168,6 +168,7 @@ export default function RegisterPage() {
     phone: "",
     domain: "",
     team: "",
+    consent: false,
   });
 
   // UI state management
@@ -175,6 +176,7 @@ export default function RegisterPage() {
   const [apiError, setApiError] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [registeredData, setRegisteredData] = useState(null); // stores response object on success
+  const [isPrivacyModalOpen, setIsPrivacyModalOpen] = useState(false);
 
   // Client-side validations matching Zod rules
   const validateForm = () => {
@@ -206,15 +208,19 @@ export default function RegisterPage() {
       errors.team = "Please select a FIFA team.";
     }
 
+    if (!formData.consent) {
+      errors.consent = "You must accept to share your data to register.";
+    }
+
     setValidationErrors(errors);
     return Object.keys(errors).length === 0;
   };
 
   const handleInputChange = (e) => {
-    const { name, value } = e.target;
+    const { name, value, type, checked } = e.target;
     setFormData((prev) => ({
       ...prev,
-      [name]: value,
+      [name]: type === "checkbox" ? checked : value,
     }));
     // Clear the specific validation error on change
     if (validationErrors[name]) {
@@ -293,6 +299,7 @@ export default function RegisterPage() {
       phone: "",
       domain: "",
       team: "",
+      consent: false,
     });
     setValidationErrors({});
     setApiError("");
@@ -500,6 +507,72 @@ export default function RegisterPage() {
                 </div>
               </div>
 
+              {/* Data Consent Checkbox */}
+              <div className="flex flex-col gap-1.5 mt-2">
+                <label className="flex items-start gap-2.5 cursor-pointer group select-none">
+                  <div className="relative flex items-center mt-0.5">
+                    <input
+                      type="checkbox"
+                      name="consent"
+                      checked={formData.consent}
+                      onChange={handleInputChange}
+                      className="sr-only peer"
+                      aria-invalid={!!validationErrors.consent}
+                      aria-describedby={
+                        validationErrors.consent ? "consent-error" : undefined
+                      }
+                    />
+                    {/* Visual Checkbox */}
+                    <div
+                      className={`w-4 h-4 rounded-md border bg-black/40 flex items-center justify-center transition-all duration-200 peer-focus-visible:ring-2 peer-focus-visible:ring-[#FF2E93] ${
+                        formData.consent
+                          ? "border-[#FF2E93] bg-gradient-to-r from-pink-500/20 to-transparent"
+                          : "border-white/10 group-hover:border-white/20"
+                      }`}
+                    >
+                      {formData.consent && (
+                        <svg
+                          className="w-2.5 h-2.5 text-[#FF2E93]"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="3.5"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            d="M4.5 12.75l6 6 9-13.5"
+                          />
+                        </svg>
+                      )}
+                    </div>
+                  </div>
+                  <span className="text-[10.5px] font-medium text-slate-300 leading-normal group-hover:text-white transition-colors text-left">
+                    I accept the{" "}
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        setIsPrivacyModalOpen(true);
+                      }}
+                      className="underline text-[#00E5FF] hover:text-[#FF2E93] cursor-pointer font-bold focus:outline-none"
+                    >
+                      Privacy Policy
+                    </button>{" "}
+                    and consent to share my data.
+                  </span>
+                </label>
+                {validationErrors.consent && (
+                  <span
+                    id="consent-error"
+                    className="text-[10px] text-red-400 font-semibold text-left"
+                  >
+                    {validationErrors.consent}
+                  </span>
+                )}
+              </div>
+
               {/* Submit Button */}
               <button
                 type="submit"
@@ -674,6 +747,453 @@ export default function RegisterPage() {
           </div>
         )}
       </div>
+
+      {/* Privacy Policy Modal */}
+      {isPrivacyModalOpen && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-in fade-in duration-200">
+          <div className="relative w-full max-w-lg bg-[#080b15] border border-white/10 rounded-2xl p-6 shadow-2xl flex flex-col gap-4 text-left max-h-[90vh] overflow-y-auto bg-[linear-gradient(115deg,rgba(255,255,255,0.01),rgba(0,229,255,0.01))] animate-in zoom-in-95 duration-200">
+            {/* Header */}
+            <div className="flex items-center justify-between border-b border-white/10 pb-3">
+              <h3 className="text-sm font-black uppercase tracking-wider text-slate-100 flex items-center gap-2">
+                Privacy Policy
+              </h3>
+              <button
+                type="button"
+                onClick={() => setIsPrivacyModalOpen(false)}
+                className="text-slate-400 hover:text-white cursor-pointer text-sm focus:outline-none"
+              >
+                ✕
+              </button>
+            </div>
+
+            {/* Policy Content */}
+            <div className="text-slate-300 text-[11px] leading-relaxed flex flex-col gap-4 max-h-[60vh] overflow-y-auto pr-2">
+              <div className="flex flex-col gap-1 border-b border-white/5 pb-2">
+                <span className="text-[10px] font-black uppercase tracking-wider text-slate-400">
+                  Last Updated: September 2025
+                </span>
+              </div>
+              <p>
+                This Policy is issued by µLearn, which includes its parent,
+                subsidiaries and affiliates (together, &quot;µLearn&quot;, or
+                &quot;We&quot; or &quot;us&quot; or &quot;our(s)&quot;) and is
+                addressed to individuals outside our organisation with whom we
+                interact, including but not limited to customers, visitors to
+                our websites, offices and other users (together,
+                &quot;You&quot;) of our Services. By registering to µLearn
+                platform, you are implicitly consenting to have your profile
+                registered for e-learning, reporting purposes and helping µLearn
+                improve the research quality.
+              </p>
+              <p>
+                You are hereby agreed that the data you are freely deciding to
+                share is intended to keep your profile up to date and complete.
+                This data will be processed in order to manage our e-learning
+                process and offer you more visibility and accessibility to
+                opportunities which will match with your profile.
+              </p>
+              <p>
+                You agree that while creating a profile, it implies a transfer
+                of your profile data to µLearn entities located across Kerala.
+                The protection of your data is assured by our internal
+                Information Security, and is processed with your consent and for
+                the legitimate interest of µLearn Group.
+              </p>
+
+              <div>
+                <span className="font-bold text-slate-200 block mb-1">
+                  1. Use of Information
+                </span>
+                <p className="mb-2">
+                  We use your information to provide, analyse, administer,
+                  enhance and personalize our Services and marketing efforts, to
+                  process your registration, and to communicate with you on
+                  these and other topics.
+                </p>
+                <p className="mb-2">
+                  We use your information in order to resolve disputes;
+                  troubleshoot problems; help promote safe matching; measure
+                  consumer interest in Services; inform you about Offers,
+                  Products, Services, and Updates; customize your experience;
+                  detect and protect us against error, fraud and other criminal
+                  activity; enforce our Terms of Services (TOS); and as
+                  otherwise described to you at the time of registration. We may
+                  compare and review your Information for errors, omissions and
+                  for accuracy.
+                </p>
+                <p className="mb-2">
+                  We use your e-mail to send you system e-mails about the
+                  functionality of our Website.
+                </p>
+                <p className="mb-2">
+                  We use your e-mail associated with your account in order to
+                  send you newsletters and promotions in conjunction with your
+                  use of our Services.
+                </p>
+                <p className="mb-2">
+                  We may use your Information in order to provide benchmark
+                  analysis and aggregate statistics. This particular Information
+                  will be anonymized, will not contain personal identification
+                  and will not be transferred or sold to third parties in any
+                  way or format that identifies you.
+                </p>
+                <p className="mb-2">
+                  We use Website navigation data to operate and improve our
+                  Website. We may also use Website navigation data alone or in
+                  combination with your Information to provide aggregated
+                  information about µLearn.
+                </p>
+                <p className="mb-2">
+                  We collect the IP Addresses to track when you use our Website.
+                  We use IP Addresses to monitor the regions from which you
+                  navigate our Website and sign-up to use our Services. Your IP
+                  Address is also registered for statistical purposes and to
+                  better our advertising and layout of the Website.
+                </p>
+                <p>
+                  We do not transfer, sell or rent your Information to third
+                  parties for their marketing purposes other than what is stated
+                  in this Privacy Policy. We request only the information that
+                  we need to operate our Services and improve our Website&apos;s
+                  user experience. We do not use your Information to create any
+                  advertising creative.
+                </p>
+              </div>
+
+              <div>
+                <span className="font-bold text-slate-200 block mb-1">
+                  2. Protection of Information
+                </span>
+                <p className="mb-2">
+                  We use reasonable administrative, logical, physical and
+                  managerial measures to safeguard your personal information
+                  against loss, theft and unauthorised access, use and
+                  modification. These measures are designed to provide a level
+                  of security appropriate to the risks of processing your
+                  personal information.
+                </p>
+                <p className="mb-2">
+                  All our employees, independent contractors and agents have
+                  executed non-disclosure agreements, which provide explicit
+                  confidentiality protections.
+                </p>
+                <p className="mb-2">
+                  We do not make any of your Information available to third
+                  parties for their marketing purposes. µLearn&apos;s software
+                  may runs on individual servers and no data given or collected
+                  is shared with other social media platforms.
+                </p>
+                <p className="mb-2">
+                  We use robust security measures to protect data from
+                  unauthorized access, maintain data accuracy, and help ensure
+                  the appropriate use of data. When the Services are accessed
+                  using the internet, Secure Socket Layer (SSL) technology
+                  protects your Information, using both server authentication
+                  and data encryption. These technologies help ensure that your
+                  Information is safe, secure, and only available to you and to
+                  whom you have granted access.
+                </p>
+                <p>
+                  µLearn does its utmost to secure communications and data
+                  storage in order to protect confidentiality of your
+                  Information against loss and interception by third parties.
+                  However, it is important to know that there is no zero-risk
+                  element against loss or interception by others of your
+                  Information.
+                </p>
+              </div>
+
+              <div>
+                <span className="font-bold text-slate-200 block mb-1">
+                  3. Storage of Information
+                </span>
+                <p className="mb-2">
+                  We save your Information in our database in order to improve
+                  our Website and user experience and in accordance with our
+                  TOS. If you wish that your Information be permanently deleted
+                  from our database when you stop using our Services, please
+                  notify us at info@mulearn.org
+                </p>
+                <p className="mb-2">
+                  µLearn is an Indian company. If you are located outside India
+                  and choose to provide information to us, µLearn transfers your
+                  Information to our servers in India. India may not have the
+                  same data protection laws as the country in which you
+                  initially provided the Information. Therefore while we
+                  transfer your Information to India, we will protect it as
+                  described in this Privacy Policy.
+                </p>
+                <p>
+                  By visiting our Website or providing µLearn with your
+                  Information, you fully understand and unambiguously consent to
+                  this transfer, processing and storage of your Information in
+                  India.
+                </p>
+              </div>
+
+              <div>
+                <span className="font-bold text-slate-200 block mb-1">
+                  4. Data Retention
+                </span>
+                <p>
+                  We retain your Personal Data for as long as is required to
+                  fulfil the activities set out in this Privacy Policy, for as
+                  long as otherwise communicated to you or for as long as is
+                  permitted by Applicable Law.
+                </p>
+              </div>
+
+              <div>
+                <span className="font-bold text-slate-200 block mb-1">
+                  5. Your legal rights
+                </span>
+                <p>
+                  Under Applicable Law, you may have a number of rights,
+                  including: the right not to provide your Personal Data to us;
+                  the right of access to your Personal Data; the right to
+                  request rectification of inaccuracies; the right to request
+                  the erasure, or restriction of Processing, of your Personal
+                  Data; the right to object to the Processing of your Personal
+                  Data; the right to have your Personal Data transferred to
+                  another Controller; the right to withdraw consent; and the
+                  right to lodge complaints with Data Protection Authorities. We
+                  may require proof of your identity before we can give effect
+                  to these rights.
+                </p>
+              </div>
+
+              <div>
+                <span className="font-bold text-slate-200 block mb-1">
+                  6. Other websites
+                </span>
+                <p>
+                  µLearn&apos;s Website may contain links to sites operated by
+                  third parties whose policies regarding the handling of
+                  information may differ from ours. These websites and platforms
+                  have separate and independent privacy or data policies,
+                  privacy statements, notices and terms of use, which we
+                  recommend you read carefully. In addition, you may encounter
+                  third party applications that interact with µLearn&apos;s
+                  Services.
+                </p>
+              </div>
+
+              <div>
+                <span className="font-bold text-slate-200 block mb-1">
+                  7. Applicable Law
+                </span>
+                <p>
+                  The validity and interpretation of this Privacy Policy shall
+                  be governed by the laws of the India.
+                </p>
+              </div>
+
+              <div>
+                <span className="font-bold text-slate-200 block mb-1">
+                  8. Changes to this Privacy Policy
+                </span>
+                <p>
+                  This Policy may be amended or updated from time to time to
+                  reflect changes in our practices with respect to the
+                  Processing of Personal Data, or changes in Applicable Law. We
+                  encourage you to read this Policy carefully, and to regularly
+                  check this page to review any changes we might make in
+                  accordance with the terms of this Policy.
+                </p>
+              </div>
+
+              <div>
+                <span className="font-bold text-slate-200 block mb-1">
+                  9. Cookies and Tracking Technologies
+                </span>
+                <p className="mb-2">
+                  We use cookies and similar tracking technologies to enhance
+                  your browsing experience, analyze website traffic, and
+                  personalize content. Cookies are small text files stored on
+                  your device that help us remember your preferences and
+                  understand how you interact with our website.
+                </p>
+                <p className="mb-1">
+                  <strong>Essential Cookies:</strong> These cookies are
+                  necessary for the website to function properly. They enable
+                  core functionality such as security, network management, and
+                  accessibility. You cannot opt out of essential cookies.
+                </p>
+                <p className="mb-1">
+                  <strong>Analytics Cookies:</strong> We use Google Analytics 4
+                  to collect anonymous information about how visitors use our
+                  website. This data helps us improve user experience and
+                  website performance. Analytics cookies are only activated with
+                  your consent.
+                </p>
+                <p className="mb-1">
+                  <strong>Performance Cookies:</strong> These cookies collect
+                  information about page load times and Core Web Vitals metrics
+                  to help us optimize website performance.
+                </p>
+                <p>
+                  <strong>Marketing Cookies:</strong> These cookies may be used
+                  to deliver personalized advertisements and measure the
+                  effectiveness of marketing campaigns. Marketing cookies
+                  require explicit consent.
+                </p>
+              </div>
+
+              <div>
+                <span className="font-bold text-slate-200 block mb-1">
+                  10. Google Analytics
+                </span>
+                <p className="mb-2">
+                  We use Google Analytics 4, a web analytics service provided by
+                  Google LLC, to analyze website usage. Google Analytics uses
+                  cookies to collect anonymous data including pages visited,
+                  time spent on pages, referral sources, and device information.
+                  This data is processed by Google and may be transferred to
+                  servers in the United States.
+                </p>
+                <p className="mb-2">
+                  We have implemented IP anonymization to ensure your full IP
+                  address is never stored.
+                </p>
+                <p className="mb-2">
+                  We do not combine Google Analytics data with personally
+                  identifiable information.
+                </p>
+                <p className="mb-2">
+                  You can opt out of Google Analytics by using our cookie
+                  preferences panel or by installing the Google Analytics
+                  Opt-out Browser Add-on.
+                </p>
+                <p>
+                  For more information about Google&apos;s privacy practices,
+                  please visit:{" "}
+                  <a
+                    href="https://policies.google.com/privacy"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="underline text-[#00E5FF]"
+                  >
+                    https://policies.google.com/privacy
+                  </a>
+                </p>
+              </div>
+
+              <div>
+                <span className="font-bold text-slate-200 block mb-1">
+                  11. Your Cookie Choices
+                </span>
+                <p className="mb-2">
+                  You have the right to manage your cookie preferences at any
+                  time. When you first visit our website, a cookie consent
+                  banner will appear asking for your consent to use
+                  non-essential cookies. You can:
+                </p>
+                <p className="mb-2">
+                  <strong>Accept All:</strong> Enable all cookies including
+                  analytics, performance, and marketing cookies.
+                </p>
+                <p className="mb-2">
+                  <strong>Reject All:</strong> Only essential cookies will be
+                  used, which are necessary for website functionality.
+                </p>
+                <p className="mb-2">
+                  <strong>Manage Preferences:</strong> Customize which cookie
+                  categories you allow. You can change your preferences at any
+                  time through the &apos;Cookie Settings&apos; link in our
+                  website footer.
+                </p>
+                <p>
+                  Most web browsers allow you to control cookies through their
+                  settings. However, limiting cookies may affect your experience
+                  on our website.
+                </p>
+              </div>
+
+              <div>
+                <span className="font-bold text-slate-200 block mb-1">
+                  12. Do Not Track
+                </span>
+                <p>
+                  We respect the Do Not Track (DNT) browser setting. If you have
+                  enabled DNT in your browser, we will honor this signal and
+                  limit tracking accordingly. Please note that enabling DNT may
+                  affect some website functionality.
+                </p>
+              </div>
+
+              <div>
+                <span className="font-bold text-slate-200 block mb-1">
+                  13. International Data Transfers and Your Rights
+                </span>
+                <p className="mb-2">
+                  If you are located in the European Union, California, or
+                  Brazil, you have specific rights regarding your personal data
+                  under GDPR, CCPA, and LGPD respectively:
+                </p>
+                <p className="mb-1">
+                  <strong>Right to Access:</strong> You can request a copy of
+                  your personal data we hold.
+                </p>
+                <p className="mb-1">
+                  <strong>Right to Rectification:</strong> You can request
+                  correction of inaccurate personal data.
+                </p>
+                <p className="mb-1">
+                  <strong>Right to Erasure:</strong> You can request deletion of
+                  your personal data under certain circumstances.
+                </p>
+                <p className="mb-1">
+                  <strong>Right to Data Portability:</strong> You can request
+                  your data in a machine-readable format.
+                </p>
+                <p className="mb-1">
+                  <strong>Right to Object:</strong> You can object to processing
+                  of your personal data for marketing purposes.
+                </p>
+                <p className="mb-2">
+                  <strong>Right to Withdraw Consent:</strong> You can withdraw
+                  your consent for data processing at any time by updating your
+                  cookie preferences.
+                </p>
+                <p>
+                  To exercise any of these rights, please contact us at{" "}
+                  <a
+                    href="mailto:info@mulearn.org"
+                    className="underline text-[#00E5FF]"
+                  >
+                    info@mulearn.org
+                  </a>
+                  . We will respond to your request within 30 days.
+                </p>
+              </div>
+            </div>
+
+            {/* Actions */}
+            <div className="flex gap-3 pt-3 border-t border-white/5">
+              <button
+                type="button"
+                onClick={() => setIsPrivacyModalOpen(false)}
+                className="flex-1 cursor-pointer bg-white/5 hover:bg-white/10 border border-white/10 text-slate-300 font-bold py-2.5 rounded-xl text-xs tracking-wider uppercase transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setFormData((prev) => ({ ...prev, consent: true }));
+                  if (validationErrors.consent) {
+                    setValidationErrors((prev) => ({ ...prev, consent: "" }));
+                  }
+                  setIsPrivacyModalOpen(false);
+                }}
+                className="flex-1 cursor-pointer bg-glass border border-[#00E5FF]/40 hover:border-[#00E5FF]/90 text-[#00E5FF] hover:text-white font-bold py-2.5 rounded-xl text-xs tracking-wider uppercase glow-blue-btn bg-gradient-to-r from-[#00E5FF]/10 to-transparent flex items-center justify-center transition-colors"
+              >
+                I Agree
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
