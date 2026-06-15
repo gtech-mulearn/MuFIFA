@@ -4,7 +4,7 @@ import { TEAM_FLAGS, TEAM_WHATSAPP_LINKS } from "./constants";
 import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
-import { createCanvas, loadImage, GlobalFonts } from "@napi-rs/canvas";
+import sharp from "sharp";
 
 // Resolve __dirname equivalent for ESM (works reliably on both local and Vercel)
 const __filename = fileURLToPath(import.meta.url);
@@ -16,8 +16,6 @@ const smtpUser = process.env.SMTP_USER;
 const smtpPass = process.env.SMTP_PASS;
 const smtpFrom = process.env.SMTP_FROM;
 
-let fontsRegistered = false;
-
 /**
  * Tries multiple candidate paths to find a file, returning the first that exists.
  */
@@ -28,48 +26,16 @@ function resolveFile(candidates) {
   return null;
 }
 
-function registerFonts() {
-  if (fontsRegistered) return;
-
-  // Multiple candidate paths: __dirname-relative (most reliable), then cwd-based fallback
-  const boldCandidates = [
-    path.join(__dirname, "fonts", "Roboto-Bold.ttf"),
-    path.join(process.cwd(), "utils", "fonts", "Roboto-Bold.ttf"),
-    path.join(process.cwd(), ".next", "server", "utils", "fonts", "Roboto-Bold.ttf"),
-  ];
-  const blackCandidates = [
-    path.join(__dirname, "fonts", "Roboto-Black.ttf"),
-    path.join(process.cwd(), "utils", "fonts", "Roboto-Black.ttf"),
-    path.join(process.cwd(), ".next", "server", "utils", "fonts", "Roboto-Black.ttf"),
-  ];
-
-  const fontBoldPath = resolveFile(boldCandidates);
-  const fontBlackPath = resolveFile(blackCandidates);
-
-  console.log(`[Canvas Fonts] __dirname = ${__dirname}`);
-  console.log(`[Canvas Fonts] process.cwd() = ${process.cwd()}`);
-  console.log(`[Canvas Fonts] Resolved Bold path: ${fontBoldPath}`);
-  console.log(`[Canvas Fonts] Resolved Black path: ${fontBlackPath}`);
-
-  try {
-    if (fontBoldPath) {
-      const boldBuffer = fs.readFileSync(fontBoldPath);
-      GlobalFonts.register(boldBuffer, "RobotoBold");
-      console.log("[Canvas Fonts] Registered RobotoBold successfully from buffer.");
-    } else {
-      console.error(`[Canvas Fonts] Roboto-Bold.ttf not found. Tried: ${boldCandidates.join(", ")}`);
-    }
-    if (fontBlackPath) {
-      const blackBuffer = fs.readFileSync(fontBlackPath);
-      GlobalFonts.register(blackBuffer, "RobotoBlack");
-      console.log("[Canvas Fonts] Registered RobotoBlack successfully from buffer.");
-    } else {
-      console.error(`[Canvas Fonts] Roboto-Black.ttf not found. Tried: ${blackCandidates.join(", ")}`);
-    }
-    fontsRegistered = true;
-  } catch (e) {
-    console.error("[Canvas Fonts] Failed to load or register custom fonts from buffer:", e);
-  }
+/**
+ * Escapes special XML characters in a string to prevent SVG injection.
+ */
+function escapeXml(str) {
+  return String(str)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&apos;");
 }
 
 let transporter = null;
@@ -98,10 +64,16 @@ function getTransporter() {
   return transporter;
 }
 
+/**
+ * Generates a ticket PNG by:
+ * 1. Reading the SVG template (ticket.svg) which contains the base64-encoded background image
+ * 2. Injecting dynamic <text> elements for player name, user ID, and issued date
+ * 3. Converting the final SVG to PNG using Sharp
+ *
+ * This approach completely avoids @napi-rs/canvas and custom font registration issues,
+ * and works reliably on Vercel since Sharp is natively supported.
+ */
 export async function generateTicketPng(player) {
-  // Lazy-load and register fonts inside the execution context
-  registerFonts();
-
   const { name, user_id, created_at } = player;
 
   // Format the date (e.g. "Jun 15, 2026")
@@ -112,57 +84,73 @@ export async function generateTicketPng(player) {
     day: "numeric",
   });
 
-  // Resolve ticket.png with multiple candidate paths
-  const ticketCandidates = [
-    path.join(__dirname, "..", "public", "ticket.png"),
-    path.join(process.cwd(), "public", "ticket.png"),
-    path.join(process.cwd(), ".next", "server", "public", "ticket.png"),
+  // Resolve ticket.svg with multiple candidate paths
+  const svgCandidates = [
+    path.join(__dirname, "..", "public", "ticket.svg"),
+    path.join(process.cwd(), "public", "ticket.svg"),
+    path.join(process.cwd(), ".next", "server", "public", "ticket.svg"),
   ];
-  const baseImgPath = resolveFile(ticketCandidates);
-  console.log(`[Canvas Ticket] Resolved ticket.png path: ${baseImgPath}`);
+  const svgPath = resolveFile(svgCandidates);
+  console.log(`[Ticket SVG] Resolved ticket.svg path: ${svgPath}`);
 
-  let image;
-  if (!baseImgPath) {
-    throw new Error(`ticket.png not found. Tried: ${ticketCandidates.join(", ")}`);
+  if (!svgPath) {
+    throw new Error(`ticket.svg not found. Tried: ${svgCandidates.join(", ")}`);
   }
+
+  // Read the SVG template
+  let svgContent;
   try {
-    const imgBuffer = fs.readFileSync(baseImgPath);
-    image = await loadImage(imgBuffer);
+    svgContent = fs.readFileSync(svgPath, "utf-8");
   } catch (err) {
-    console.error("Failed to read base ticket image:", err);
+    console.error("[Ticket SVG] Failed to read ticket.svg:", err);
     throw err;
   }
 
-  const canvas = createCanvas(image.width, image.height);
-  const ctx = canvas.getContext("2d");
+  // Escape dynamic values for safe XML embedding
+  const safeName = escapeXml(name);
+  const safeUserId = escapeXml(
+    user_id.startsWith("@") ? user_id : `@${user_id}`
+  );
+  const safeDate = escapeXml(issuedOn);
 
-  // Draw base image
-  ctx.drawImage(image, 0, 0);
+  // SVG text elements to overlay on the ticket
+  // Coordinates match the original canvas positions (2128x1177 SVG viewBox)
+  // Font: using sans-serif which is universally available in SVG renderers
+  const textOverlay = `
+  <text x="510" y="582" font-family="Arial, Helvetica, sans-serif" font-size="48" font-weight="900" fill="#2A1E17">${safeName}</text>
+  <text x="470" y="742" font-family="Arial, Helvetica, sans-serif" font-size="38" font-weight="700" fill="#E53935">${safeUserId}</text>
+  <text x="430" y="898" font-family="Arial, Helvetica, sans-serif" font-size="30" font-weight="700" fill="#2A1E17">${safeDate}</text>
+`;
 
-  // Use custom fonts with system fallback
-  const blackFont = fontsRegistered ? "48px RobotoBlack, sans-serif" : "bold 48px sans-serif";
-  const boldFont38 = fontsRegistered ? "38px RobotoBold, sans-serif" : "bold 38px sans-serif";
-  const boldFont30 = fontsRegistered ? "30px RobotoBold, sans-serif" : "bold 30px sans-serif";
+  // Inject text elements before the closing </svg> tag
+  const closingTagIndex = svgContent.lastIndexOf("</svg>");
+  if (closingTagIndex === -1) {
+    throw new Error("Invalid SVG: no closing </svg> tag found");
+  }
 
-  console.log(`[Canvas Draw] Using fonts: fontsRegistered=${fontsRegistered}, blackFont=${blackFont}`);
+  const finalSvg =
+    svgContent.substring(0, closingTagIndex) +
+    textOverlay +
+    svgContent.substring(closingTagIndex);
 
-  // Draw Name
-  ctx.fillStyle = '#2A1E17'; // Dark charcoal/brown
-  ctx.font = blackFont;
-  ctx.fillText(name, 510, 582);
+  console.log(
+    `[Ticket SVG] SVG prepared with dynamic text. Total SVG length: ${finalSvg.length}`
+  );
 
-  // Draw User ID (with @ prefix if not already present)
-  const displayId = user_id.startsWith('@') ? user_id : `@${user_id}`;
-  ctx.fillStyle = '#E53935'; // Red
-  ctx.font = boldFont38;
-  ctx.fillText(displayId, 470, 742);
+  // Convert SVG to PNG using Sharp
+  try {
+    const pngBuffer = await sharp(Buffer.from(finalSvg))
+      .png()
+      .toBuffer();
 
-  // Draw Issued On
-  ctx.fillStyle = '#2A1E17'; // Dark charcoal/brown
-  ctx.font = boldFont30;
-  ctx.fillText(issuedOn, 430, 898);
-
-  return canvas.toBuffer("image/png");
+    console.log(
+      `[Ticket SVG] PNG generated successfully. Buffer size: ${pngBuffer.length} bytes`
+    );
+    return pngBuffer;
+  } catch (err) {
+    console.error("[Ticket SVG] Sharp SVG-to-PNG conversion failed:", err);
+    throw err;
+  }
 }
 
 export async function sendRegistrationEmail(player) {
@@ -178,10 +166,10 @@ export async function sendRegistrationEmail(player) {
   try {
     const pngContent = await generateTicketPng(player);
     const info = await mailTransporter.sendMail({
-      from: `"μFifa'26" <${smtpFrom}>`,
+      from: `"noreply@mulearn.org" <noreply@mulearn.org>`,
       to: email,
-      subject: `μFifa'26 Access Pass Confirmed - @${user_id}`,
-      text: `Welcome to μFifa'26, ${name}. Your arena access pass is confirmed under Player ID @${user_id} playing for ${teamLabel}. Join your squad WhatsApp group here: ${whatsappUrl}`,
+      subject: `Access Pass Confirmed - ${user_id.startsWith('@') ? user_id : '@' + user_id} | μFIFA`,
+      text: `Hello ${name}, welcome to μFIFA'26! Your arena access pass has been confirmed under Player ID ${user_id.startsWith('@') ? user_id : '@' + user_id} playing for ${teamLabel}. Join your squad WhatsApp group here: ${whatsappUrl}`,
       html: getNewUserEmailHtml(player),
       attachments: [
         {
