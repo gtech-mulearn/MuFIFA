@@ -1,34 +1,4 @@
-// Country flags mapping
-const TEAM_FLAGS = {
-  Brazil: "Brazil",
-  Argentina: "Argentina",
-  Portugal: "Portugal",
-  Germany: "Germany",
-  France: "France",
-  England: "England",
-  Spain: "Spain",
-  Netherlands: "Netherlands",
-  Belgium: "Belgium",
-  Croatia: "Croatia",
-  Uruguay: "Uruguay",
-  Japan: "Japan",
-};
-
-// WhatsApp invite links per squad country
-const TEAM_WHATSAPP_LINKS = {
-  Brazil: "https://chat.whatsapp.com/EV8id4d16MGIXdmmpDtx7g",
-  Argentina: "https://chat.whatsapp.com/BhddYg7jtG24SpEP9XmYvf",
-  Portugal: "https://chat.whatsapp.com/Ec6u5gbzXaBLsKJOVdMSgB",
-  Germany: "https://chat.whatsapp.com/KwNWCzEWyCJA24NmeacfLM",
-  France: "https://chat.whatsapp.com/LY2EOqz9pXYClO7ZfIwybU",
-  England: "https://chat.whatsapp.com/KnJcWM2Bb7M32TnT68LtUI",
-  Spain: "https://chat.whatsapp.com/DAIaHMOjt3P6DrAdaD3EDv",
-  Netherlands: "https://chat.whatsapp.com/BFLIlE9IdenBzj7R4zfGW9",
-  Belgium: "https://chat.whatsapp.com/H8ibvdnnBSaLORa4gguG5M",
-  Croatia: "https://chat.whatsapp.com/FkLUDYocKur6EWkSCSKNaN",
-  Uruguay: "https://chat.whatsapp.com/DEYKZdZ65NG15zhIaxpAcK",
-  Japan: "https://chat.whatsapp.com/Ccg1WGLaize3hgcVLUqZHF",
-};
+import { TEAM_WHATSAPP_LINKS, TEAM_FLAGS } from "../../utils/constants";
 
 function formatIssuedDate(value) {
   const date = value ? new Date(value) : new Date();
@@ -56,7 +26,7 @@ function getNewUserEmailHtml(player, assets = {}) {
           body {
             margin: 0;
             padding: 0;
-            background: #04060d;
+            background: #090A0F;
             color: #f1f5f9;
             font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
             -webkit-font-smoothing: antialiased;
@@ -65,9 +35,9 @@ function getNewUserEmailHtml(player, assets = {}) {
             width: 100%;
             padding: 32px 0;
             background:
-              radial-gradient(circle at top right, rgba(255, 46, 147, 0.12), transparent 34%),
-              radial-gradient(circle at bottom left, rgba(0, 229, 255, 0.14), transparent 34%),
-              #04060d;
+              radial-gradient(circle at top right, rgba(79, 70, 229, 0.12), transparent 34%),
+              radial-gradient(circle at bottom left, rgba(6, 182, 212, 0.14), transparent 34%),
+              #090A0F;
           }
           .container {
             max-width: 440px;
@@ -83,12 +53,12 @@ function getNewUserEmailHtml(player, assets = {}) {
           }
           .ticket {
             position: relative;
-            background: rgba(8, 11, 21, 0.94);
-            border: 2px dashed rgba(0, 229, 255, 0.4);
+            background: rgba(32, 3, 5, 0.94);
+            border: 2px dashed rgba(6, 182, 212, 0.4);
             border-radius: 28px;
             padding: 24px;
             overflow: hidden;
-            box-shadow: 0 0 30px rgba(0, 229, 255, 0.14);
+            box-shadow: 0 0 30px rgba(6, 182, 212, 0.14);
           }
           .header {
             position: relative;
@@ -139,9 +109,9 @@ function getNewUserEmailHtml(player, assets = {}) {
           }
           .status {
             display: inline-block;
-            background: rgba(0, 229, 255, 0.1);
-            border: 1px solid rgba(0, 229, 255, 0.3);
-            color: #00e5ff;
+            background: rgba(6, 182, 212, 0.1);
+            border: 1px solid rgba(6, 182, 212, 0.3);
+            color: #06B6D4;
             padding: 5px 9px;
             border-radius: 7px;
             font-size: 8px;
@@ -180,10 +150,10 @@ function getNewUserEmailHtml(player, assets = {}) {
             word-break: break-word;
           }
           .value-cyan {
-            color: #00e5ff;
+            color: #06B6D4;
           }
           .value-pink {
-            color: #ff2e93;
+            color: #4F46E5;
           }
           .footer {
             position: relative;
@@ -307,8 +277,4 @@ function getNewUserEmailHtml(player, assets = {}) {
   `;
 }
 
-module.exports = {
-  getNewUserEmailHtml,
-  TEAM_FLAGS,
-  TEAM_WHATSAPP_LINKS,
-};
+export { getNewUserEmailHtml };

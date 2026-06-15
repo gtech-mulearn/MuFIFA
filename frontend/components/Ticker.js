@@ -179,7 +179,7 @@ export default function Ticker() {
                   </span>
                 )}
                 {isDown && (
-                  <span className="text-[#FF2E93] animate-pulse drop-shadow-[0_0_4px_#FF2E93] text-[10px]" aria-label="Rank decreased">
+                  <span className="text-[#4F46E5] animate-pulse drop-shadow-[0_0_4px_#4F46E5] text-[10px]" aria-label="Rank decreased">
                     ▼
                   </span>
                 )}
@@ -198,11 +198,11 @@ export default function Ticker() {
         {toasts.map((toast) => (
           <div
             key={toast.id}
-            className="pointer-events-auto bg-[#080c16]/95 border border-[#00E5FF]/30 rounded-xl p-4 shadow-[0_8px_30px_rgb(0,0,0,0.6)] backdrop-blur-xl flex items-center justify-between gap-3 text-slate-100 text-xs font-bold animate-slideInRight select-none relative overflow-hidden"
+            className="pointer-events-auto bg-[#131927]/95 border border-[#06B6D4]/30 rounded-xl p-4 shadow-[0_8px_30px_rgb(0,0,0,0.6)] backdrop-blur-xl flex items-center justify-between gap-3 text-slate-100 text-xs font-bold animate-slideInRight select-none relative overflow-hidden"
           >
-            <div className="absolute left-0 top-0 h-full w-[3px] bg-gradient-to-b from-[#00E5FF] to-[#FF2E93]" />
+            <div className="absolute left-0 top-0 h-full w-[3px] bg-gradient-to-b from-[#06B6D4] to-[#4F46E5]" />
             <div className="flex-1 pl-2">
-              <span className="text-[9px] tracking-wider text-[#00E5FF] uppercase block mb-0.5">
+              <span className="text-[9px] tracking-wider text-[#06B6D4] uppercase block mb-0.5">
                 // Overtaking Alert //
               </span>
               <p className="text-slate-100 font-semibold flex items-center gap-1.5 flex-wrap">
@@ -213,7 +213,7 @@ export default function Ticker() {
                 <span className={`fi fi-${toast.overtakenFlagCode} rounded-sm shadow-sm border border-white/10 shrink-0`} style={{ width: '15px', height: '11.5px' }} role="img" aria-label={`${toast.overtakenName} flag`} />
                 <span>{toast.overtakenName}</span>
                 <span className="text-slate-400 font-medium">for Rank</span>
-                <span className="text-[#00E5FF]">{toast.newRank}!</span>
+                <span className="text-[#06B6D4]">{toast.newRank}!</span>
               </p>
             </div>
             <button

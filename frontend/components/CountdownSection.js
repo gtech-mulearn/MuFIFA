@@ -5,7 +5,7 @@ import React, { useState, useEffect } from "react";
 export function CountdownSkeleton() {
   return (
     <div className="relative z-20 w-full lg:w-auto my-4 lg:my-0 flex flex-col items-center justify-center lg:items-end text-center lg:text-right">
-      <span className="text-[10px] tracking-widest text-[#FF2E93] font-bold uppercase mb-3 animate-pulse">
+      <span className="text-[10px] tracking-widest text-[#4F46E5] font-bold uppercase mb-3 animate-pulse">
         LOADING ARENA TIMER...
       </span>
       <div className="flex gap-4 sm:gap-6 justify-center lg:justify-end">

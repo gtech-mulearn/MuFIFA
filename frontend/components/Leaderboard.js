@@ -147,9 +147,9 @@ export default function Leaderboard() {
   }, [isLiveFeed]);
 
   const getRankStyle = (rank) => {
-    if (rank === 1) return "bg-[#00E5FF]/10 border-[#00E5FF]/30 text-[#00E5FF]";
-    if (rank === 2) return "bg-[#FF2E93]/10 border-[#FF2E93]/30 text-[#FF2E93]";
-    if (rank === 3) return "bg-[#7000FF]/10 border-[#7000FF]/30 text-[#7000FF]";
+    if (rank === 1) return "bg-[#FBBF24]/10 border-[#FBBF24]/30 text-[#FBBF24] shadow-[0_0_8px_rgba(251,191,36,0.15)]";
+    if (rank === 2) return "bg-[#94A3B8]/10 border-[#94A3B8]/30 text-[#E2E8F0] shadow-[0_0_8px_rgba(148,163,184,0.15)]";
+    if (rank === 3) return "bg-[#D97706]/10 border-[#D97706]/30 text-[#F97316]";
     return "bg-white/5 border-white/10 text-slate-400";
   };
 
@@ -202,7 +202,7 @@ export default function Leaderboard() {
                     </span>
                   )}
                   {team.rankTrend === "down" && (
-                    <span className="text-[#FF2E93] text-[9px] drop-shadow-[0_0_2px_#FF2E93]" aria-label="Rank decreased">
+                    <span className="text-[#4F46E5] text-[9px] drop-shadow-[0_0_2px_#4F46E5]" aria-label="Rank decreased">
                       ▼
                     </span>
                   )}
@@ -219,7 +219,7 @@ export default function Leaderboard() {
             </div>
 
             <div className="flex items-center gap-1.5">
-              <span className="text-xs font-bold text-[#00E5FF]">
+              <span className="text-xs font-bold text-[#06B6D4]">
                 {team.points}
               </span>
               <span className="text-[8px] text-slate-500 uppercase tracking-wider">
@@ -234,7 +234,7 @@ export default function Leaderboard() {
       <div className="pt-2 border-t border-white/5 flex justify-center">
         <Link
           href="/leaderboard"
-          className="text-[10px] font-bold uppercase tracking-wider text-[#00E5FF] hover:text-[#00E5FF]/80 transition-colors flex items-center gap-1"
+          className="text-[10px] font-bold uppercase tracking-wider text-[#06B6D4] hover:text-[#06B6D4]/80 transition-colors flex items-center gap-1"
         >
           View Detailed Standings <span className="text-xs">→</span>
         </Link>

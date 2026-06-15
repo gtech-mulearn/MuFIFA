@@ -1,43 +1,12 @@
 "use client";
 
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, Suspense } from "react";
 import Link from "next/link";
 import Image from "next/image";
+import { useSearchParams, useRouter } from "next/navigation";
 import BackgroundVideo from "@/components/BackgroundVideo";
 import { getBackendUrl } from "@/utils/api";
-
-const DOMAINS = ["Maker", "Creative", "Coder", "Strategist"];
-
-const TEAM_FLAGS = {
-  Brazil: "br",
-  Argentina: "ar",
-  Portugal: "pt",
-  Germany: "de",
-  France: "fr",
-  England: "gb-eng",
-  Spain: "es",
-  Netherlands: "nl",
-  Belgium: "be",
-  Croatia: "hr",
-  Uruguay: "uy",
-  Japan: "jp",
-};
-
-// WhatsApp invite link configuration per squad country
-const TEAM_WHATSAPP_LINKS = {
-  Brazil: "https://chat.whatsapp.com/EV8id4d16MGIXdmmpDtx7g",
-  Argentina: "https://chat.whatsapp.com/BhddYg7jtG24SpEP9XmYvf",
-  Portugal: "https://chat.whatsapp.com/Ec6u5gbzXaBLsKJOVdMSgB",
-  Germany: "https://chat.whatsapp.com/KwNWCzEWyCJA24NmeacfLM",
-  France: "https://chat.whatsapp.com/LY2EOqz9pXYClO7ZfIwybU",
-  England: "https://chat.whatsapp.com/KnJcWM2Bb7M32TnT68LtUI",
-  Spain: "https://chat.whatsapp.com/DAIaHMOjt3P6DrAdaD3EDv",
-  Netherlands: "https://chat.whatsapp.com/BFLIlE9IdenBzj7R4zfGW9",
-  Belgium: "https://chat.whatsapp.com/H8ibvdnnBSaLORa4gguG5M",
-  Croatia: "https://chat.whatsapp.com/FkLUDYocKur6EWkSCSKNaN",
-  Uruguay: "https://chat.whatsapp.com/DEYKZdZ65NG15zhIaxpAcK",
-  Japan: "https://chat.whatsapp.com/Ccg1WGLaize3hgcVLUqZHF",
-};
+import { TEAM_WHATSAPP_LINKS, DOMAINS, TEAM_FLAGS } from "@/utils/constants";
 
 const TEAMS = Object.keys(TEAM_FLAGS);
 
@@ -91,7 +60,7 @@ function Select({
         className={`bg-black/40 border rounded-xl px-4 py-2.5 text-xs text-slate-200 w-full flex items-center justify-between cursor-pointer focus:outline-none transition-colors ${
           error
             ? "border-red-500/50 focus:border-red-500"
-            : "border-white/10 focus:border-[#FF2E93]"
+            : "border-white/10 focus:border-[#4F46E5]"
         }`}
       >
         <span>{value || placeholder}</span>
@@ -113,7 +82,7 @@ function Select({
       {isOpen && (
         <div
           role="listbox"
-          className="absolute z-50 mt-1.5 w-full bg-[#080b15] border border-white/10 rounded-xl shadow-2xl max-h-60 overflow-y-auto py-1 backdrop-blur-xl animate-in fade-in slide-in-from-top-1 duration-100"
+          className="absolute z-50 mt-1.5 w-full bg-[#131927] border border-white/10 rounded-xl shadow-2xl max-h-60 overflow-y-auto py-1 backdrop-blur-xl animate-in fade-in slide-in-from-top-1 duration-100"
         >
           {options?.map((option) => {
             const isSelected = optionRenderer
@@ -131,14 +100,14 @@ function Select({
                 onClick={() => handleSelect(option)}
                 className={`w-full text-left px-4 py-2 text-xs transition-colors flex items-center justify-between cursor-pointer ${
                   isSelected
-                    ? "text-[#FF2E93] bg-white/[0.03] font-bold"
+                    ? "text-[#4F46E5] bg-white/[0.03] font-bold"
                     : "text-slate-300 hover:text-white hover:bg-white/[0.03]"
                 }`}
               >
                 <span>{displayText}</span>
                 {isSelected && (
                   <svg
-                    className="w-3.5 h-3.5 text-[#FF2E93]"
+                    className="w-3.5 h-3.5 text-[#4F46E5]"
                     fill="none"
                     stroke="currentColor"
                     strokeWidth="3"
@@ -160,7 +129,12 @@ function Select({
   );
 }
 
-export default function RegisterPage() {
+function RegisterForm() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const refParam = searchParams ? searchParams.get("ref") || "" : "";
+
+  const [checkingAuth, setCheckingAuth] = useState(true);
   const [formData, setFormData] = useState({
     name: "",
     email: "",
@@ -168,6 +142,7 @@ export default function RegisterPage() {
     domain: "",
     team: "",
     consent: false,
+    referralId: refParam,
   });
 
   const [validationErrors, setValidationErrors] = useState({});
@@ -187,6 +162,25 @@ export default function RegisterPage() {
   const [isVerifyingOtp, setIsVerifyingOtp] = useState(false);
   const [isResendingOtp, setIsResendingOtp] = useState(false);
   const [otpCountdownMs, setOtpCountdownMs] = useState(0);
+
+  // Check if player is already logged in
+  useEffect(() => {
+    async function checkAuth() {
+      try {
+        const res = await fetch("/api/v1/auth/me");
+        const data = await res.json();
+        if (res.ok && data.success) {
+          router.push(`/dashboard`);
+          return;
+        }
+      } catch (err) {
+        console.error("Auth check failed:", err);
+      } finally {
+        setCheckingAuth(false);
+      }
+    }
+    checkAuth();
+  }, [router]);
 
   useEffect(() => {
     if (isPrivacyModalOpen) {
@@ -253,9 +247,13 @@ export default function RegisterPage() {
 
   const handleInputChange = (e) => {
     const { name, value, type, checked } = e.target;
+    const finalValue =
+      name === "referralId" && typeof value === "string"
+        ? value.toUpperCase()
+        : value;
     setFormData((prev) => ({
       ...prev,
-      [name]: type === "checkbox" ? checked : value,
+      [name]: type === "checkbox" ? checked : finalValue,
     }));
     if (validationErrors[name]) {
       setValidationErrors((prev) => ({
@@ -313,6 +311,7 @@ export default function RegisterPage() {
           phone: formData.phone.trim(),
           domain: formData.domain,
           team: formData.team,
+          referralId: formData.referralId ? formData.referralId.trim() : "",
         }),
       });
 
@@ -460,6 +459,7 @@ export default function RegisterPage() {
           phone: formData.phone.trim(),
           domain: formData.domain,
           team: formData.team,
+          referralId: formData.referralId ? formData.referralId.trim() : "",
         }),
       });
 
@@ -501,6 +501,7 @@ export default function RegisterPage() {
       domain: "",
       team: "",
       consent: false,
+      referralId: refParam,
     });
     setValidationErrors({});
     setApiError("");
@@ -516,22 +517,30 @@ export default function RegisterPage() {
     });
   };
 
+  if (checkingAuth) {
+    return (
+      <div className="w-full min-h-screen bg-[#090A0F] flex items-center justify-center">
+        <div className="w-8 h-8 rounded-full border-2 border-[#4F46E5] border-t-transparent animate-spin" />
+      </div>
+    );
+  }
+
   return (
-    <div className="w-full min-h-screen bg-[#04060d] text-white flex flex-col font-sans relative select-none pb-16 pt-8 md:pt-12 ">
+    <div className="w-full min-h-screen bg-[#090A0F] text-white flex flex-col font-sans relative select-none pb-16 pt-8 md:pt-12 ">
       {/* Background Stadium Video */}
       <div className="no-print">
         <BackgroundVideo />
       </div>
 
       {/* Retro Theme Overlay and accent glows */}
-      <div className="absolute inset-0 z-0 bg-[radial-gradient(circle_at_center,rgba(20,10,35,0.2)_25%,#04060d_95%)] opacity-85 pointer-events-none no-print" />
-      <div className="absolute top-[30%] right-[10%] w-[45vw] h-[45vw] pink-accent-glow pointer-events-none rounded-full opacity-55 no-print" />
-      <div className="absolute bottom-[20%] left-[-15%] w-[45vw] h-[45vw] blue-accent-glow pointer-events-none rounded-full opacity-55 no-print" />
+      <div className="absolute inset-0 z-0 bg-[radial-gradient(circle_at_center,rgba(255,255,255,0.02)_25%,#090A0F_95%)] opacity-85 pointer-events-none no-print" />
+      <div className="absolute top-[30%] right-[10%] w-[45vw] h-[45vw] indigo-accent-glow pointer-events-none rounded-full opacity-20 no-print" />
+      <div className="absolute bottom-[20%] left-[-15%] w-[45vw] h-[45vw] cyan-accent-glow pointer-events-none rounded-full opacity-20 no-print" />
 
       <div className="max-w-4xl mx-auto px-4 sm:px-6 w-full relative z-10 flex-1 flex flex-col justify-center items-center">
         {!registeredData ? (
           /* REGISTRATION FORM VIEW */
-          <div className="w-full max-w-lg bg-glass-card rounded-2xl p-5 sm:p-6 md:p-8 border border-white/10 backdrop-blur-md shadow-2xl flex flex-col gap-5 sm:gap-6 bg-[linear-gradient(115deg,rgba(255,255,255,0.02),rgba(255,46,147,0.015))]">
+          <div className="w-full max-w-lg bg-glass-card rounded-2xl p-5 sm:p-6 md:p-8 border border-white/10 backdrop-blur-md shadow-2xl flex flex-col gap-5 sm:gap-6 bg-[linear-gradient(115deg,rgba(255,255,255,0.02),rgba(79, 70, 229,0.015))]">
             {/* Header */}
             <div className="text-center flex flex-col gap-1.5">
               <h1 className="text-2xl md:text-3xl font-extrabold tracking-wider bg-gradient-to-r from-white to-slate-400 bg-clip-text text-transparent uppercase">
@@ -544,7 +553,7 @@ export default function RegisterPage() {
             </div>
 
             {apiError && (
-              <div className="bg-red-500/10 border border-red-500/30 text-red-400 text-xs py-3 px-4 rounded-xl font-medium flex items-center gap-2">
+              <div className="bg-indigo-500/10 border border-indigo-500/30 text-indigo-400 text-xs py-3 px-4 rounded-xl font-medium flex items-center gap-2">
                 <span className="text-base">⚠️</span> {apiError}
               </div>
             )}
@@ -570,12 +579,12 @@ export default function RegisterPage() {
                   aria-describedby={
                     validationErrors.name ? "name-error" : undefined
                   }
-                  className="bg-black/40 border border-white/10 rounded-xl px-4 py-2.5 text-xs text-slate-200 placeholder-slate-500 focus:outline-none focus:border-[#FF2E93] transition-colors"
+                  className="bg-black/40 border border-white/10 rounded-xl px-4 py-2.5 text-xs text-slate-200 placeholder-slate-500 focus:outline-none focus:border-[#4F46E5] transition-colors"
                 />
                 {validationErrors.name && (
                   <span
                     id="name-error"
-                    className="text-[10px] text-red-400 font-semibold"
+                    className="text-[10px] text-indigo-400 font-semibold"
                   >
                     {validationErrors.name}
                   </span>
@@ -601,12 +610,12 @@ export default function RegisterPage() {
                   aria-describedby={
                     validationErrors.email ? "email-error" : undefined
                   }
-                  className="bg-black/40 border border-white/10 rounded-xl px-4 py-2.5 text-xs text-slate-200 placeholder-slate-500 focus:outline-none focus:border-[#FF2E93] transition-colors"
+                  className="bg-black/40 border border-white/10 rounded-xl px-4 py-2.5 text-xs text-slate-200 placeholder-slate-500 focus:outline-none focus:border-[#4F46E5] transition-colors"
                 />
                 {validationErrors.email && (
                   <span
                     id="email-error"
-                    className="text-[10px] text-red-400 font-semibold"
+                    className="text-[10px] text-indigo-400 font-semibold"
                   >
                     {validationErrors.email}
                   </span>
@@ -632,12 +641,12 @@ export default function RegisterPage() {
                   aria-describedby={
                     validationErrors.phone ? "phone-error" : undefined
                   }
-                  className="bg-black/40 border border-white/10 rounded-xl px-4 py-2.5 text-xs text-slate-200 placeholder-slate-500 focus:outline-none focus:border-[#FF2E93] transition-colors"
+                  className="bg-black/40 border border-white/10 rounded-xl px-4 py-2.5 text-xs text-slate-200 placeholder-slate-500 focus:outline-none focus:border-[#4F46E5] transition-colors"
                 />
                 {validationErrors.phone && (
                   <span
                     id="phone-error"
-                    className="text-[10px] text-red-400 font-semibold"
+                    className="text-[10px] text-indigo-400 font-semibold"
                   >
                     {validationErrors.phone}
                   </span>
@@ -673,7 +682,7 @@ export default function RegisterPage() {
                   {validationErrors.domain && (
                     <span
                       id="domain-error"
-                      className="text-[10px] text-red-400 font-semibold"
+                      className="text-[10px] text-indigo-400 font-semibold"
                     >
                       {validationErrors.domain}
                     </span>
@@ -727,12 +736,37 @@ export default function RegisterPage() {
                   {validationErrors.team && (
                     <span
                       id="team-error"
-                      className="text-[10px] text-red-400 font-semibold"
+                      className="text-[10px] text-indigo-400 font-semibold"
                     >
                       {validationErrors.team}
                     </span>
                   )}
                 </div>
+              </div>
+
+              {/* Referral ID Input */}
+              <div className="flex flex-col gap-1.5">
+                <label
+                  htmlFor="referral-id-input"
+                  className="text-[10px] font-black uppercase tracking-wider text-slate-300"
+                >
+                  Referral ID (Optional)
+                </label>
+                <input
+                  id="referral-id-input"
+                  type="text"
+                  name="referralId"
+                  value={formData.referralId}
+                  onChange={handleInputChange}
+                  placeholder={refParam ? refParam : "e.g. H8F9X2"}
+                  disabled={!!refParam}
+                  className="bg-black/40 border border-white/10 rounded-xl px-4 py-2.5 text-xs text-slate-200 placeholder-slate-500 focus:outline-none focus:border-[#4F46E5] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                />
+                {refParam && (
+                  <span className="text-[9.5px] text-[#06B6D4] font-medium text-left">
+                    ✓ Referral applied.
+                  </span>
+                )}
               </div>
 
               {/* Data Consent Checkbox */}
@@ -752,15 +786,15 @@ export default function RegisterPage() {
                     />
                     {/* Visual Checkbox */}
                     <div
-                      className={`w-4 h-4 rounded-md border bg-black/40 flex items-center justify-center transition-all duration-200 peer-focus-visible:ring-2 peer-focus-visible:ring-[#FF2E93] ${
+                      className={`w-4 h-4 rounded-md border bg-black/40 flex items-center justify-center transition-all duration-200 peer-focus-visible:ring-2 peer-focus-visible:ring-[#4F46E5] ${
                         formData.consent
-                          ? "border-[#FF2E93] bg-gradient-to-r from-pink-500/20 to-transparent"
+                          ? "border-[#4F46E5] bg-gradient-to-r from-indigo-500/20 to-transparent"
                           : "border-white/10 group-hover:border-white/20"
                       }`}
                     >
                       {formData.consent && (
                         <svg
-                          className="w-2.5 h-2.5 text-[#FF2E93]"
+                          className="w-2.5 h-2.5 text-[#4F46E5]"
                           fill="none"
                           stroke="currentColor"
                           strokeWidth="3.5"
@@ -784,7 +818,7 @@ export default function RegisterPage() {
                         e.stopPropagation();
                         setIsPrivacyModalOpen(true);
                       }}
-                      className="underline text-[#00E5FF] hover:text-[#FF2E93] cursor-pointer font-bold focus:outline-none"
+                      className="underline text-[#06B6D4] hover:text-[#4F46E5] cursor-pointer font-bold focus:outline-none"
                     >
                       Privacy Policy
                     </button>{" "}
@@ -794,7 +828,7 @@ export default function RegisterPage() {
                 {validationErrors.consent && (
                   <span
                     id="consent-error"
-                    className="text-[10px] text-red-400 font-semibold text-left"
+                    className="text-[10px] text-indigo-400 font-semibold text-left"
                   >
                     {validationErrors.consent}
                   </span>
@@ -804,11 +838,11 @@ export default function RegisterPage() {
               <button
                 type="submit"
                 disabled={isSubmitting}
-                className="mt-2 w-full cursor-pointer bg-glass border border-[#FF2E93]/40 hover:border-[#FF2E93]/90 text-[#FF2E93] hover:text-white font-bold py-3 rounded-xl text-xs tracking-wider uppercase glow-pink-btn bg-gradient-to-r from-pink-500/10 to-transparent flex items-center justify-center gap-2"
+                className="mt-2 w-full cursor-pointer bg-white border border-white hover:bg-white/90 text-black font-bold py-3 rounded-xl text-xs tracking-wider uppercase flex items-center justify-center gap-2 transition-colors"
               >
                 {isSubmitting ? (
                   <>
-                    <span className="w-3.5 h-3.5 rounded-full border-2 border-[#FF2E93] border-t-transparent animate-spin" />
+                    <span className="w-3.5 h-3.5 rounded-full border-2 border-black border-t-transparent animate-spin" />
                     Submitting...
                   </>
                 ) : (
@@ -816,6 +850,16 @@ export default function RegisterPage() {
                 )}
               </button>
             </form>
+
+            <div className="text-center text-xs text-slate-400 mt-2">
+              Already registered?{" "}
+              <Link
+                href="/login"
+                className="text-[#06B6D4] hover:text-[#4F46E5] font-bold underline transition-colors cursor-pointer"
+              >
+                Log In
+              </Link>
+            </div>
           </div>
         ) : (
           <div className="w-full max-w-md flex flex-col gap-4 items-center px-4 sm:px-0">
@@ -843,13 +887,13 @@ export default function RegisterPage() {
 
             <div
               id="tournament-ticket"
-              className="w-full bg-[#080b15]/90 border-2 border-dashed border-[#00E5FF]/40 rounded-3xl p-4 sm:p-6 shadow-[0_0_30px_rgba(0,229,255,0.15)] flex flex-col gap-4 sm:gap-5 relative overflow-hidden backdrop-blur-lg select-none"
+              className="w-full bg-[#131927]/90 border-2 border-dashed border-[#06B6D4]/40 rounded-3xl p-4 sm:p-6 shadow-[0_0_30px_rgba(6, 182, 212,0.15)] flex flex-col gap-4 sm:gap-5 relative overflow-hidden backdrop-blur-lg select-none"
             >
-              <div className="absolute -top-12 -left-12 w-28 h-28 bg-[#00E5FF]/20 rounded-full blur-2xl pointer-events-none" />
-              <div className="absolute -bottom-12 -right-12 w-28 h-28 bg-[#FF2E93]/20 rounded-full blur-2xl pointer-events-none" />
+              <div className="absolute -top-12 -left-12 w-28 h-28 bg-[#06B6D4]/20 rounded-full blur-2xl pointer-events-none" />
+              <div className="absolute -bottom-12 -right-12 w-28 h-28 bg-[#4F46E5]/20 rounded-full blur-2xl pointer-events-none" />
 
-              <div className="absolute top-1/2 -translate-y-1/2 -left-[10px] w-5 h-5 bg-[#04060d] border-r-2 border-dashed border-[#00E5FF]/40 rounded-full" />
-              <div className="absolute top-1/2 -translate-y-1/2 -right-[10px] w-5 h-5 bg-[#04060d] border-l-2 border-dashed border-[#00E5FF]/40 rounded-full" />
+              <div className="absolute top-1/2 -translate-y-1/2 -left-[10px] w-5 h-5 bg-[#090A0F] border-r-2 border-dashed border-[#06B6D4]/40 rounded-full" />
+              <div className="absolute top-1/2 -translate-y-1/2 -right-[10px] w-5 h-5 bg-[#090A0F] border-l-2 border-dashed border-[#06B6D4]/40 rounded-full" />
 
               <div className="flex items-center justify-between border-b border-white/10 pb-4">
                 <div className="flex items-center gap-1.5 sm:gap-2">
@@ -860,7 +904,7 @@ export default function RegisterPage() {
                       width={9}
                       height={24}
                       priority
-                      className="h-5 sm:h-6 w-auto object-contain filter drop-shadow-[0_0_6px_rgba(0,229,255,0.45)]"
+                      className="h-5 sm:h-6 w-auto object-contain filter drop-shadow-[0_0_6px_rgba(6, 182, 212,0.45)]"
                     />
                     <Image
                       src="/logo.png"
@@ -878,7 +922,7 @@ export default function RegisterPage() {
                     </span>
                   </div>
                 </div>
-                <div className="bg-[#00E5FF]/10 border border-[#00E5FF]/30 px-1.5 sm:px-2 py-0.5 rounded text-[7px] sm:text-[8px] font-black text-[#00E5FF] tracking-wider uppercase shrink-0">
+                <div className="bg-[#06B6D4]/10 border border-[#06B6D4]/30 px-1.5 sm:px-2 py-0.5 rounded text-[7px] sm:text-[8px] font-black text-[#06B6D4] tracking-wider uppercase shrink-0">
                   CONFIRMED
                 </div>
               </div>
@@ -897,7 +941,7 @@ export default function RegisterPage() {
                   <span className="text-[8px] font-black uppercase tracking-wider text-slate-500">
                     Player ID
                   </span>
-                  <span className="text-xs sm:text-sm font-bold text-[#00E5FF] truncate">
+                  <span className="text-xs sm:text-sm font-bold text-[#06B6D4] truncate">
                     @{registeredData.user_id}
                   </span>
                 </div>
@@ -921,7 +965,7 @@ export default function RegisterPage() {
                   <span className="text-[8px] font-black uppercase tracking-wider text-slate-500">
                     Squad Domain
                   </span>
-                  <span className="text-xs sm:text-sm font-bold text-[#FF2E93] truncate">
+                  <span className="text-xs sm:text-sm font-bold text-[#4F46E5] truncate">
                     {registeredData.domain}
                   </span>
                 </div>
@@ -981,7 +1025,7 @@ export default function RegisterPage() {
       {/* Privacy Policy Modal */}
       {isPrivacyModalOpen && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-in fade-in duration-200 overflow-hidden">
-          <div className="relative w-full max-w-lg bg-[#080b15] border border-white/10 rounded-2xl p-5 sm:p-6 shadow-2xl flex flex-col gap-4 text-left h-auto max-h-[85vh] bg-[linear-gradient(115deg,rgba(255,255,255,0.01),rgba(0,229,255,0.01))] animate-in zoom-in-95 duration-200 overflow-hidden">
+          <div className="relative w-full max-w-lg bg-[#131927] border border-white/10 rounded-2xl p-5 sm:p-6 shadow-2xl flex flex-col gap-4 text-left h-auto max-h-[85vh] bg-[linear-gradient(115deg,rgba(255,255,255,0.01),rgba(6, 182, 212,0.01))] animate-in zoom-in-95 duration-200 overflow-hidden">
             {/* Header */}
             <div className="flex items-center justify-between border-b border-white/10 pb-3 shrink-0">
               <h3 className="text-sm font-black uppercase tracking-wider text-slate-100 flex items-center gap-2">
@@ -1301,7 +1345,7 @@ export default function RegisterPage() {
                     href="https://policies.google.com/privacy"
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="underline text-[#00E5FF] break-all"
+                    className="underline text-[#06B6D4] break-all"
                   >
                     https://policies.google.com/privacy
                   </a>
@@ -1389,7 +1433,7 @@ export default function RegisterPage() {
                   To exercise any of these rights, please contact us at{" "}
                   <a
                     href="mailto:info@mulearn.org"
-                    className="underline text-[#00E5FF]"
+                    className="underline text-[#06B6D4]"
                   >
                     info@mulearn.org
                   </a>
@@ -1416,7 +1460,7 @@ export default function RegisterPage() {
                   }
                   setIsPrivacyModalOpen(false);
                 }}
-                className="flex-1 cursor-pointer bg-glass border border-[#00E5FF]/40 hover:border-[#00E5FF]/90 text-[#00E5FF] hover:text-white font-bold py-2.5 rounded-xl text-xs tracking-wider uppercase glow-blue-btn bg-gradient-to-r from-[#00E5FF]/10 to-transparent flex items-center justify-center transition-colors"
+                className="flex-1 cursor-pointer bg-glass border border-[#06B6D4]/40 hover:border-[#06B6D4]/90 text-[#06B6D4] hover:text-white font-bold py-2.5 rounded-xl text-xs tracking-wider uppercase glow-cyan-btn bg-gradient-to-r from-[#06B6D4]/10 to-transparent flex items-center justify-center transition-colors"
               >
                 I Agree
               </button>
@@ -1427,7 +1471,7 @@ export default function RegisterPage() {
 
       {otpModal.open && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-md">
-          <div className="w-full max-w-md bg-[#080b15] border border-white/10 rounded-2xl p-6 shadow-2xl flex flex-col gap-4">
+          <div className="w-full max-w-md bg-[#131927] border border-white/10 rounded-2xl p-6 shadow-2xl flex flex-col gap-4">
             <div className="flex flex-col gap-1">
               <h2 className="text-lg font-extrabold tracking-wider text-white uppercase">
                 Verify OTP
@@ -1440,13 +1484,13 @@ export default function RegisterPage() {
             </div>
 
             {otpModal.message && (
-              <div className="bg-[#00E5FF]/10 border border-[#00E5FF]/20 text-[#00E5FF] text-xs py-2.5 px-3 rounded-xl">
+              <div className="bg-[#06B6D4]/10 border border-[#06B6D4]/20 text-[#06B6D4] text-xs py-2.5 px-3 rounded-xl">
                 {otpModal.message}
               </div>
             )}
 
             {otpModal.error && (
-              <div className="bg-red-500/10 border border-red-500/30 text-red-400 text-xs py-2.5 px-3 rounded-xl">
+              <div className="bg-indigo-500/10 border border-indigo-500/30 text-indigo-400 text-xs py-2.5 px-3 rounded-xl">
                 {otpModal.error}
               </div>
             )}
@@ -1467,7 +1511,7 @@ export default function RegisterPage() {
                   value={otpModal.otp}
                   onChange={handleOtpChange}
                   placeholder="Enter 6-digit OTP"
-                  className="bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-sm tracking-[0.4em] text-slate-100 placeholder-slate-500 focus:outline-none focus:border-[#FF2E93] transition-colors text-center"
+                  className="bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-sm tracking-[0.4em] text-slate-100 placeholder-slate-500 focus:outline-none focus:border-[#4F46E5] transition-colors text-center"
                 />
                 <div className="flex items-center justify-between text-[10px] text-slate-500">
                   <span>Valid for 10 minutes</span>
@@ -1491,14 +1535,14 @@ export default function RegisterPage() {
                   type="button"
                   onClick={handleResendOtp}
                   disabled={otpCountdownMs > 0 || isResendingOtp}
-                  className="cursor-pointer bg-[#00E5FF]/10 border border-[#00E5FF]/30 text-[#00E5FF] disabled:opacity-40 disabled:cursor-not-allowed font-bold py-2.5 rounded-xl text-xs tracking-wider uppercase transition-colors"
+                  className="cursor-pointer bg-[#06B6D4]/10 border border-[#06B6D4]/30 text-[#06B6D4] disabled:opacity-40 disabled:cursor-not-allowed font-bold py-2.5 rounded-xl text-xs tracking-wider uppercase transition-colors"
                 >
                   {isResendingOtp ? "Sending" : "Resend"}
                 </button>
                 <button
                   type="submit"
                   disabled={isVerifyingOtp}
-                  className="cursor-pointer bg-glass border border-[#FF2E93]/40 hover:border-[#FF2E93]/90 text-[#FF2E93] hover:text-white font-bold py-2.5 rounded-xl text-xs tracking-wider uppercase glow-pink-btn bg-gradient-to-r from-pink-500/10 to-transparent transition-colors disabled:opacity-50"
+                  className="cursor-pointer bg-glass border border-[#4F46E5]/40 hover:border-[#4F46E5]/90 text-[#4F46E5] hover:text-white font-bold py-2.5 rounded-xl text-xs tracking-wider uppercase glow-indigo-btn bg-gradient-to-r from-red-500/10 to-transparent transition-colors disabled:opacity-50"
                 >
                   {isVerifyingOtp ? "Verifying" : "Verify"}
                 </button>
@@ -1508,5 +1552,19 @@ export default function RegisterPage() {
         </div>
       )}
     </div>
+  );
+}
+
+export default function RegisterPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="w-full min-h-screen bg-[#090A0F] flex items-center justify-center">
+          <div className="w-8 h-8 rounded-full border-2 border-[#4F46E5] border-t-transparent animate-spin" />
+        </div>
+      }
+    >
+      <RegisterForm />
+    </Suspense>
   );
 }

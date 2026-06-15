@@ -191,6 +191,9 @@ function TopBar({ admin, collapsed }) {
 
   const handleLogout = async () => {
     await fetch("/api/v1/admin/auth/logout", { method: "POST" });
+    if (typeof window !== "undefined") {
+      localStorage.clear();
+    }
     router.push("/admin/login");
   };
 

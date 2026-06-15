@@ -33,12 +33,12 @@ export default function Loader() {
 
   return (
     <div
-      className={`fixed inset-0 z-[99999] bg-[#04060d] flex flex-col items-center justify-center transition-all duration-500 ease-out ${
+      className={`fixed inset-0 z-[99999] bg-[#090A0F] flex flex-col items-center justify-center transition-all duration-500 ease-out ${
         fadeOut ? "opacity-0 pointer-events-none" : "opacity-100"
       }`}
     >
       <div className="relative w-full max-w-[280px] sm:max-w-[360px] aspect-square flex items-center justify-center">
-        <div className="absolute inset-0 bg-[#FF2E93]/5 rounded-full blur-3xl animate-pulse" />
+        <div className="absolute inset-0 bg-[#4F46E5]/5 rounded-full blur-3xl animate-pulse" />
         
         <video
           ref={videoRef}

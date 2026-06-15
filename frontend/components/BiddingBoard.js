@@ -2,7 +2,7 @@ import React from "react";
 
 export default function BiddingBoard() {
   return (
-    <div className="lg:flex-1 bg-glass-card rounded-2xl p-5 border border-white/10 backdrop-blur-md shadow-2xl flex flex-col gap-4 bg-[linear-gradient(110deg,rgba(255,255,255,0.02),rgba(255,46,147,0.015))]">
+    <div className="lg:flex-1 bg-glass-card rounded-2xl p-5 border border-white/10 backdrop-blur-md shadow-2xl flex flex-col gap-4 bg-[linear-gradient(110deg,rgba(255,255,255,0.02),rgba(79, 70, 229,0.015))]">
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-base font-extrabold tracking-wide text-white">
@@ -18,9 +18,9 @@ export default function BiddingBoard() {
       </div>
 
       <div className="flex-grow flex flex-col items-center justify-center py-10 px-4 text-center bg-black/30 border border-white/5 rounded-xl min-h-[180px] relative overflow-hidden">
-        <div className="absolute w-24 h-24 bg-[#FF2E93]/10 rounded-full blur-xl animate-pulse" />
+        <div className="absolute w-24 h-24 bg-[#4F46E5]/10 rounded-full blur-xl animate-pulse" />
 
-        <div className="relative mb-3 flex items-center justify-center w-12 h-12 rounded-full border border-pink-500/30 bg-pink-500/5 text-[#FF2E93] shadow-[0_0_15px_rgba(255,46,147,0.15)] animate-[pulse_2s_ease-in-out_infinite]">
+        <div className="relative mb-3 flex items-center justify-center w-12 h-12 rounded-full border border-indigo-500/30 bg-indigo-500/5 text-[#4F46E5] shadow-[0_0_15px_rgba(79, 70, 229,0.15)] animate-[pulse_2s_ease-in-out_infinite]">
           <svg
             className="w-5 h-5"
             fill="none"
@@ -34,7 +34,7 @@ export default function BiddingBoard() {
           </svg>
         </div>
 
-        <span className="text-xs tracking-[0.2em] text-[#FF2E93] font-black uppercase mb-1 drop-shadow-[0_0_8px_rgba(255,46,147,0.4)]">
+        <span className="text-xs tracking-[0.2em] text-[#4F46E5] font-black uppercase mb-1 drop-shadow-[0_0_8px_rgba(79, 70, 229,0.4)]">
           REGISTRATION IS ONGOING
         </span>
         <p className="text-[10px] text-slate-400 max-w-[200px] leading-relaxed">

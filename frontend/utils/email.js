@@ -1,12 +1,6 @@
-import fs from "fs";
 import nodemailer from "nodemailer";
-import path from "path";
-import {
-  getNewUserEmailHtml,
-  TEAM_FLAGS,
-  TEAM_WHATSAPP_LINKS,
-} from "../templates/email/newUser";
-
+import { getNewUserEmailHtml } from "../templates/email/newUser";
+import { TEAM_FLAGS, TEAM_WHATSAPP_LINKS } from "./constants";
 const smtpHost = process.env.SMTP_HOST;
 const smtpPort = process.env.SMTP_PORT;
 const smtpUser = process.env.SMTP_USER;
@@ -80,13 +74,13 @@ export async function sendRegistrationOtpEmail({ email, name, otp }) {
       subject: "μFifa'26 Verify your registration OTP",
       text: `Hello ${name}, your registration OTP is ${otp}. It is valid for 10 minutes. You can request a new OTP after 2 minutes.`,
       html: `
-        <div style="background:#04060d;padding:32px 16px;font-family:Segoe UI,Arial,sans-serif;color:#e2e8f0;">
-          <div style="max-width:480px;margin:0 auto;background:#080b15;border:1px solid rgba(255,255,255,0.08);border-radius:20px;padding:32px;text-align:center;">
+        <div style="background:#090A0F;padding:32px 16px;font-family:Segoe UI,Arial,sans-serif;color:#e2e8f0;">
+          <div style="max-width:480px;margin:0 auto;background:#131927;border:1px solid rgba(255,255,255,0.08);border-radius:20px;padding:32px;text-align:center;">
             <div style="font-size:24px;font-weight:800;letter-spacing:0.18em;text-transform:uppercase;color:#ffffff;">Verify Your Email</div>
             <p style="font-size:14px;line-height:1.7;color:#94a3b8;margin:16px 0 24px;">
               Hello ${name}, use the one-time password below to complete your μFifa registration.
             </p>
-            <div style="display:inline-block;padding:14px 20px;border-radius:14px;background:rgba(0,229,255,0.12);border:1px solid rgba(0,229,255,0.28);font-size:28px;font-weight:800;letter-spacing:0.35em;color:#00e5ff;">
+            <div style="display:inline-block;padding:14px 20px;border-radius:14px;background:rgba(6, 182, 212,0.12);border:1px solid rgba(6, 182, 212,0.28);font-size:28px;font-weight:800;letter-spacing:0.35em;color:#06B6D4;">
               ${otp}
             </div>
             <p style="font-size:12px;line-height:1.7;color:#94a3b8;margin:24px 0 0;">

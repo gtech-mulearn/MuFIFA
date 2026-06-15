@@ -5,8 +5,8 @@ import Link from "next/link";
 export default function Footer() {
   return (
     <footer className="relative w-full mt-auto border-t border-white/5 bg-glass-card backdrop-blur-md overflow-hidden z-20">
-      <div className="absolute -bottom-20 -left-20 w-[300px] h-[300px] bg-gradient-to-tr from-[#FF2E93]/10 to-transparent rounded-full blur-3xl pointer-events-none" />
-      <div className="absolute -top-20 right-10 w-[300px] h-[300px] bg-gradient-to-bl from-[#00E5FF]/5 to-transparent rounded-full blur-3xl pointer-events-none" />
+      <div className="absolute -bottom-20 -left-20 w-[300px] h-[300px] bg-gradient-to-tr from-[#4F46E5]/10 to-transparent rounded-full blur-3xl pointer-events-none" />
+      <div className="absolute -top-20 right-10 w-[300px] h-[300px] bg-gradient-to-bl from-[#06B6D4]/5 to-transparent rounded-full blur-3xl pointer-events-none" />
 
       <div className="max-w-7xl mx-auto px-6 py-12 md:py-16 relative z-10">
         <div className="grid grid-cols-1 md:grid-cols-12 gap-8 md:gap-12 items-center">
@@ -20,7 +20,7 @@ export default function Footer() {
                 alt="World Cup Trophy"
                 width={15}
                 height={40}
-                className="h-8 md:h-10 w-auto object-contain filter drop-shadow-[0_0_8px_rgba(0,229,255,0.45)] group-hover:scale-110 transition-transform duration-300"
+                className="h-8 md:h-10 w-auto object-contain filter drop-shadow-[0_0_8px_rgba(6, 182, 212,0.45)] group-hover:scale-110 transition-transform duration-300"
               />
               <Image
                 src="/logo.png"
@@ -32,13 +32,15 @@ export default function Footer() {
             </Link>
 
             <p className="text-xs text-slate-400 max-w-sm leading-relaxed">
-              Bet Big. Build Bigger. Join the gamified hackathon organized by
+              For the Game. For the Spirit. Join the gamified hackathon
+              organized by
               <span className="text-slate-200 font-medium">
                 {" "}
                 μLearn Foundation
               </span>{" "}
               &<span className="text-[#00E676] font-medium"> μLearn MCE</span>.
-              Complete drills, wager µ-Coins, and lead your squad to the top of the leaderboard.
+              Complete drills, wager µ-Points, and lead your squad to the top of
+              the leaderboard.
             </p>
 
             <div className="flex items-center gap-4 mt-2">
@@ -113,7 +115,7 @@ export default function Footer() {
                   href={social.url}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="w-8 h-8 rounded-full border border-white/10 flex items-center justify-center text-slate-400 hover:text-white hover:border-[#FF2E93] hover:shadow-[0_0_10px_rgba(255,46,147,0.3)] bg-white/5 transition-all duration-300 transform hover:-translate-y-0.5"
+                  className="w-8 h-8 rounded-full border border-white/10 flex items-center justify-center text-slate-400 hover:text-white hover:border-[#4F46E5] hover:shadow-[0_0_10px_rgba(79, 70, 229,0.3)] bg-white/5 transition-all duration-300 transform hover:-translate-y-0.5"
                   title={social.name}
                   aria-label={social.name}
                 >
@@ -162,6 +164,10 @@ export default function Footer() {
                     name: "Terms & Conditions",
                     href: "https://mulearn.org/termsandconditions",
                   },
+                   {
+                    name: "Community Guidelines",
+                    href: "/community-guidelines",
+                  },
                 ].map((link) => (
                   <li key={link.name}>
                     <a
@@ -203,16 +209,17 @@ export default function Footer() {
         </div>
       </div>
 
-      <div className="absolute right-0 top-8 -translate-y-1/2 translate-x-[25%] flex flex-col items-center justify-center h-40 w-40 pointer-events-none select-none z-10 overflow-visible" aria-hidden="true">
-        <div className="absolute w-28 h-28 bg-gradient-to-tr from-[#FF2E93]/35 to-[#00E5FF]/35 rounded-full blur-2xl animate-[pulse_3s_ease-in-out_infinite]" />
-
+      <div
+        className="absolute right-0 top-8 -translate-y-1/2 translate-x-[25%] flex flex-col items-center justify-center h-40 w-40 pointer-events-none select-none z-10 overflow-visible"
+        aria-hidden="true"
+      >
         <div className="relative w-44 h-44 flex items-center justify-center animate-[spin_25s_linear_infinite]">
           <Image
             src="/football.png"
             alt="Revolving Football"
             width={96}
             height={96}
-            className="w-full h-full object-contain drop-shadow-[0_0_15px_rgba(0,229,255,0.45)] select-none pointer-events-none"
+            className="w-full h-full object-contain drop-shadow-[0_0_15px_rgba(6, 182, 212,0.45)] select-none pointer-events-none"
           />
         </div>
       </div>

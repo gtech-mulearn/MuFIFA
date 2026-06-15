@@ -17,7 +17,7 @@ export const metadata = {
     template: "%s | µFifa '26",
   },
   description:
-    "Bet Big. Build Bigger. A Flagship Gamified Hackathon by µLearn Foundation & µLearn MCE. Complete technical drills, wager µ-Coins, and lead your squad to the top of the standings.",
+    "For the Game. For the Spirit. A Flagship Gamified Hackathon by µLearn Foundation & µLearn MCE. Complete technical drills, wager µ-Point, and lead your squad to the top of the standings.",
   keywords: [
     "µFifa",
     "mulearn",
@@ -43,14 +43,14 @@ export const metadata = {
   openGraph: {
     title: "µFifa '26 | Gamified Hackathon",
     description:
-      "Bet Big. Build Bigger. A Flagship Gamified Hackathon by µLearn Foundation & µLearn MCE. Complete technical drills, wager µ-Coins, and lead your squad to the top of the standings.",
+      "For the Game. For the Spirit. A Flagship Gamified Hackathon by µLearn Foundation & µLearn MCE. Complete technical drills, wager µ-Points, and lead your squad to the top of the standings.",
     url: "https://mufifa.mulearn.org",
     siteName: "µFifa '26",
     locale: "en_US",
     type: "website",
     images: [
       {
-        url: "/logo.png",
+        url: "/MMP_Banner.jpg",
         width: 800,
         height: 600,
         alt: "µFifa '26",
@@ -61,8 +61,8 @@ export const metadata = {
     card: "summary_large_image",
     title: "µFifa '26 | Gamified Hackathon",
     description:
-      "Bet Big. Build Bigger. A Flagship Gamified Hackathon by µLearn Foundation & µLearn MCE. Complete technical drills, wager µ-Coins, and lead your squad to the top of the standings.",
-    images: ["/logo.png"],
+      "For the Game. For the Spirit. A Flagship Gamified Hackathon by µLearn Foundation & µLearn MCE. Complete technical drills, wager µ-Points, and lead your squad to the top of the standings.",
+    images: ["/MMP_Banner.jpg"],
     creator: "@mulearn",
   },
   robots: {
@@ -81,7 +81,7 @@ export const metadata = {
 function LayoutShell({ children }) {
   return (
     <html lang="en" className={`${outfit.variable} h-full antialiased`}>
-      <body className="min-h-full flex flex-col bg-[#04060d] text-slate-100 font-sans relative">
+      <body className="min-h-full flex flex-col bg-[#090A0F] text-slate-100 font-sans relative">
         <Script id="microsoft-clarity" strategy="afterInteractive">
           {`
             (function(c,l,a,r,i,t,y){

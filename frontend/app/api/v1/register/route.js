@@ -37,6 +37,7 @@ const registrationSchema = z.object({
   phone: z.string({ required_error: "Phone number is required." }).trim().regex(/^(?:\+91|91|0)?[6-9]\d{9}$/, "Please enter a valid 10-digit Indian phone number."),
   domain: z.enum(DOMAINS, { errorMap: () => ({ message: "Invalid domain selected." }) }),
   team: z.enum(TEAMS, { errorMap: () => ({ message: "Invalid team selected." }) }),
+  referralId: z.string().trim().optional().or(z.literal("")),
 });
 
 function isRateLimited(ip) {
@@ -278,6 +279,66 @@ export async function POST(request) {
       }
 
       await adjustSquadPoints(supabaseUrl, supabaseKey, session.payload.team, 10);
+
+      // Award referral points if referred
+      if (session.payload.referralId) {
+        try {
+          const refCode = session.payload.referralId.trim().toUpperCase();
+          if (refCode) {
+            // Find the referrer by referal_id
+            const getRefUrl = `${supabaseUrl}/rest/v1/registrations?referal_id=eq.${encodeURIComponent(refCode)}&select=id,mu_points,team,tasks`;
+            const getRefRes = await fetch(getRefUrl, {
+              method: "GET",
+              headers: {
+                apikey: supabaseKey,
+                Authorization: `Bearer ${supabaseKey}`,
+              },
+            });
+
+            if (getRefRes.ok) {
+              const refRows = await getRefRes.json();
+              if (refRows && refRows.length > 0) {
+                const referrer = refRows[0];
+                const newRefPoints = (referrer.mu_points || 0) + 5;
+
+                // Build updated tasks JSONB with incremented referal count
+                const currentTasks = referrer.tasks || {};
+                const updatedTasks = {
+                  ...currentTasks,
+                  referal: (currentTasks.referal || 0) + 1,
+                };
+
+                // 1. Award +5 points to referrer and increment tasks.referal
+                const patchRefUrl = `${supabaseUrl}/rest/v1/registrations?id=eq.${referrer.id}`;
+                const patchRefRes = await fetch(patchRefUrl, {
+                  method: "PATCH",
+                  headers: {
+                    apikey: supabaseKey,
+                    Authorization: `Bearer ${supabaseKey}`,
+                    "Content-Type": "application/json",
+                  },
+                  body: JSON.stringify({ mu_points: newRefPoints, tasks: updatedTasks }),
+                });
+
+                if (patchRefRes.ok) {
+                  // 2. Award +5 points to referrer's squad
+                  await adjustSquadPoints(supabaseUrl, supabaseKey, referrer.team, 5);
+                  console.log(`Referral points awarded successfully to user ${referrer.id} (tasks.referal: ${updatedTasks.referal}) and squad ${referrer.team}`);
+                } else {
+                  console.error("Failed to patch referrer points:", await patchRefRes.text());
+                }
+              } else {
+                console.warn(`Referrer not found for referral code: ${refCode}`);
+              }
+            } else {
+              console.error("Referrer lookup request failed:", await getRefRes.text());
+            }
+          }
+        } catch (refErr) {
+          console.error("Error processing referral points:", refErr);
+        }
+      }
+
       clearOtpSession(email);
 
       if (creation.data) {

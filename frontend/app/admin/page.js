@@ -12,14 +12,22 @@ const DOMAIN_COLORS = {
 
 function MetricIcon({ type }) {
   const icons = {
-    players: "M4.5 19.5v-1.125A3.375 3.375 0 017.875 15h3.75A3.375 3.375 0 0115 18.375V19.5M15.75 7.5a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0Z",
+    players:
+      "M4.5 19.5v-1.125A3.375 3.375 0 017.875 15h3.75A3.375 3.375 0 0115 18.375V19.5M15.75 7.5a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0Z",
     squads: "M3.75 15.75h16.5M7.5 15.75V9.375m4.5 6.375V6.75m4.5 9V11.25",
-    domains: "M21 12c0 4.97-4.03 9-9 9s-9-4.03-9-9 4.03-9 9-9 9 4.03 9 9ZM8.25 12h7.5M12 8.25v7.5",
+    domains:
+      "M21 12c0 4.97-4.03 9-9 9s-9-4.03-9-9 4.03-9 9-9 9 4.03 9 9ZM8.25 12h7.5M12 8.25v7.5",
     trend: "M4.5 15.75 9 11.25l3 3L19.5 6.75M19.5 6.75H14.25M19.5 6.75V12",
   };
 
   return (
-    <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
+    <svg
+      className="h-5 w-5"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+    >
       <path strokeLinecap="round" strokeLinejoin="round" d={icons[type]} />
     </svg>
   );
@@ -28,7 +36,13 @@ function MetricIcon({ type }) {
 function TeamBadge({ team }) {
   const code = TEAM_FLAGS[team];
   return code ? (
-    <span className={`fi fi-${code} rounded-sm shadow-sm border border-slate-200 shrink-0`} style={{ width: '16px', height: '12px' }} title={team} role="img" aria-label={`${team} flag`} />
+    <span
+      className={`fi fi-${code} rounded-sm shadow-sm border border-slate-200 shrink-0`}
+      style={{ width: "16px", height: "12px" }}
+      title={team}
+      role="img"
+      aria-label={`${team} flag`}
+    />
   ) : (
     <span className="inline-flex min-w-8 items-center justify-center rounded-md border border-slate-200 bg-slate-100 px-2 py-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-600">
       {team.slice(0, 2)}
@@ -38,7 +52,9 @@ function TeamBadge({ team }) {
 
 function StatCard({ label, value, icon, accent }) {
   return (
-    <div className={`${THEME.panel} rounded-2xl p-5 flex flex-col gap-3 relative overflow-hidden transition-transform duration-300 hover:-translate-y-0.5`}>
+    <div
+      className={`${THEME.panel} rounded-2xl p-5 flex flex-col gap-3 relative overflow-hidden transition-transform duration-300 hover:-translate-y-0.5`}
+    >
       <div
         className="absolute -top-10 -right-8 w-28 h-28 rounded-full opacity-25"
         style={{ filter: "blur(34px)", background: accent }}
@@ -65,7 +81,11 @@ function SortIcon({ col, sortKey, sortDir }) {
       strokeWidth="2.5"
       viewBox="0 0 24 24"
     >
-      <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" />
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        d="M19.5 8.25l-7.5 7.5-7.5-7.5"
+      />
     </svg>
   );
 }
@@ -99,19 +119,25 @@ function TeamTable({ teamStats }) {
         <table className="w-full text-xs">
           <thead>
             <tr className="border-b border-slate-200/90 text-slate-500">
-              <th className="text-left px-5 py-3 font-bold uppercase tracking-wider">#</th>
-              <th className="text-left px-5 py-3 font-bold uppercase tracking-wider">Team</th>
+              <th className="text-left px-5 py-3 font-bold uppercase tracking-wider">
+                #
+              </th>
+              <th className="text-left px-5 py-3 font-bold uppercase tracking-wider">
+                Team
+              </th>
               <th
                 className="text-right px-5 py-3 font-bold uppercase tracking-wider cursor-pointer hover:text-slate-900 transition-colors select-none"
                 onClick={() => handleSort("count")}
               >
-                Members <SortIcon col="count" sortKey={sortKey} sortDir={sortDir} />
+                Members{" "}
+                <SortIcon col="count" sortKey={sortKey} sortDir={sortDir} />
               </th>
               <th
                 className="text-right px-5 py-3 font-bold uppercase tracking-wider cursor-pointer hover:text-slate-900 transition-colors select-none"
                 onClick={() => handleSort("points")}
               >
-                Points <SortIcon col="points" sortKey={sortKey} sortDir={sortDir} />
+                Points{" "}
+                <SortIcon col="points" sortKey={sortKey} sortDir={sortDir} />
               </th>
             </tr>
           </thead>
@@ -121,7 +147,9 @@ function TeamTable({ teamStats }) {
                 key={team.name}
                 className="border-b border-slate-200/70 hover:bg-slate-50 transition-colors"
               >
-                <td className="px-5 py-3 text-slate-500 font-mono">{idx + 1}</td>
+                <td className="px-5 py-3 text-slate-500 font-mono">
+                  {idx + 1}
+                </td>
                 <td className="px-5 py-3 text-slate-800 font-semibold">
                   <span className="mr-3 inline-flex align-middle">
                     <TeamBadge team={team.name} />
@@ -151,12 +179,15 @@ function DomainBreakdown({ domainStats, totalUsers }) {
       </h3>
       <div className="flex flex-col gap-3">
         {domainStats.map((d) => {
-          const pct = totalUsers > 0 ? ((d.count / totalUsers) * 100).toFixed(1) : 0;
+          const pct =
+            totalUsers > 0 ? ((d.count / totalUsers) * 100).toFixed(1) : 0;
           const color = DOMAIN_COLORS[d.name] || "#94a3b8";
           return (
             <div key={d.name} className="flex flex-col gap-1.5">
               <div className="flex items-center justify-between">
-                <span className="text-xs font-semibold text-slate-700">{d.name}</span>
+                <span className="text-xs font-semibold text-slate-700">
+                  {d.name}
+                </span>
                 <span className="text-[10px] text-slate-500 font-mono">
                   {d.count} ({pct}%)
                 </span>
@@ -188,18 +219,26 @@ function DailyTrend({ dailyTrend }) {
           const height = (d.count / maxCount) * 100;
           const label = d.date.slice(5);
           return (
-            <div key={d.date} className="flex-1 flex flex-col items-center gap-1">
-              <span className="text-[9px] text-slate-500 font-mono">{d.count}</span>
+            <div
+              key={d.date}
+              className="flex-1 flex flex-col items-center gap-1"
+            >
+              <span className="text-[9px] text-slate-500 font-mono">
+                {d.count}
+              </span>
               <div className="w-full flex justify-center">
                 <div
                   className="w-full max-w-[28px] rounded-t-md transition-all duration-500"
                   style={{
                     height: `${Math.max(height, 4)}%`,
-                    background: "linear-gradient(180deg, rgba(56,189,248,0.95), rgba(29,78,216,0.72))",
+                    background:
+                      "linear-gradient(180deg, rgba(56,189,248,0.95), rgba(29,78,216,0.72))",
                   }}
                 />
               </div>
-              <span className="text-[8px] text-slate-600 font-mono">{label}</span>
+              <span className="text-[8px] text-slate-600 font-mono">
+                {label}
+              </span>
             </div>
           );
         })}
@@ -221,7 +260,9 @@ export default function AdminDashboard() {
         if (data.success) {
           setStats(data.stats);
         } else {
-          setError(data.error?.message || data.error || "Failed to load stats.");
+          setError(
+            data.error?.message || data.error || "Failed to load stats.",
+          );
         }
       } catch {
         setError("Network error.");

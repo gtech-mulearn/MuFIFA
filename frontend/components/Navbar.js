@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import Image from "next/image";
@@ -8,12 +8,32 @@ import Image from "next/image";
 export default function Navbar() {
   const pathname = usePathname();
   const [menuOpen, setMenuOpen] = useState(false);
+  const [player, setPlayer] = useState(null);
+
+  useEffect(() => {
+    async function checkAuth() {
+      try {
+        const res = await fetch("/api/v1/auth/me");
+        const data = await res.json();
+        if (res.ok && data.success) {
+          setPlayer(data.data);
+        } else {
+          setPlayer(null);
+        }
+      } catch (err) {
+        console.error("Navbar auth check error:", err);
+        setPlayer(null);
+      }
+    }
+    checkAuth();
+  }, [pathname]);
 
   const navItems = [
     { name: "Home", href: "/" },
     { name: "Leaderboard", href: "/leaderboard" },
-    { name: "Register", href: "/register" },
-  ];
+    player ? { name: "Dashboard", href: "/dashboard" } : null,
+    !player ? { name: "Register", href: "/register" } : null,
+  ].filter(Boolean);
 
   return (
     <header className="absolute top-0 left-0 w-full z-50 border-b border-white/5 bg-transparent select-none">
@@ -54,7 +74,7 @@ export default function Navbar() {
               >
                 {item.name}
                 <span
-                  className={`absolute bottom-0 left-0 w-full h-[2px] bg-[#FF2E93] rounded-full shadow-[0_0_8px_#FF2E93] transition-transform duration-300 origin-left ${
+                  className={`absolute bottom-0 left-0 w-full h-[2px] bg-[#4F46E5] rounded-full shadow-[0_0_8px_#4F46E5] transition-transform duration-300 origin-left ${
                     isActive
                       ? "scale-x-100"
                       : "scale-x-0 group-hover:scale-x-100"
@@ -67,8 +87,8 @@ export default function Navbar() {
 
         <div className="flex items-center gap-3">
           <Link
-            href="/register"
-            className="hidden md:inline-block cursor-pointer bg-glass border border-[#FF2E93]/30 hover:border-[#FF2E93]/80 px-4 py-1.5 rounded-full text-xs font-semibold tracking-wider text-[#FF2E93] glow-pink-btn bg-gradient-to-r from-pink-500/10 to-transparent text-center"
+            href={player ? `/profile/${player.user_id}` : "/register"}
+            className="hidden md:inline-block cursor-pointer bg-white border border-white hover:bg-white/90 hover:border-white/90 px-4 py-1.5 rounded-full text-xs font-semibold tracking-wider text-black text-center transition-colors"
           >
             ENTER ARENA
           </Link>
@@ -96,7 +116,7 @@ export default function Navbar() {
 
         <div
           id="mobile-nav-menu"
-          className={`md:hidden w-full bg-[#080b15]/95 backdrop-blur-lg rounded-xl flex flex-col gap-3 z-50 relative transition-all duration-300 ease-in-out origin-top overflow-hidden border ${
+          className={`md:hidden w-full bg-[#131927]/95 backdrop-blur-lg rounded-xl flex flex-col gap-3 z-50 relative transition-all duration-300 ease-in-out origin-top overflow-hidden border ${
             menuOpen
               ? "max-h-[420px] opacity-100 scale-y-100 mt-3 p-4 border-white/10 pointer-events-auto"
               : "max-h-0 opacity-0 scale-y-95 mt-0 p-0 border-transparent pointer-events-none"
@@ -111,7 +131,7 @@ export default function Navbar() {
                 href={item.href}
                 onClick={() => setMenuOpen(false)}
                 className={`text-left text-sm py-1.5 cursor-pointer hover:text-white transition-colors ${
-                  isActive ? "text-[#FF2E93] font-bold" : "text-slate-300"
+                  isActive ? "text-[#4F46E5] font-bold" : "text-slate-300"
                 }`}
               >
                 {item.name}
@@ -120,9 +140,9 @@ export default function Navbar() {
           })}
 
           <Link
-            href="/register"
+            href={player ? `/profile/${player.user_id}` : "/register"}
             onClick={() => setMenuOpen(false)}
-            className="cursor-pointer bg-glass border border-[#FF2E93]/30 hover:border-[#FF2E93]/80 px-4 py-2.5 rounded-full text-xs font-semibold tracking-wider text-[#FF2E93] glow-pink-btn bg-gradient-to-r from-pink-500/10 to-transparent mt-2 text-center w-full block"
+            className="md:inline-block cursor-pointer bg-white border border-white hover:bg-white/90 hover:border-white/90 px-4 py-1.5 rounded-full text-xs font-semibold tracking-wider text-black text-center transition-colors"
           >
             ENTER ARENA
           </Link>

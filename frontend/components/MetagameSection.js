@@ -61,8 +61,8 @@ export default function MetagameSection() {
               num: "01",
               name: "Enter The Arena",
               desc: "Start your journey in μfifa. Register & choose your country.",
-              border: "border-pink-500/30",
-              bar: "bg-pink-500",
+              border: "border-[#4F46E5]/30",
+              bar: "bg-[#4F46E5]",
             },
             {
               id: 2,
@@ -70,16 +70,16 @@ export default function MetagameSection() {
               name: "Find the GOAT",
               desc: "Choose your captain. Build a goated team to enter the ground.",
               border:
-                "border-blue-500/40 shadow-[0_0_12px_rgba(0,229,255,0.15)]",
-              bar: "bg-[#00E5FF]",
+                "border-[#06B6D4]/40 shadow-[0_0_12px_rgba(6, 182, 212,0.15)]",
+              bar: "bg-[#06B6D4]",
             },
             {
               id: 3,
               num: "03",
               name: "Match Time",
               desc: "The Sprint Begins. Battle for your team & get the μcup",
-              border: "border-green-500/30",
-              bar: "bg-[#00E676]",
+              border: "border-white/20",
+              bar: "bg-white",
             },
           ].map((tier) => (
             <div
