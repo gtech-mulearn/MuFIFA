@@ -31,6 +31,7 @@ export default function Navbar() {
   const navItems = [
     { name: "Home", href: "/" },
     { name: "Leaderboard", href: "/leaderboard" },
+    { name: "Match", href: "/match" },
     player ? { name: "Dashboard", href: "/dashboard" } : null,
     !player ? { name: "Register", href: "/register" } : null,
   ].filter(Boolean);
