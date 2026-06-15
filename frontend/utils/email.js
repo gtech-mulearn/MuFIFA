@@ -3,13 +3,24 @@ import { getNewUserEmailHtml } from "../templates/email/newUser";
 import { TEAM_FLAGS, TEAM_WHATSAPP_LINKS } from "./constants";
 import fs from "fs";
 import path from "path";
-import { createCanvas, loadImage } from "@napi-rs/canvas";
+import { createCanvas, loadImage, GlobalFonts } from "@napi-rs/canvas";
 
 const smtpHost = process.env.SMTP_HOST;
 const smtpPort = process.env.SMTP_PORT;
 const smtpUser = process.env.SMTP_USER;
 const smtpPass = process.env.SMTP_PASS;
 const smtpFrom = process.env.SMTP_FROM;
+
+// Register custom fonts for Vercel/serverless environments where system fonts are not present
+const fontBoldPath = path.join(process.cwd(), "public", "fonts", "Roboto-Bold.ttf");
+const fontBlackPath = path.join(process.cwd(), "public", "fonts", "Roboto-Black.ttf");
+
+if (fs.existsSync(fontBoldPath)) {
+  GlobalFonts.registerFromPath(fontBoldPath, "RobotoBold");
+}
+if (fs.existsSync(fontBlackPath)) {
+  GlobalFonts.registerFromPath(fontBlackPath, "RobotoBlack");
+}
 
 let transporter = null;
 
@@ -58,18 +69,18 @@ async function generateTicketPng(player) {
 
   // Draw Name
   ctx.fillStyle = '#2A1E17'; // Dark charcoal/brown
-  ctx.font = "900 48px 'Segoe UI', Arial, sans-serif";
+  ctx.font = "48px RobotoBlack";
   ctx.fillText(name, 510, 582);
 
   // Draw User ID (with @ prefix if not already present)
   const displayId = user_id.startsWith('@') ? user_id : `@${user_id}`;
   ctx.fillStyle = '#E53935'; // Red
-  ctx.font = "bold 38px 'Segoe UI', Arial, sans-serif";
+  ctx.font = "38px RobotoBold";
   ctx.fillText(displayId, 470, 742);
 
   // Draw Issued On
   ctx.fillStyle = '#2A1E17'; // Dark charcoal/brown
-  ctx.font = "bold 30px 'Segoe UI', Arial, sans-serif";
+  ctx.font = "30px RobotoBold";
   ctx.fillText(issuedOn, 430, 898);
 
   return canvas.toBuffer("image/png");
