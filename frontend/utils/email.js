@@ -3,6 +3,7 @@ import { getNewUserEmailHtml } from "../templates/email/newUser";
 import { TEAM_FLAGS, TEAM_WHATSAPP_LINKS } from "./constants";
 import fs from "fs";
 import path from "path";
+import { createCanvas, loadImage } from "@napi-rs/canvas";
 
 const smtpHost = process.env.SMTP_HOST;
 const smtpPort = process.env.SMTP_PORT;
@@ -36,6 +37,44 @@ function getTransporter() {
   return transporter;
 }
 
+async function generateTicketPng(player) {
+  const { name, user_id, created_at } = player;
+
+  // Format the date (e.g. "Jun 15, 2026")
+  const dateObj = created_at ? new Date(created_at) : new Date();
+  const issuedOn = dateObj.toLocaleDateString("en-US", {
+    year: "numeric",
+    month: "short",
+    day: "numeric",
+  });
+
+  const baseImgPath = path.join(process.cwd(), "public", "ticket.png");
+  const image = await loadImage(baseImgPath);
+  const canvas = createCanvas(image.width, image.height);
+  const ctx = canvas.getContext("2d");
+
+  // Draw base image
+  ctx.drawImage(image, 0, 0);
+
+  // Draw Name
+  ctx.fillStyle = '#2A1E17'; // Dark charcoal/brown
+  ctx.font = "900 48px 'Segoe UI', Arial, sans-serif";
+  ctx.fillText(name, 510, 582);
+
+  // Draw User ID (with @ prefix if not already present)
+  const displayId = user_id.startsWith('@') ? user_id : `@${user_id}`;
+  ctx.fillStyle = '#E53935'; // Red
+  ctx.font = "bold 38px 'Segoe UI', Arial, sans-serif";
+  ctx.fillText(displayId, 470, 742);
+
+  // Draw Issued On
+  ctx.fillStyle = '#2A1E17'; // Dark charcoal/brown
+  ctx.font = "bold 30px 'Segoe UI', Arial, sans-serif";
+  ctx.fillText(issuedOn, 430, 898);
+
+  return canvas.toBuffer("image/png");
+}
+
 export async function sendRegistrationEmail(player) {
   const mailTransporter = getTransporter();
   if (!mailTransporter) {
@@ -47,8 +86,7 @@ export async function sendRegistrationEmail(player) {
   const whatsappUrl = TEAM_WHATSAPP_LINKS[team] || "https://chat.whatsapp.com/";
 
   try {
-    const pngPath = path.join(process.cwd(), "public", "ticket.png");
-    const pngContent = fs.readFileSync(pngPath);
+    const pngContent = await generateTicketPng(player);
     const info = await mailTransporter.sendMail({
       from: `"μFifa'26" <${smtpFrom}>`,
       to: email,

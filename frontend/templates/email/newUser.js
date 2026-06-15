@@ -93,36 +93,7 @@ function getNewUserEmailHtml(player, assets = {}) {
             <p class="intro">
               Your registration is confirmed. Here is your arena access pass and your squad WhatsApp joining link.
             </p>
-            <table class="ticket" width="404" height="223" cellpadding="0" cellspacing="0" border="0" background="cid:ticket_image" style="width: 404px; height: 223px; border-collapse: collapse; background-image: url('cid:ticket_image'); background-size: cover; background-position: center; background-repeat: no-repeat; border: 1px solid rgba(255,255,255,0.1); border-radius: 24px; box-shadow: 0 0 40px rgba(6,182,212,0.25); margin: 0 auto 20px auto; -webkit-user-select: none; -moz-user-select: none; -ms-user-select: none; user-select: none;">
-              <!-- Row 1: Top Spacer & Name -->
-              <tr style="height: 50.5%;">
-                <td valign="bottom" style="text-align: left; vertical-align: bottom; padding: 0 0 2px 24%; height: 50.5%;">
-                  <span style="font-size: 9px; font-weight: 900; color: #2A1E17; font-family: 'Segoe UI', Roboto, sans-serif; letter-spacing: 0.05em; line-height: 1; display: block; white-space: nowrap;">
-                    ${name}
-                  </span>
-                </td>
-              </tr>
-              <!-- Row 2: User ID -->
-              <tr style="height: 8.3%;">
-                <td valign="bottom" style="text-align: left; vertical-align: bottom; padding: 0 0 2px 22%; height: 14.2%;">
-                  <span style="font-size: 7.5px; font-weight: bold; color: #E53935; font-family: 'Segoe UI', Roboto, sans-serif; letter-spacing: 0.05em; line-height: 1; display: block; white-space: nowrap;">
-                    ${user_id}
-                  </span>
-                </td>
-              </tr>
-              <!-- Row 3: Issued On -->
-              <tr style="height: 13.5%;">
-                <td valign="bottom" style="text-align: left; vertical-align: bottom; padding: 0 0 2px 20%; height: 11%;">
-                  <span style="font-size: 5.9px; font-weight: bold; color: #2A1E17; font-family: 'Segoe UI', Roboto, sans-serif; line-height: 1; display: block; white-space: nowrap;">
-                    ${issuedOn}
-                  </span>
-                </td>
-              </tr>
-              <!-- Row 4: Bottom Spacer -->
-              <tr style="height: 23%;">
-                <td style="height: 23%; padding: 0;">&nbsp;</td>
-              </tr>
-            </table>
+            <img src="cid:ticket_image" width="404" height="223" alt="μFifa '26 - Arena Access Pass" style="display: block; width: 404px; height: 223px; border: 1px solid rgba(255,255,255,0.1); border-radius: 24px; box-shadow: 0 0 40px rgba(6,182,212,0.25); margin: 0 auto 20px auto; -webkit-user-select: none; -moz-user-select: none; -ms-user-select: none; user-select: none;">
 
             <div class="button-wrap">
               <a href="${whatsappUrl}" target="_blank" rel="noopener noreferrer" class="button">

@@ -9,6 +9,7 @@
     "lint": "eslint"
   },
   "dependencies": {
+    "@napi-rs/canvas": "^1.0.0",
     "bcryptjs": "^3.0.3",
     "flag-icons": "^7.5.0",
     "jsonwebtoken": "^9.0.3",
