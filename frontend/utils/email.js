@@ -11,22 +11,35 @@ const smtpUser = process.env.SMTP_USER;
 const smtpPass = process.env.SMTP_PASS;
 const smtpFrom = process.env.SMTP_FROM;
 
-// Register custom fonts for Vercel/serverless environments where system fonts are not present
-// Using fs.readFileSync forces Next.js Node File Tracer to statically bundle these font files.
-const fontBoldPath = path.join(process.cwd(), "utils", "fonts", "Roboto-Bold.ttf");
-const fontBlackPath = path.join(process.cwd(), "utils", "fonts", "Roboto-Black.ttf");
+let fontsRegistered = false;
 
-try {
-  if (fs.existsSync(fontBoldPath)) {
-    const boldBuffer = fs.readFileSync(fontBoldPath);
-    GlobalFonts.register(boldBuffer, "RobotoBold");
+function registerFonts() {
+  if (fontsRegistered) return;
+
+  const fontBoldPath = path.join(process.cwd(), "utils", "fonts", "Roboto-Bold.ttf");
+  const fontBlackPath = path.join(process.cwd(), "utils", "fonts", "Roboto-Black.ttf");
+
+  console.log(`[Canvas Fonts] Checking font files: Bold exists? ${fs.existsSync(fontBoldPath)}, Black exists? ${fs.existsSync(fontBlackPath)}`);
+
+  try {
+    if (fs.existsSync(fontBoldPath)) {
+      const boldBuffer = fs.readFileSync(fontBoldPath);
+      GlobalFonts.register(boldBuffer, "RobotoBold");
+      console.log("[Canvas Fonts] Registered RobotoBold successfully from buffer.");
+    } else {
+      console.error(`[Canvas Fonts] Roboto-Bold.ttf not found at path: ${fontBoldPath}`);
+    }
+    if (fs.existsSync(fontBlackPath)) {
+      const blackBuffer = fs.readFileSync(fontBlackPath);
+      GlobalFonts.register(blackBuffer, "RobotoBlack");
+      console.log("[Canvas Fonts] Registered RobotoBlack successfully from buffer.");
+    } else {
+      console.error(`[Canvas Fonts] Roboto-Black.ttf not found at path: ${fontBlackPath}`);
+    }
+    fontsRegistered = true;
+  } catch (e) {
+    console.error("[Canvas Fonts] Failed to load or register custom fonts from buffer:", e);
   }
-  if (fs.existsSync(fontBlackPath)) {
-    const blackBuffer = fs.readFileSync(fontBlackPath);
-    GlobalFonts.register(blackBuffer, "RobotoBlack");
-  }
-} catch (e) {
-  console.error("Failed to load or register custom fonts from buffer:", e);
 }
 
 let transporter = null;
@@ -56,6 +69,9 @@ function getTransporter() {
 }
 
 export async function generateTicketPng(player) {
+  // Lazy-load and register fonts inside the execution context
+  registerFonts();
+
   const { name, user_id, created_at } = player;
 
   // Format the date (e.g. "Jun 15, 2026")
