@@ -75,7 +75,7 @@ export default function Footer() {
                 },
                 {
                   name: "Instagram",
-                  url: "https://instagram.com/mulearn",
+                  url: "https://instagram.com/mulearn.official",
                   icon: (
                     <svg
                       className="w-4 h-4"
@@ -164,7 +164,7 @@ export default function Footer() {
                     name: "Terms & Conditions",
                     href: "https://mulearn.org/termsandconditions",
                   },
-                   {
+                  {
                     name: "Community Guidelines",
                     href: "/community-guidelines",
                   },
