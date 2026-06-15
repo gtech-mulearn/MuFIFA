@@ -1,9 +1,6 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  serverExternalPackages: ["sharp"],
-  outputFileTracingIncludes: {
-    "/api/**/*": ["./public/ticket.svg"],
-  },
+  serverExternalPackages: ['@napi-rs/canvas'],
 };
 
-export default nextConfig;
+export default nextConfig;  

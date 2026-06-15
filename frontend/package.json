@@ -10,7 +10,7 @@
     "test:ticket": "node ticket-test.mjs"
   },
   "dependencies": {
-    "@napi-rs/canvas": "^0.1.53",
+    "@napi-rs/canvas": "^1.0.0",
     "bcryptjs": "^3.0.3",
     "flag-icons": "^7.5.0",
     "html2canvas": "^1.4.1",
