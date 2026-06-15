@@ -12,14 +12,21 @@ const smtpPass = process.env.SMTP_PASS;
 const smtpFrom = process.env.SMTP_FROM;
 
 // Register custom fonts for Vercel/serverless environments where system fonts are not present
+// Using fs.readFileSync forces Next.js Node File Tracer to statically bundle these font files.
 const fontBoldPath = path.join(process.cwd(), "utils", "fonts", "Roboto-Bold.ttf");
 const fontBlackPath = path.join(process.cwd(), "utils", "fonts", "Roboto-Black.ttf");
 
-if (fs.existsSync(fontBoldPath)) {
-  GlobalFonts.registerFromPath(fontBoldPath, "RobotoBold");
-}
-if (fs.existsSync(fontBlackPath)) {
-  GlobalFonts.registerFromPath(fontBlackPath, "RobotoBlack");
+try {
+  if (fs.existsSync(fontBoldPath)) {
+    const boldBuffer = fs.readFileSync(fontBoldPath);
+    GlobalFonts.register(boldBuffer, "RobotoBold");
+  }
+  if (fs.existsSync(fontBlackPath)) {
+    const blackBuffer = fs.readFileSync(fontBlackPath);
+    GlobalFonts.register(blackBuffer, "RobotoBlack");
+  }
+} catch (e) {
+  console.error("Failed to load or register custom fonts from buffer:", e);
 }
 
 let transporter = null;
@@ -48,7 +55,7 @@ function getTransporter() {
   return transporter;
 }
 
-async function generateTicketPng(player) {
+export async function generateTicketPng(player) {
   const { name, user_id, created_at } = player;
 
   // Format the date (e.g. "Jun 15, 2026")
@@ -60,7 +67,15 @@ async function generateTicketPng(player) {
   });
 
   const baseImgPath = path.join(process.cwd(), "public", "ticket.png");
-  const image = await loadImage(baseImgPath);
+  let image;
+  try {
+    const imgBuffer = fs.readFileSync(baseImgPath);
+    image = await loadImage(imgBuffer);
+  } catch (err) {
+    console.error("Failed to read base ticket image buffer, falling back to path resolution:", err);
+    image = await loadImage(baseImgPath);
+  }
+
   const canvas = createCanvas(image.width, image.height);
   const ctx = canvas.getContext("2d");
 
