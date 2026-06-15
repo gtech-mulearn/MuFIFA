@@ -3,7 +3,12 @@ import { getNewUserEmailHtml } from "../templates/email/newUser";
 import { TEAM_FLAGS, TEAM_WHATSAPP_LINKS } from "./constants";
 import fs from "fs";
 import path from "path";
+import { fileURLToPath } from "url";
 import { createCanvas, loadImage, GlobalFonts } from "@napi-rs/canvas";
+
+// Resolve __dirname equivalent for ESM (works reliably on both local and Vercel)
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 const smtpHost = process.env.SMTP_HOST;
 const smtpPort = process.env.SMTP_PORT;
@@ -13,28 +18,53 @@ const smtpFrom = process.env.SMTP_FROM;
 
 let fontsRegistered = false;
 
+/**
+ * Tries multiple candidate paths to find a file, returning the first that exists.
+ */
+function resolveFile(candidates) {
+  for (const p of candidates) {
+    if (fs.existsSync(p)) return p;
+  }
+  return null;
+}
+
 function registerFonts() {
   if (fontsRegistered) return;
 
-  const fontBoldPath = path.join(process.cwd(), "utils", "fonts", "Roboto-Bold.ttf");
-  const fontBlackPath = path.join(process.cwd(), "utils", "fonts", "Roboto-Black.ttf");
+  // Multiple candidate paths: __dirname-relative (most reliable), then cwd-based fallback
+  const boldCandidates = [
+    path.join(__dirname, "fonts", "Roboto-Bold.ttf"),
+    path.join(process.cwd(), "utils", "fonts", "Roboto-Bold.ttf"),
+    path.join(process.cwd(), ".next", "server", "utils", "fonts", "Roboto-Bold.ttf"),
+  ];
+  const blackCandidates = [
+    path.join(__dirname, "fonts", "Roboto-Black.ttf"),
+    path.join(process.cwd(), "utils", "fonts", "Roboto-Black.ttf"),
+    path.join(process.cwd(), ".next", "server", "utils", "fonts", "Roboto-Black.ttf"),
+  ];
 
-  console.log(`[Canvas Fonts] Checking font files: Bold exists? ${fs.existsSync(fontBoldPath)}, Black exists? ${fs.existsSync(fontBlackPath)}`);
+  const fontBoldPath = resolveFile(boldCandidates);
+  const fontBlackPath = resolveFile(blackCandidates);
+
+  console.log(`[Canvas Fonts] __dirname = ${__dirname}`);
+  console.log(`[Canvas Fonts] process.cwd() = ${process.cwd()}`);
+  console.log(`[Canvas Fonts] Resolved Bold path: ${fontBoldPath}`);
+  console.log(`[Canvas Fonts] Resolved Black path: ${fontBlackPath}`);
 
   try {
-    if (fs.existsSync(fontBoldPath)) {
+    if (fontBoldPath) {
       const boldBuffer = fs.readFileSync(fontBoldPath);
       GlobalFonts.register(boldBuffer, "RobotoBold");
       console.log("[Canvas Fonts] Registered RobotoBold successfully from buffer.");
     } else {
-      console.error(`[Canvas Fonts] Roboto-Bold.ttf not found at path: ${fontBoldPath}`);
+      console.error(`[Canvas Fonts] Roboto-Bold.ttf not found. Tried: ${boldCandidates.join(", ")}`);
     }
-    if (fs.existsSync(fontBlackPath)) {
+    if (fontBlackPath) {
       const blackBuffer = fs.readFileSync(fontBlackPath);
       GlobalFonts.register(blackBuffer, "RobotoBlack");
       console.log("[Canvas Fonts] Registered RobotoBlack successfully from buffer.");
     } else {
-      console.error(`[Canvas Fonts] Roboto-Black.ttf not found at path: ${fontBlackPath}`);
+      console.error(`[Canvas Fonts] Roboto-Black.ttf not found. Tried: ${blackCandidates.join(", ")}`);
     }
     fontsRegistered = true;
   } catch (e) {
@@ -82,14 +112,25 @@ export async function generateTicketPng(player) {
     day: "numeric",
   });
 
-  const baseImgPath = path.join(process.cwd(), "public", "ticket.png");
+  // Resolve ticket.png with multiple candidate paths
+  const ticketCandidates = [
+    path.join(__dirname, "..", "public", "ticket.png"),
+    path.join(process.cwd(), "public", "ticket.png"),
+    path.join(process.cwd(), ".next", "server", "public", "ticket.png"),
+  ];
+  const baseImgPath = resolveFile(ticketCandidates);
+  console.log(`[Canvas Ticket] Resolved ticket.png path: ${baseImgPath}`);
+
   let image;
+  if (!baseImgPath) {
+    throw new Error(`ticket.png not found. Tried: ${ticketCandidates.join(", ")}`);
+  }
   try {
     const imgBuffer = fs.readFileSync(baseImgPath);
     image = await loadImage(imgBuffer);
   } catch (err) {
-    console.error("Failed to read base ticket image buffer, falling back to path resolution:", err);
-    image = await loadImage(baseImgPath);
+    console.error("Failed to read base ticket image:", err);
+    throw err;
   }
 
   const canvas = createCanvas(image.width, image.height);
@@ -98,20 +139,27 @@ export async function generateTicketPng(player) {
   // Draw base image
   ctx.drawImage(image, 0, 0);
 
+  // Use custom fonts with system fallback
+  const blackFont = fontsRegistered ? "48px RobotoBlack, sans-serif" : "bold 48px sans-serif";
+  const boldFont38 = fontsRegistered ? "38px RobotoBold, sans-serif" : "bold 38px sans-serif";
+  const boldFont30 = fontsRegistered ? "30px RobotoBold, sans-serif" : "bold 30px sans-serif";
+
+  console.log(`[Canvas Draw] Using fonts: fontsRegistered=${fontsRegistered}, blackFont=${blackFont}`);
+
   // Draw Name
   ctx.fillStyle = '#2A1E17'; // Dark charcoal/brown
-  ctx.font = "48px RobotoBlack";
+  ctx.font = blackFont;
   ctx.fillText(name, 510, 582);
 
   // Draw User ID (with @ prefix if not already present)
   const displayId = user_id.startsWith('@') ? user_id : `@${user_id}`;
   ctx.fillStyle = '#E53935'; // Red
-  ctx.font = "38px RobotoBold";
+  ctx.font = boldFont38;
   ctx.fillText(displayId, 470, 742);
 
   // Draw Issued On
   ctx.fillStyle = '#2A1E17'; // Dark charcoal/brown
-  ctx.font = "30px RobotoBold";
+  ctx.font = boldFont30;
   ctx.fillText(issuedOn, 430, 898);
 
   return canvas.toBuffer("image/png");
