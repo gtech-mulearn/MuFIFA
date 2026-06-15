@@ -16,15 +16,6 @@ const smtpUser = process.env.SMTP_USER;
 const smtpPass = process.env.SMTP_PASS;
 const smtpFrom = process.env.SMTP_FROM;
 
-/**
- * Tries multiple candidate paths to find a file, returning the first that exists.
- */
-function resolveFile(candidates) {
-  for (const p of candidates) {
-    if (fs.existsSync(p)) return p;
-  }
-  return null;
-}
 
 /**
  * Escapes special XML characters in a string to prevent SVG injection.
@@ -84,17 +75,11 @@ export async function generateTicketPng(player) {
     day: "numeric",
   });
 
-  // Resolve ticket.svg with multiple candidate paths
-  const svgCandidates = [
-    path.join(__dirname, "..", "public", "ticket.svg"),
-    path.join(process.cwd(), "public", "ticket.svg"),
-    path.join(process.cwd(), ".next", "server", "public", "ticket.svg"),
-  ];
-  const svgPath = resolveFile(svgCandidates);
+  const svgPath = path.join(process.cwd(), "public", "ticket.svg");
   console.log(`[Ticket SVG] Resolved ticket.svg path: ${svgPath}`);
 
-  if (!svgPath) {
-    throw new Error(`ticket.svg not found. Tried: ${svgCandidates.join(", ")}`);
+  if (!fs.existsSync(svgPath)) {
+    throw new Error(`ticket.svg not found at: ${svgPath}`);
   }
 
   // Read the SVG template
@@ -289,25 +274,153 @@ export async function sendRegistrationOtpEmail({ email, name, otp }) {
 
   try {
     const info = await mailTransporter.sendMail({
-      from: `"μFifa'26" <${smtpFrom}>`,
+      from: `"noreply@mulearn.org" <noreply@mulearn.org>`,
       to: email,
-      subject: "μFifa'26 Verify your registration OTP",
-      text: `Hello ${name}, your registration OTP is ${otp}. It is valid for 10 minutes. You can request a new OTP after 2 minutes.`,
+      subject: `Verify your registration OTP | μFIFA`,
+      text: `Hello ${name}, welcome to μFIFA'26! Use the one-time password (OTP) ${otp} to verify your email and complete your registration. This OTP is valid for 10 minutes.`,
       html: `
-        <div style="background:#090A0F;padding:32px 16px;font-family:Segoe UI,Arial,sans-serif;color:#e2e8f0;">
-          <div style="max-width:480px;margin:0 auto;background:#131927;border:1px solid rgba(255,255,255,0.08);border-radius:20px;padding:32px;text-align:center;">
-            <div style="font-size:24px;font-weight:800;letter-spacing:0.18em;text-transform:uppercase;color:#ffffff;">Verify Your Email</div>
-            <p style="font-size:14px;line-height:1.7;color:#94a3b8;margin:16px 0 24px;">
-              Hello ${name}, use the one-time password below to complete your μFifa registration.
-            </p>
-            <div style="display:inline-block;padding:14px 20px;border-radius:14px;background:rgba(6, 182, 212,0.12);border:1px solid rgba(6, 182, 212,0.28);font-size:28px;font-weight:800;letter-spacing:0.35em;color:#06B6D4;">
-              ${otp}
+        <!DOCTYPE html>
+        <html>
+          <head>
+            <meta charset="utf-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <title>Verify Your Email | μFIFA</title>
+            <style>
+              body {
+                margin: 0;
+                padding: 0;
+                background-color: #090a0f;
+                color: #f1f5f9;
+                font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+                -webkit-font-smoothing: antialiased;
+              }
+              .wrapper {
+                width: 100%;
+                box-sizing: border-box;
+                padding: 40px 20px;
+                background: 
+                  radial-gradient(circle at top right, rgba(79, 70, 229, 0.12), transparent 40%),
+                  radial-gradient(circle at bottom left, rgba(6, 182, 212, 0.12), transparent 40%),
+                  #090a0f;
+              }
+              .container {
+                max-width: 480px;
+                margin: 0 auto;
+                background: rgba(19, 25, 39, 0.6);
+                border: 1px solid rgba(255, 255, 255, 0.08);
+                border-radius: 24px;
+                padding: 40px;
+                text-align: center;
+                box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5);
+              }
+              .header {
+                text-align: center;
+                margin-bottom: 28px;
+              }
+              .logo-text {
+                font-size: 24px;
+                font-weight: 800;
+                letter-spacing: 0.15em;
+                color: #ffffff;
+                margin: 0;
+                text-transform: uppercase;
+              }
+              .greeting {
+                font-size: 18px;
+                font-weight: 700;
+                color: #ffffff;
+                margin: 0 0 16px 0;
+                text-align: left;
+              }
+              .message {
+                font-size: 14px;
+                line-height: 1.6;
+                color: #94a3b8;
+                margin: 0 0 24px 0;
+                text-align: left;
+              }
+              .otp-box {
+                display: inline-block;
+                padding: 16px 28px;
+                border-radius: 14px;
+                background: rgba(6, 182, 212, 0.08);
+                border: 1px solid rgba(6, 182, 212, 0.25);
+                font-size: 32px;
+                font-weight: 800;
+                letter-spacing: 0.3em;
+                color: #06b6d4;
+                margin: 8px 0 24px 0;
+                text-shadow: 0 0 12px rgba(6, 182, 212, 0.3);
+              }
+              .note {
+                font-size: 12px;
+                color: #64748b;
+                margin: 0 0 28px 0;
+              }
+              .footer {
+                margin-top: 32px;
+                border-top: 1px solid rgba(255, 255, 255, 0.06);
+                padding-top: 24px;
+                text-align: center;
+              }
+              .footer-title {
+                font-size: 12px;
+                font-weight: 700;
+                color: #94a3b8;
+                margin: 0 0 6px 0;
+              }
+              .footer-desc {
+                font-size: 10px;
+                line-height: 1.5;
+                color: #64748b;
+                margin: 0 0 12px 0;
+              }
+              .footer-desc a {
+                color: #06b6d4;
+                text-decoration: none;
+              }
+              .footer-copyright {
+                font-size: 9px;
+                color: #475569;
+                margin: 0;
+              }
+            </style>
+          </head>
+          <body>
+            <div class="wrapper">
+              <div class="container">
+                <!-- Header -->
+                <div class="header">
+                  <h1 class="logo-text">μFIFA'26</h1>
+                </div>
+
+                <!-- Greetings & Message -->
+                <div class="greeting">Hello ${name},</div>
+                <div class="message">
+                  Thank you for starting your registration for <strong>μFIFA'26</strong>! Use the verification code below to confirm your email address and secure your spot in the arena:
+                </div>
+
+                <!-- OTP Code -->
+                <div class="otp-box">${otp}</div>
+
+                <div class="note">
+                  This code is valid for 10 minutes. If you did not request this verification, please ignore this email.
+                </div>
+
+                <!-- Footer -->
+                <div class="footer">
+                  <div class="footer-title">μLearn Foundation</div>
+                  <div class="footer-desc">
+                    Discover professional peer learning communities and micro-networking circles at <a href="https://mulearn.org" target="_blank" rel="noopener noreferrer">mulearn.org</a>.
+                  </div>
+                  <p class="footer-copyright">
+                    &copy; 2026 μLearn Foundation. All rights reserved.
+                  </p>
+                </div>
+              </div>
             </div>
-            <p style="font-size:12px;line-height:1.7;color:#94a3b8;margin:24px 0 0;">
-              This OTP is valid for 10 minutes. You can request a new OTP after 2 minutes.
-            </p>
-          </div>
-        </div>
+          </body>
+        </html>
       `,
     });
     console.log(
