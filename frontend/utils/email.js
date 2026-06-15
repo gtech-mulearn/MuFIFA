@@ -153,6 +153,96 @@ export async function generateTicketPng(player) {
   }
 }
 
+/**
+ * Uploads the generated ticket PNG to Supabase Storage and returns the public URL.
+ * Also attempts to save this URL to the registration record under ticket_url.
+ */
+async function uploadTicketToSupabase(player, pngBuffer) {
+  const supabaseUrl = process.env.SUPABASE_URL;
+  const supabaseKey = process.env.SUPABASE_KEY;
+
+  if (!supabaseUrl || !supabaseKey) {
+    console.warn("[Supabase Storage] Database configuration missing. Skipping upload.");
+    return null;
+  }
+
+  const { user_id, id } = player;
+  const bucketName = "tickets";
+  const filePath = `tickets/${user_id}.png`;
+
+  // 1. Create bucket if it doesn't exist (fail-safe)
+  try {
+    await fetch(`${supabaseUrl}/storage/v1/bucket`, {
+      method: "POST",
+      headers: {
+        apikey: supabaseKey,
+        Authorization: `Bearer ${supabaseKey}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        id: bucketName,
+        name: bucketName,
+        public: true,
+      }),
+    });
+  } catch (err) {
+    console.warn(`[Supabase Storage] Bucket '${bucketName}' creation warning:`, err.message);
+  }
+
+  // 2. Upload file
+  const uploadUrl = `${supabaseUrl}/storage/v1/object/${bucketName}/${filePath}`;
+  try {
+    const response = await fetch(uploadUrl, {
+      method: "POST",
+      headers: {
+        apikey: supabaseKey,
+        Authorization: `Bearer ${supabaseKey}`,
+        "Content-Type": "image/png",
+        "x-upsert": "true",
+      },
+      body: pngBuffer,
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error("[Supabase Storage] Upload request failed:", errorText);
+      return null;
+    }
+
+    const publicUrl = `${supabaseUrl}/storage/v1/object/public/${bucketName}/${filePath}`;
+    console.log(`[Supabase Storage] Ticket uploaded successfully: ${publicUrl}`);
+
+    // 3. Update registrations row if player database ID is available
+    if (id) {
+      try {
+        const dbRes = await fetch(`${supabaseUrl}/rest/v1/registrations?id=eq.${id}`, {
+          method: "PATCH",
+          headers: {
+            apikey: supabaseKey,
+            Authorization: `Bearer ${supabaseKey}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            ticket_url: publicUrl,
+          }),
+        });
+        if (!dbRes.ok) {
+          console.warn(`[Supabase DB] Failed to save ticket_url (the column may not exist):`, await dbRes.text());
+        } else {
+          console.log(`[Supabase DB] Ticket URL successfully updated in registration record.`);
+        }
+      } catch (dbErr) {
+        console.warn(`[Supabase DB] Failed to update registration row:`, dbErr.message);
+      }
+    }
+
+    return publicUrl;
+  } catch (err) {
+    console.error("[Supabase Storage] Exception during ticket upload:", err.message);
+    return null;
+  }
+}
+
 export async function sendRegistrationEmail(player) {
   const mailTransporter = getTransporter();
   if (!mailTransporter) {
@@ -165,12 +255,14 @@ export async function sendRegistrationEmail(player) {
 
   try {
     const pngContent = await generateTicketPng(player);
+    const publicUrl = await uploadTicketToSupabase(player, pngContent);
+
     const info = await mailTransporter.sendMail({
       from: `"noreply@mulearn.org" <noreply@mulearn.org>`,
       to: email,
       subject: `Access Pass Confirmed - ${user_id.startsWith('@') ? user_id : '@' + user_id} | μFIFA`,
-      text: `Hello ${name}, welcome to μFIFA'26! Your arena access pass has been confirmed under Player ID ${user_id.startsWith('@') ? user_id : '@' + user_id} playing for ${teamLabel}. Join your squad WhatsApp group here: ${whatsappUrl}`,
-      html: getNewUserEmailHtml(player),
+      text: `Hello ${name}, welcome to μFIFA'26! Your arena access pass has been confirmed under Player ID ${user_id.startsWith('@') ? user_id : '@' + user_id} playing for ${teamLabel}. You can view your access pass online here: ${publicUrl || 'N/A'}. Join your squad WhatsApp group here: ${whatsappUrl}`,
+      html: getNewUserEmailHtml(player, { ticketUrl: publicUrl }),
       attachments: [
         {
           filename: "ticket.png",

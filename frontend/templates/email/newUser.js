@@ -1,16 +1,7 @@
 import { TEAM_WHATSAPP_LINKS, TEAM_FLAGS } from "../../utils/constants";
 
-function formatIssuedDate(value) {
-  const date = value ? new Date(value) : new Date();
-  return date.toLocaleDateString("en-US", {
-    year: "numeric",
-    month: "short",
-    day: "numeric",
-  });
-}
-
 function getNewUserEmailHtml(player, assets = {}) {
-  const { name, user_id, team, created_at } = player;
+  const { name, user_id, team } = player;
   const teamLabel = TEAM_FLAGS[team] || team || "Assigned Team";
   const whatsappUrl = TEAM_WHATSAPP_LINKS[team] || "https://chat.whatsapp.com/";
   const displayId = user_id.startsWith("@") ? user_id : `@${user_id}`;
@@ -183,14 +174,11 @@ function getNewUserEmailHtml(player, assets = {}) {
               <div class="highlight-item">
                 <span class="highlight-label">Player ID:</span> ${displayId}
               </div>
-              <div class="highlight-item">
-                <span class="highlight-label">Squad:</span> ${teamLabel}
-              </div>
             </div>
 
             <!-- Access Pass Image -->
             <div class="ticket-wrap">
-              <img src="cid:ticket_image" class="ticket-img" alt="μFIFA '26 Arena Access Pass" width="500">
+              <img src="${assets?.ticketUrl || "cid:ticket_image"}" class="ticket-img" alt="μFIFA '26 Arena Access Pass" width="500">
             </div>
 
             <!-- Squad Call to Action -->
