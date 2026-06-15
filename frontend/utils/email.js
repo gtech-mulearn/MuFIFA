@@ -5,6 +5,7 @@ import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
 import sharp from "sharp";
+import { createCanvas, loadImage } from "@napi-rs/canvas";
 
 // Resolve __dirname equivalent for ESM (works reliably on both local and Vercel)
 const __filename = fileURLToPath(import.meta.url);
@@ -57,12 +58,11 @@ function getTransporter() {
 
 /**
  * Generates a ticket PNG by:
- * 1. Reading the SVG template (ticket.svg) which contains the base64-encoded background image
- * 2. Injecting dynamic <text> elements for player name, user ID, and issued date
- * 3. Converting the final SVG to PNG using Sharp
- *
- * This approach completely avoids @napi-rs/canvas and custom font registration issues,
- * and works reliably on Vercel since Sharp is natively supported.
+ * 1. Loading the base ticket.png image
+ * 2. Creating a Canvas overlay with dynamic text (name, user_id, date)
+ * 3. Compositing the text onto the base image
+ * 
+ * Uses @napi-rs/canvas for consistent text rendering across platforms (Windows & Linux/Vercel)
  */
 export async function generateTicketPng(player) {
   const { name, user_id, created_at } = player;
@@ -75,65 +75,61 @@ export async function generateTicketPng(player) {
     day: "numeric",
   });
 
-  const svgPath = path.join(process.cwd(), "public", "ticket.svg");
-  console.log(`[Ticket SVG] Resolved ticket.svg path: ${svgPath}`);
+  const ticketPath = path.join(process.cwd(), "public", "ticket.png");
+  console.log(`[Ticket Canvas] Resolved ticket.png path: ${ticketPath}`);
 
-  if (!fs.existsSync(svgPath)) {
-    throw new Error(`ticket.svg not found at: ${svgPath}`);
+  if (!fs.existsSync(ticketPath)) {
+    throw new Error(`ticket.png not found at: ${ticketPath}`);
   }
 
-  // Read the SVG template
-  let svgContent;
   try {
-    svgContent = fs.readFileSync(svgPath, "utf-8");
-  } catch (err) {
-    console.error("[Ticket SVG] Failed to read ticket.svg:", err);
-    throw err;
-  }
+    // Load the base ticket image
+    const baseImage = await loadImage(ticketPath);
+    const width = baseImage.width;
+    const height = baseImage.height;
 
-  // Escape dynamic values for safe XML embedding
-  const safeName = escapeXml(name);
-  const safeUserId = escapeXml(
-    user_id.startsWith("@") ? user_id : `@${user_id}`
-  );
-  const safeDate = escapeXml(issuedOn);
+    console.log(`[Ticket Canvas] Base image loaded: ${width}x${height}`);
 
-  // SVG text elements to overlay on the ticket
-  // Coordinates match the original canvas positions (2128x1177 SVG viewBox)
-  // Font: using sans-serif which is universally available in SVG renderers
-  const textOverlay = `
-  <text x="510" y="582" font-family="Arial, Helvetica, sans-serif" font-size="48" font-weight="900" fill="#2A1E17">${safeName}</text>
-  <text x="470" y="742" font-family="Arial, Helvetica, sans-serif" font-size="38" font-weight="700" fill="#E53935">${safeUserId}</text>
-  <text x="430" y="898" font-family="Arial, Helvetica, sans-serif" font-size="30" font-weight="700" fill="#2A1E17">${safeDate}</text>
-`;
+    // Create canvas and draw base image
+    const canvas = createCanvas(width, height);
+    const ctx = canvas.getContext("2d");
 
-  // Inject text elements before the closing </svg> tag
-  const closingTagIndex = svgContent.lastIndexOf("</svg>");
-  if (closingTagIndex === -1) {
-    throw new Error("Invalid SVG: no closing </svg> tag found");
-  }
+    // Draw the base ticket image
+    ctx.drawImage(baseImage, 0, 0, width, height);
 
-  const finalSvg =
-    svgContent.substring(0, closingTagIndex) +
-    textOverlay +
-    svgContent.substring(closingTagIndex);
+    // Prepare text
+    const displayUserId = user_id.startsWith("@") ? user_id : `@${user_id}`;
 
-  console.log(
-    `[Ticket SVG] SVG prepared with dynamic text. Total SVG length: ${finalSvg.length}`
-  );
+    // Draw player name (bold, large text)
+    ctx.font = "bold 48px Arial";
+    ctx.fillStyle = "#2A1E17";
+    ctx.textAlign = "left";
+    ctx.fillText(name, 510, 582);
+    console.log(`[Ticket Canvas] Drew name: "${name}" at (510, 582)`);
 
-  // Convert SVG to PNG using Sharp
-  try {
-    const pngBuffer = await sharp(Buffer.from(finalSvg))
-      .png()
-      .toBuffer();
+    // Draw user ID (bold, red text)
+    ctx.font = "bold 38px Arial";
+    ctx.fillStyle = "#E53935";
+    ctx.textAlign = "left";
+    ctx.fillText(displayUserId, 470, 742);
+    console.log(`[Ticket Canvas] Drew user_id: "${displayUserId}" at (470, 742)`);
+
+    // Draw issued date
+    ctx.font = "bold 30px Arial";
+    ctx.fillStyle = "#2A1E17";
+    ctx.textAlign = "left";
+    ctx.fillText(issuedOn, 430, 898);
+    console.log(`[Ticket Canvas] Drew date: "${issuedOn}" at (430, 898)`);
+
+    // Convert canvas to PNG buffer
+    const pngBuffer = await canvas.encode("png");
 
     console.log(
-      `[Ticket SVG] PNG generated successfully. Buffer size: ${pngBuffer.length} bytes`
+      `[Ticket Canvas] PNG generated successfully. Buffer size: ${pngBuffer.length} bytes`
     );
     return pngBuffer;
   } catch (err) {
-    console.error("[Ticket SVG] Sharp SVG-to-PNG conversion failed:", err);
+    console.error("[Ticket Canvas] Failed to generate ticket:", err);
     throw err;
   }
 }
