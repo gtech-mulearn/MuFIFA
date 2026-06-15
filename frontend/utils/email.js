@@ -12,8 +12,8 @@ const smtpPass = process.env.SMTP_PASS;
 const smtpFrom = process.env.SMTP_FROM;
 
 // Register custom fonts for Vercel/serverless environments where system fonts are not present
-const fontBoldPath = path.join(process.cwd(), "public", "fonts", "Roboto-Bold.ttf");
-const fontBlackPath = path.join(process.cwd(), "public", "fonts", "Roboto-Black.ttf");
+const fontBoldPath = path.join(process.cwd(), "utils", "fonts", "Roboto-Bold.ttf");
+const fontBlackPath = path.join(process.cwd(), "utils", "fonts", "Roboto-Black.ttf");
 
 if (fs.existsSync(fontBoldPath)) {
   GlobalFonts.registerFromPath(fontBoldPath, "RobotoBold");
