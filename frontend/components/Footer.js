@@ -39,7 +39,7 @@ export default function Footer() {
                 μLearn Foundation
               </span>{" "}
               &<span className="text-[#00E676] font-medium"> μLearn MCE</span>.
-              Complete drills, wager µ-Points, and lead your squad to the top of
+              Complete drills, wager μPoints, and lead your squad to the top of
               the leaderboard.
             </p>
 

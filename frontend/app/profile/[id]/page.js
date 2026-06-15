@@ -452,8 +452,8 @@ export default function ProfilePage({ params }) {
                   <span className="text-[7px] font-black uppercase tracking-widest text-slate-600">
                     Current Score
                   </span>
-                  <span className="text-[12px] font-black text-[#06B6D4] uppercase tracking-wider">
-                    {player.mu_points || 0} μ-Points
+                  <span className="text-[12px] font-black text-[#06B6D4] tracking-wider">
+                    {player.mu_points || 0} μPoints
                   </span>
                 </div>
               </div>

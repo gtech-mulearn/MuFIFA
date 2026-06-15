@@ -461,7 +461,7 @@ export default function Dashboard() {
                 <div className="text-3xl md:text-4xl font-extrabold text-[#FBBF24] flex items-baseline gap-1.5 mt-1.5 drop-shadow-[0_0_15px_rgba(251,191,36,0.2)]">
                   <span>{player?.mu_points || 0}</span>
                   <span className="text-[11px] font-bold text-amber-500/90 tracking-wide">
-                    μ-Points
+                    μPoints
                   </span>
                 </div>
               </div>
@@ -515,9 +515,7 @@ export default function Dashboard() {
                   </svg>
                   <span className="text-[11px] text-slate-400 leading-normal">
                     You receive{" "}
-                    <strong className="text-white font-bold">
-                      +5 μ-Points
-                    </strong>{" "}
+                    <strong className="text-white font-bold">+5 μPoints</strong>{" "}
                     directly.
                   </span>
                 </div>

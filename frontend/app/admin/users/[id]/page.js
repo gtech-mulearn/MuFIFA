@@ -112,7 +112,10 @@ export default function AdminUserEditPage({ params }) {
   return (
     <div className="flex flex-col gap-6 max-w-2xl">
       <div className="flex items-center gap-2 text-xs text-slate-500">
-        <Link href="/admin/users" className="hover:text-slate-900 transition-colors">
+        <Link
+          href="/admin/users"
+          className="hover:text-slate-900 transition-colors"
+        >
           Users
         </Link>
         <span>/</span>
@@ -139,7 +142,10 @@ export default function AdminUserEditPage({ params }) {
         </div>
       )}
 
-      <form onSubmit={handleSave} className={`${THEME.panel} rounded-2xl p-6 flex flex-col gap-5`}>
+      <form
+        onSubmit={handleSave}
+        className={`${THEME.panel} rounded-2xl p-6 flex flex-col gap-5`}
+      >
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
           <div className="flex flex-col gap-1.5">
             <label className="text-[10px] font-black uppercase tracking-wider text-slate-500">
@@ -181,8 +187,8 @@ export default function AdminUserEditPage({ params }) {
           </div>
 
           <div className="flex flex-col gap-1.5">
-            <label className="text-[10px] font-black uppercase tracking-wider text-slate-500">
-              mu-Points
+            <label className="text-[10px] font-black tracking-wider text-slate-500">
+              μPoints
             </label>
             <input
               name="mu_points"
@@ -206,7 +212,9 @@ export default function AdminUserEditPage({ params }) {
               className={`rounded-xl px-4 py-2.5 text-xs transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed appearance-none focus:outline-none ${THEME.input}`}
             >
               {DOMAINS.map((d) => (
-                <option key={d} value={d}>{d}</option>
+                <option key={d} value={d}>
+                  {d}
+                </option>
               ))}
             </select>
           </div>
@@ -223,15 +231,27 @@ export default function AdminUserEditPage({ params }) {
               className={`rounded-xl px-4 py-2.5 text-xs transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed appearance-none focus:outline-none ${THEME.input}`}
             >
               {TEAMS.map((t) => (
-                <option key={t} value={t}>{t}</option>
+                <option key={t} value={t}>
+                  {t}
+                </option>
               ))}
             </select>
           </div>
         </div>
 
         <div className="flex items-center gap-6 text-[10px] text-slate-500 pt-2 border-t border-slate-200/90">
-          <span>User ID: <span className="font-mono text-slate-500">{user?.user_id}</span></span>
-          <span>Registered: <span className="text-slate-500">{user?.created_at ? new Date(user.created_at).toLocaleDateString() : "-"}</span></span>
+          <span>
+            User ID:{" "}
+            <span className="font-mono text-slate-500">{user?.user_id}</span>
+          </span>
+          <span>
+            Registered:{" "}
+            <span className="text-slate-500">
+              {user?.created_at
+                ? new Date(user.created_at).toLocaleDateString()
+                : "-"}
+            </span>
+          </span>
         </div>
 
         {!isViewer && (

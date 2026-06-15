@@ -1,6 +1,9 @@
 import nodemailer from "nodemailer";
 import { getNewUserEmailHtml } from "../templates/email/newUser";
 import { TEAM_FLAGS, TEAM_WHATSAPP_LINKS } from "./constants";
+import fs from "fs";
+import path from "path";
+
 const smtpHost = process.env.SMTP_HOST;
 const smtpPort = process.env.SMTP_PORT;
 const smtpUser = process.env.SMTP_USER;
@@ -44,12 +47,21 @@ export async function sendRegistrationEmail(player) {
   const whatsappUrl = TEAM_WHATSAPP_LINKS[team] || "https://chat.whatsapp.com/";
 
   try {
+    const pngPath = path.join(process.cwd(), "public", "ticket.png");
+    const pngContent = fs.readFileSync(pngPath);
     const info = await mailTransporter.sendMail({
       from: `"μFifa'26" <${smtpFrom}>`,
       to: email,
       subject: `μFifa'26 Access Pass Confirmed - @${user_id}`,
       text: `Welcome to μFifa'26, ${name}. Your arena access pass is confirmed under Player ID @${user_id} playing for ${teamLabel}. Join your squad WhatsApp group here: ${whatsappUrl}`,
       html: getNewUserEmailHtml(player),
+      attachments: [
+        {
+          filename: "ticket.png",
+          content: pngContent,
+          cid: "ticket_image",
+        },
+      ],
     });
     console.log(
       `Email successfully sent to ${email}. MessageId: ${info.messageId}`,

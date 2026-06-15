@@ -3,6 +3,7 @@ import crypto from "crypto";
 import { z } from "zod";
 import { sendRegistrationEmail, sendRegistrationOtpEmail } from "@/utils/email";
 import { adjustSquadPoints } from "@/utils/squad";
+import { signToken } from "@/utils/auth";
 import {
   OTP_MAX_ATTEMPTS,
   clearOtpSession,
@@ -347,11 +348,29 @@ export async function POST(request) {
         });
       }
 
-      return NextResponse.json({
+      const response = NextResponse.json({
         success: true,
         message: "Registration completed successfully.",
         data: creation.data,
       }, { status: 201 });
+
+      if (creation.data) {
+        try {
+          const token = signToken({
+            id: creation.data.id,
+            name: creation.data.name,
+            user_id: creation.data.user_id,
+            email: creation.data.email,
+            role: "player",
+          });
+          const maxAge = 30 * 24 * 60 * 60; // 30 days
+          response.headers.set("Set-Cookie", `player_token=${token}; Path=/; HttpOnly; SameSite=Lax; Max-Age=${maxAge}`);
+        } catch (authErr) {
+          console.error("Failed to auto-sign token on registration:", authErr);
+        }
+      }
+
+      return response;
     }
 
     if (action === "cancel_otp") {

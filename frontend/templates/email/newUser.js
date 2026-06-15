@@ -52,125 +52,7 @@ function getNewUserEmailHtml(player, assets = {}) {
             margin: 0 0 18px 0;
           }
           .ticket {
-            position: relative;
-            background: rgba(32, 3, 5, 0.94);
-            border: 2px dashed rgba(6, 182, 212, 0.4);
-            border-radius: 28px;
-            padding: 24px;
-            overflow: hidden;
-            box-shadow: 0 0 30px rgba(6, 182, 212, 0.14);
-          }
-          .header {
-            position: relative;
-            display: table;
-            width: 100%;
-            padding-bottom: 16px;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-          }
-          .header-left,
-          .header-right {
-            display: table-cell;
-            vertical-align: middle;
-          }
-          .header-right {
-            text-align: right;
-          }
-          .brand {
-            color: #f8fafc;
-            font-size: 11px;
-            font-weight: 900;
-            letter-spacing: 0.18em;
-            text-transform: uppercase;
-          }
-          .brand-row {
-            display: table;
-            width: 100%;
-          }
-          .brand-lockup {
-            display: inline-block;
-            white-space: nowrap;
-          }
-          .brand-logo {
-            display: inline-block;
-            vertical-align: middle;
-            margin-right: 6px;
-          }
-          .brand-separator {
-            display: inline-block;
-            vertical-align: middle;
-            width: 1px;
-            height: 18px;
-            background: rgba(255, 255, 255, 0.2);
-            margin: 0 8px 0 2px;
-          }
-          .brand-title {
-            display: inline-block;
-            vertical-align: middle;
-          }
-          .status {
-            display: inline-block;
-            background: rgba(6, 182, 212, 0.1);
-            border: 1px solid rgba(6, 182, 212, 0.3);
-            color: #06B6D4;
-            padding: 5px 9px;
-            border-radius: 7px;
-            font-size: 8px;
-            font-weight: 900;
-            letter-spacing: 0.18em;
-            text-transform: uppercase;
-          }
-          .grid {
-            position: relative;
-            display: table;
-            width: 100%;
-            padding: 15px 0;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.06);
-          }
-          .cell {
-            display: table-cell;
-            width: 50%;
-            vertical-align: top;
-            padding-right: 10px;
-          }
-          .label {
-            display: block;
-            color: #64748b;
-            font-size: 8px;
-            font-weight: 900;
-            letter-spacing: 0.18em;
-            text-transform: uppercase;
-            margin-bottom: 5px;
-          }
-          .value {
-            display: block;
-            color: #f8fafc;
-            font-size: 14px;
-            font-weight: 700;
-            line-height: 1.4;
-            word-break: break-word;
-          }
-          .value-cyan {
-            color: #06B6D4;
-          }
-          .value-pink {
-            color: #4F46E5;
-          }
-          .footer {
-            position: relative;
-            padding-top: 14px;
-          }
-          .issued-label {
-            color: #475569;
-            font-size: 8px;
-            font-weight: 900;
-            letter-spacing: 0.2em;
-            text-transform: uppercase;
-          }
-          .issued-value {
-            color: #94a3b8;
-            font-size: 10px;
-            font-weight: 600;
-            margin-top: 4px;
+            margin: 0 auto 20px auto;
           }
           .button-wrap {
             text-align: center;
@@ -211,50 +93,36 @@ function getNewUserEmailHtml(player, assets = {}) {
             <p class="intro">
               Your registration is confirmed. Here is your arena access pass and your squad WhatsApp joining link.
             </p>
-            <div class="ticket">
-              <div class="header">
-                <div class="header-left">
-                  <div class="brand-row">
-                    <div class="brand-lockup">
-                      <img src="https://drive.google.com/uc?export=view&id=1cILlNpbyz0MFe9kJznGg1a-PS17L11Gz" width="10" height="28" alt="World Cup Trophy" class="brand-logo">
-                      <img src="https://drive.google.com/uc?export=view&id=1tSjhy_aDU1lu9e8iXjM7vw1ArAgmDhy6" width="62" height="28" alt="muLearn Logo" class="brand-logo">
-                      <span class="brand-separator"></span>
-                      <span class="brand brand-title">Arena Access Pass</span>
-                    </div>
-                  </div>
-                </div>
-                <div class="header-right">
-                  <span class="status">Confirmed</span>
-                </div>
-              </div>
-
-              <div class="grid">
-                <div class="cell">
-                  <span class="label">Player Name</span>
-                  <span class="value">${name}</span>
-                </div>
-                <div class="cell">
-                  <span class="label">Player ID</span>
-                  <span class="value value-cyan">@${user_id}</span>
-                </div>
-              </div>
-
-              <div class="grid">
-                <div class="cell">
-                  <span class="label">Selected Team</span>
-                  <span class="value">${teamLabel}</span>
-                </div>
-                <div class="cell">
-                  <span class="label">Squad Domain</span>
-                  <span class="value value-pink">${domain}</span>
-                </div>
-              </div>
-
-              <div class="footer">
-                <div class="issued-label">Issued On</div>
-                <div class="issued-value">${issuedOn}</div>
-              </div>
-            </div>
+            <table class="ticket" width="404" height="223" cellpadding="0" cellspacing="0" border="0" background="cid:ticket_image" style="width: 404px; height: 223px; border-collapse: collapse; background-image: url('cid:ticket_image'); background-size: cover; background-position: center; background-repeat: no-repeat; border: 1px solid rgba(255,255,255,0.1); border-radius: 24px; box-shadow: 0 0 40px rgba(6,182,212,0.25); margin: 0 auto 20px auto; -webkit-user-select: none; -moz-user-select: none; -ms-user-select: none; user-select: none;">
+              <!-- Row 1: Top Spacer & Name -->
+              <tr style="height: 50.5%;">
+                <td valign="bottom" style="text-align: left; vertical-align: bottom; padding: 0 0 2px 24%; height: 50.5%;">
+                  <span style="font-size: 9px; font-weight: 900; color: #2A1E17; font-family: 'Segoe UI', Roboto, sans-serif; letter-spacing: 0.05em; line-height: 1; display: block; white-space: nowrap;">
+                    ${name}
+                  </span>
+                </td>
+              </tr>
+              <!-- Row 2: User ID -->
+              <tr style="height: 8.3%;">
+                <td valign="bottom" style="text-align: left; vertical-align: bottom; padding: 0 0 2px 22%; height: 14.2%;">
+                  <span style="font-size: 7.5px; font-weight: bold; color: #E53935; font-family: 'Segoe UI', Roboto, sans-serif; letter-spacing: 0.05em; line-height: 1; display: block; white-space: nowrap;">
+                    ${user_id}
+                  </span>
+                </td>
+              </tr>
+              <!-- Row 3: Issued On -->
+              <tr style="height: 13.5%;">
+                <td valign="bottom" style="text-align: left; vertical-align: bottom; padding: 0 0 2px 20%; height: 11%;">
+                  <span style="font-size: 5.9px; font-weight: bold; color: #2A1E17; font-family: 'Segoe UI', Roboto, sans-serif; line-height: 1; display: block; white-space: nowrap;">
+                    ${issuedOn}
+                  </span>
+                </td>
+              </tr>
+              <!-- Row 4: Bottom Spacer -->
+              <tr style="height: 23%;">
+                <td style="height: 23%; padding: 0;">&nbsp;</td>
+              </tr>
+            </table>
 
             <div class="button-wrap">
               <a href="${whatsappUrl}" target="_blank" rel="noopener noreferrer" class="button">
@@ -263,7 +131,7 @@ function getNewUserEmailHtml(player, assets = {}) {
             </div>
 
             <p class="note">
-              Keep this pass for reference. You have also been credited with 10 μ-Points.
+              Keep this pass for reference. You have also been credited with 10 μPoints.
             </p>
 
             <div class="footer-text">

@@ -2,7 +2,6 @@
 
 import React, { useState, useEffect, useRef, Suspense } from "react";
 import Link from "next/link";
-import Image from "next/image";
 import { useSearchParams, useRouter } from "next/navigation";
 import BackgroundVideo from "@/components/BackgroundVideo";
 import { getBackendUrl } from "@/utils/api";
@@ -148,7 +147,6 @@ function RegisterForm() {
   const [validationErrors, setValidationErrors] = useState({});
   const [apiError, setApiError] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [registeredData, setRegisteredData] = useState(null);
   const [isPrivacyModalOpen, setIsPrivacyModalOpen] = useState(false);
   const [otpModal, setOtpModal] = useState({
     open: false,
@@ -413,7 +411,6 @@ function RegisterForm() {
       const data = await res.json();
 
       if (res.ok && data.success) {
-        setRegisteredData(data.data);
         setOtpModal({
           open: false,
           email: "",
@@ -423,6 +420,7 @@ function RegisterForm() {
           resendAvailableAt: 0,
           expiresAt: 0,
         });
+        router.push("/dashboard");
       } else {
         setOtpModal((prev) => ({
           ...prev,
@@ -505,7 +503,6 @@ function RegisterForm() {
     });
     setValidationErrors({});
     setApiError("");
-    setRegisteredData(null);
     setOtpModal({
       open: false,
       email: "",
@@ -538,9 +535,8 @@ function RegisterForm() {
       <div className="absolute bottom-[20%] left-[-15%] w-[45vw] h-[45vw] cyan-accent-glow pointer-events-none rounded-full opacity-20 no-print" />
 
       <div className="max-w-4xl mx-auto px-4 sm:px-6 w-full relative z-10 flex-1 flex flex-col justify-center items-center">
-        {!registeredData ? (
-          /* REGISTRATION FORM VIEW */
-          <div className="w-full max-w-lg bg-glass-card rounded-2xl p-5 sm:p-6 md:p-8 border border-white/10 backdrop-blur-md shadow-2xl flex flex-col gap-5 sm:gap-6 bg-[linear-gradient(115deg,rgba(255,255,255,0.02),rgba(79, 70, 229,0.015))]">
+        {/* REGISTRATION FORM VIEW */}
+        <div className="w-full max-w-lg bg-glass-card rounded-2xl p-5 sm:p-6 md:p-8 border border-white/10 backdrop-blur-md shadow-2xl flex flex-col gap-5 sm:gap-6 bg-[linear-gradient(115deg,rgba(255,255,255,0.02),rgba(79, 70, 229,0.015))]">
             {/* Header */}
             <div className="text-center flex flex-col gap-1.5">
               <h1 className="text-2xl md:text-3xl font-extrabold tracking-wider bg-gradient-to-r from-white to-slate-400 bg-clip-text text-transparent uppercase">
@@ -861,165 +857,6 @@ function RegisterForm() {
               </Link>
             </div>
           </div>
-        ) : (
-          <div className="w-full max-w-md flex flex-col gap-4 items-center px-4 sm:px-0">
-            <div className="w-full flex justify-between items-center no-print px-1">
-              <button
-                onClick={() => window.print()}
-                className="cursor-pointer p-2.5 rounded-xl bg-glass border border-white/10 hover:border-white/30 text-slate-400 hover:text-white transition-all flex items-center justify-center"
-                title="Print Pass"
-              >
-                <svg
-                  className="w-4.5 h-4.5"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    d="M6.72 13.829c-.24.03-.48.062-.72.096m.72-.096a42.415 42.415 0 0 1 10.56 0m-10.56 0L6.34 18m10.94-4.171c.24.03.48.062.72.096m-.72-.096L17.66 18m0 0 .229 2.523a1.125 1.125 0 0 1-1.12 1.227H7.231c-.662 0-1.18-.568-1.12-1.227L6.34 18m11.318 0h1.091A2.25 2.25 0 0 0 21 15.75V9.456c0-1.081-.768-2.015-1.837-2.175a48.865 48.865 0 0 0-14.326 0C3.768 7.44 3 8.375 3 9.456v6.294a2.25 2.25 0 0 0 2.25 2.25h1.091M12 10.5h.008v.008H12V10.5Zm3 0h.008v.008H15V10.5ZM9 10.5h.008v.008H9V10.5ZM18 13.5h.008v.008H18V13.5ZM6 13.5h.008v.008H6V13.5M16.5 7.5v-3a3 3 0 0 0-3-3h-3a3 3 0 0 0-3 3v3m6 0h-6"
-                  />
-                </svg>
-              </button>
-            </div>
-
-            <div
-              id="tournament-ticket"
-              className="w-full bg-[#131927]/90 border-2 border-dashed border-[#06B6D4]/40 rounded-3xl p-4 sm:p-6 shadow-[0_0_30px_rgba(6, 182, 212,0.15)] flex flex-col gap-4 sm:gap-5 relative overflow-hidden backdrop-blur-lg select-none"
-            >
-              <div className="absolute -top-12 -left-12 w-28 h-28 bg-[#06B6D4]/20 rounded-full blur-2xl pointer-events-none" />
-              <div className="absolute -bottom-12 -right-12 w-28 h-28 bg-[#4F46E5]/20 rounded-full blur-2xl pointer-events-none" />
-
-              <div className="absolute top-1/2 -translate-y-1/2 -left-[10px] w-5 h-5 bg-[#090A0F] border-r-2 border-dashed border-[#06B6D4]/40 rounded-full" />
-              <div className="absolute top-1/2 -translate-y-1/2 -right-[10px] w-5 h-5 bg-[#090A0F] border-l-2 border-dashed border-[#06B6D4]/40 rounded-full" />
-
-              <div className="flex items-center justify-between border-b border-white/10 pb-4">
-                <div className="flex items-center gap-1.5 sm:gap-2">
-                  <div className="flex items-center gap-1 sm:gap-1.5 shrink-0">
-                    <Image
-                      src="/trophy.png"
-                      alt="World Cup Trophy"
-                      width={9}
-                      height={24}
-                      priority
-                      className="h-5 sm:h-6 w-auto object-contain filter drop-shadow-[0_0_6px_rgba(6, 182, 212,0.45)]"
-                    />
-                    <Image
-                      src="/logo.png"
-                      alt="μLearn Logo"
-                      width={53}
-                      height={24}
-                      priority
-                      className="h-5 sm:h-6 w-auto object-contain"
-                    />
-                  </div>
-                  <div className="h-5 sm:h-6 w-[1px] bg-white/20 mx-0.5" />
-                  <div className="flex flex-col text-left">
-                    <span className="text-[9px] sm:text-[11px] font-black tracking-wider text-slate-100 uppercase leading-tight mt-0.5">
-                      Arena Access Pass
-                    </span>
-                  </div>
-                </div>
-                <div className="bg-[#06B6D4]/10 border border-[#06B6D4]/30 px-1.5 sm:px-2 py-0.5 rounded text-[7px] sm:text-[8px] font-black text-[#06B6D4] tracking-wider uppercase shrink-0">
-                  CONFIRMED
-                </div>
-              </div>
-
-              {/* Ticket Meta Details */}
-              <div className="grid grid-cols-2 gap-3 sm:gap-4 border-b border-white/5 pb-4">
-                <div className="flex flex-col text-left">
-                  <span className="text-[8px] font-black uppercase tracking-wider text-slate-500">
-                    Player Name
-                  </span>
-                  <span className="text-xs sm:text-sm font-bold text-slate-100 truncate">
-                    {registeredData.name}
-                  </span>
-                </div>
-                <div className="flex flex-col text-left">
-                  <span className="text-[8px] font-black uppercase tracking-wider text-slate-500">
-                    Player ID
-                  </span>
-                  <span className="text-xs sm:text-sm font-bold text-[#06B6D4] truncate">
-                    @{registeredData.user_id}
-                  </span>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-3 sm:gap-4 border-b border-white/5 pb-4">
-                <div className="flex flex-col text-left">
-                  <span className="text-[8px] font-black uppercase tracking-wider text-slate-500">
-                    Selected Team
-                  </span>
-                  <span className="text-xs sm:text-sm font-bold text-slate-100 truncate flex items-center gap-2">
-                    <span
-                      className={`fi fi-${TEAM_FLAGS[registeredData.team]} rounded-sm shadow-sm border border-white/10 shrink-0`}
-                      style={{ width: "16px", height: "12px" }}
-                      aria-hidden="true"
-                    />
-                    <span>{registeredData.team}</span>
-                  </span>
-                </div>
-                <div className="flex flex-col text-left">
-                  <span className="text-[8px] font-black uppercase tracking-wider text-slate-500">
-                    Squad Domain
-                  </span>
-                  <span className="text-xs sm:text-sm font-bold text-[#4F46E5] truncate">
-                    {registeredData.domain}
-                  </span>
-                </div>
-              </div>
-
-              {/* Footer / QR Simulation */}
-              <div className="flex items-center justify-between pt-2">
-                <div className="flex flex-col text-left">
-                  <span className="text-[7px] font-black uppercase tracking-widest text-slate-600">
-                    Issued On
-                  </span>
-                  <span className="text-[9px] font-semibold text-slate-400">
-                    {new Date(
-                      registeredData.created_at || Date.now(),
-                    ).toLocaleDateString(undefined, {
-                      year: "numeric",
-                      month: "short",
-                      day: "numeric",
-                    })}
-                  </span>
-                </div>
-              </div>
-            </div>
-
-            {/* Actions */}
-            <div className="flex flex-col gap-3 w-full max-w-sm justify-center no-print mt-2">
-              <a
-                href={
-                  TEAM_WHATSAPP_LINKS[registeredData.team] ||
-                  "https://chat.whatsapp.com/"
-                }
-                target="_blank"
-                rel="noopener noreferrer"
-                className="cursor-pointer bg-[#25D366] text-white hover:bg-[#20ba5a] px-6 py-3 rounded-xl text-xs font-bold tracking-wider uppercase transition-all flex items-center justify-center gap-2 shadow-[0_0_20px_rgba(37,211,102,0.2)] hover:shadow-[0_0_35px_rgba(37,211,102,0.45)] transform hover:-translate-y-0.5"
-              >
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  viewBox="0 0 32 32"
-                  className="w-4 h-4 fill-current"
-                >
-                  <path d="M16.004 3C8.82 3 3 8.82 3 16.004c0 2.293.598 4.532 1.734 6.504L3 29l6.676-1.706a12.95 12.95 0 0 0 6.328 1.636C23.18 28.93 29 23.11 29 15.926 29 8.82 23.18 3 16.004 3zm0 23.798a10.74 10.74 0 0 1-5.47-1.496l-.392-.232-3.96 1.01 1.056-3.86-.254-.4a10.72 10.72 0 0 1-1.646-5.816c0-5.94 4.83-10.77 10.766-10.77 2.878 0 5.584 1.12 7.617 3.154a10.69 10.69 0 0 1 3.148 7.612c0 5.94-4.83 10.798-10.766 10.798zm5.906-8.052c-.322-.16-1.904-.94-2.198-1.046-.294-.106-.508-.16-.722.16-.214.32-.83 1.046-1.018 1.26-.186.214-.374.24-.694.08-.32-.16-1.35-.498-2.572-1.586-.95-.846-1.59-1.89-1.776-2.21-.188-.32-.02-.492.14-.65.144-.144.32-.374.48-.56.16-.188.214-.32.32-.534.106-.214.054-.4-.026-.56-.08-.16-.722-1.74-.99-2.386-.26-.626-.524-.54-.722-.55l-.614-.01c-.214 0-.56.08-.854.4-.294.32-1.122 1.096-1.122 2.674 0 1.578 1.15 3.102 1.31 3.316.16.214 2.262 3.454 5.48 4.842.766.33 1.364.526 1.83.674.77.244 1.47.21 2.024.128.618-.092 1.904-.778 2.172-1.53.268-.752.268-1.396.188-1.53-.08-.132-.294-.212-.616-.372z" />
-                </svg>
-                <span>Join {registeredData.team} WhatsApp Group</span>
-              </a>
-            </div>
-
-            <Link
-              href="/leaderboard"
-              className="text-xs text-slate-500 hover:text-slate-300 transition-colors uppercase tracking-widest font-black"
-            >
-              Return to Lobby
-            </Link>
-          </div>
-        )}
       </div>
 
       {/* Privacy Policy Modal */}

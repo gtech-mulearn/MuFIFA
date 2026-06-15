@@ -21,6 +21,18 @@ const FLAGS = {
 
 const TEAMS = Object.keys(FLAGS);
 
+const SQUAD_PHOTOS = {
+  Brazil: "/players/brazil_back.svg",
+  Argentina: "/players/argentina_back.svg",
+  Portugal: "/players/portugal_back.svg",
+};
+
+const getSquadPhoto = (teamName) => {
+  if (SQUAD_PHOTOS[teamName]) return SQUAD_PHOTOS[teamName];
+  const formatted = teamName.toLowerCase().replace(/\s+/g, "_");
+  return `/players/${formatted}_front.svg`;
+};
+
 const INITIAL_TEAMS = TEAMS.map((team, idx) => ({
   rank: idx + 1,
   name: team,
@@ -36,7 +48,6 @@ export default function LeaderboardPage() {
   // Squad Standings State
   const [teamsData, setTeamsData] = useState(INITIAL_TEAMS);
   const [dbStatus, setDbStatus] = useState("connecting"); // "connecting" | "connected" | "error"
-  const [isLiveFeed, setIsLiveFeed] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
 
   // Individual Standings State
@@ -86,15 +97,12 @@ export default function LeaderboardPage() {
               return { rank: newRank, rankTrend, ...item };
             });
           });
-          setIsLiveFeed(true);
         } else {
           setDbStatus("error");
-          setIsLiveFeed(false);
         }
       } catch (err) {
         console.error("Error fetching stats:", err);
         setDbStatus("error");
-        setIsLiveFeed(false);
       }
     };
 
@@ -103,62 +111,13 @@ export default function LeaderboardPage() {
     return () => clearInterval(interval);
   }, []);
 
-  // Squad Standings Simulation Loop (Fallback when database syncing or empty)
-  useEffect(() => {
-    if (isLiveFeed) return;
-
-    setTeamsData((prev) =>
-      prev.map((t, idx) => ({
-        ...t,
-        points:
-          t.points === 0
-            ? [140, 120, 100, 80, 70, 60, 50, 40, 30, 20, 10, 0][idx] || 0
-            : t.count,
-      })),
-    );
-
-    const simInterval = setInterval(() => {
-      setTeamsData((prev) => {
-        const updated = prev.map((t) => {
-          if (Math.random() < 0.3) {
-            return {
-              ...t,
-              points: t.points + Math.floor(Math.random() * 10) + 5,
-            };
-          }
-          return t;
-        });
-
-        updated.sort((a, b) => {
-          if (b.points !== a.points) return b.points - a.points;
-          if (b.count !== a.count) return b.count - a.count;
-          return a.name.localeCompare(b.name);
-        });
-
-        return updated.map((item, idx) => {
-          const newRank = idx + 1;
-          const prevItem = prev.find((p) => p.name === item.name);
-          let rankTrend = "stable";
-          if (prevItem) {
-            if (newRank < prevItem.rank) rankTrend = "up";
-            else if (newRank > prevItem.rank) rankTrend = "down";
-            else rankTrend = prevItem.rankTrend || "stable";
-          }
-          return { ...item, rank: newRank, rankTrend };
-        });
-      });
-    }, 6000);
-
-    return () => clearInterval(simInterval);
-  }, [isLiveFeed]);
-
   // Fetch Individual Standings from API
   const fetchPlayers = async (reset = false) => {
     setPlayersLoading(true);
     try {
       const currentOffset = reset ? 0 : playersOffset;
       const res = await fetch(
-        `/api/v1/leaderboard/individuals?limit=12&offset=${currentOffset}&search=${encodeURIComponent(playersSearchQuery)}&sort=${playersSortOrder}`
+        `/api/v1/leaderboard/individuals?limit=12&offset=${currentOffset}&search=${encodeURIComponent(playersSearchQuery)}&sort=${playersSortOrder}`,
       );
       const data = await res.json();
       if (res.ok && data.success) {
@@ -198,12 +157,14 @@ export default function LeaderboardPage() {
 
   // Filter Squads Client-side
   const filteredTeams = teamsData.filter((team) =>
-    team.name.toLowerCase().includes(searchQuery.toLowerCase())
+    team.name.toLowerCase().includes(searchQuery.toLowerCase()),
   );
 
   const getRankStyle = (rank) => {
-    if (rank === 1) return "bg-[#FBBF24]/10 border-[#FBBF24]/30 text-[#FBBF24] shadow-[0_0_8px_rgba(251,191,36,0.15)]";
-    if (rank === 2) return "bg-[#94A3B8]/10 border-[#94A3B8]/30 text-[#E2E8F0] shadow-[0_0_8px_rgba(148,163,184,0.15)]";
+    if (rank === 1)
+      return "bg-[#FBBF24]/10 border-[#FBBF24]/30 text-[#FBBF24] shadow-[0_0_8px_rgba(251,191,36,0.15)]";
+    if (rank === 2)
+      return "bg-[#94A3B8]/10 border-[#94A3B8]/30 text-[#E2E8F0] shadow-[0_0_8px_rgba(148,163,184,0.15)]";
     if (rank === 3) return "bg-[#D97706]/10 border-[#D97706]/30 text-[#F97316]";
     return "bg-white/5 border-white/10 text-slate-400";
   };
@@ -224,27 +185,64 @@ export default function LeaderboardPage() {
       <div className="absolute bottom-[10%] left-[-10%] w-[55vw] h-[55vw] bg-[#06b6d4]/8 pointer-events-none rounded-full blur-[130px]" />
 
       {/* Honeycomb Pattern */}
-      <div className="absolute inset-0 z-0 opacity-[0.025] pointer-events-none" style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg width='56' height='32' viewBox='0 0 56 32' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M28 0 L56 16 L56 32 L28 32 L0 32 L0 16 Z M0 0 L28 16 L56 0' fill='none' stroke='%23ffffff' stroke-width='1.2'/%3E%3C/svg%3E")` }} />
+      <div
+        className="absolute inset-0 z-0 opacity-[0.025] pointer-events-none"
+        style={{
+          backgroundImage: `url("data:image/svg+xml,%3Csvg width='56' height='32' viewBox='0 0 56 32' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M28 0 L56 16 L56 32 L28 32 L0 32 L0 16 Z M0 0 L28 16 L56 0' fill='none' stroke='%23ffffff' stroke-width='1.2'/%3E%3C/svg%3E")`,
+        }}
+      />
 
       {/* Left Wavy Glow Path */}
-      <svg className="absolute left-0 top-[20%] w-[250px] h-[500px] pointer-events-none opacity-20 hidden md:block" viewBox="0 0 100 500">
-        <path d="M 0 450 Q 50 350 20 250 T 80 50" fill="none" stroke="#06B6D4" strokeWidth="1.5" opacity="0.6" />
-        <path d="M 0 430 Q 40 340 10 240 T 70 40" fill="none" stroke="#4F46E5" strokeWidth="1" opacity="0.4" />
+      <svg
+        className="absolute left-0 top-[20%] w-[250px] h-[500px] pointer-events-none opacity-20 hidden md:block"
+        viewBox="0 0 100 500"
+      >
+        <path
+          d="M 0 450 Q 50 350 20 250 T 80 50"
+          fill="none"
+          stroke="#06B6D4"
+          strokeWidth="1.5"
+          opacity="0.6"
+        />
+        <path
+          d="M 0 430 Q 40 340 10 240 T 70 40"
+          fill="none"
+          stroke="#4F46E5"
+          strokeWidth="1"
+          opacity="0.4"
+        />
       </svg>
 
       {/* Right Wavy Glow Path */}
-      <svg className="absolute right-0 top-[15%] w-[250px] h-[500px] pointer-events-none opacity-20 hidden md:block" viewBox="0 0 100 500">
-        <path d="M 100 50 Q 50 150 80 250 T 20 450" fill="none" stroke="#06B6D4" strokeWidth="1.5" opacity="0.6" />
-        <path d="M 100 70 Q 60 160 90 260 T 30 430" fill="none" stroke="#4F46E5" strokeWidth="1" opacity="0.4" />
+      <svg
+        className="absolute right-0 top-[15%] w-[250px] h-[500px] pointer-events-none opacity-20 hidden md:block"
+        viewBox="0 0 100 500"
+      >
+        <path
+          d="M 100 50 Q 50 150 80 250 T 20 450"
+          fill="none"
+          stroke="#06B6D4"
+          strokeWidth="1.5"
+          opacity="0.6"
+        />
+        <path
+          d="M 100 70 Q 60 160 90 260 T 30 430"
+          fill="none"
+          stroke="#4F46E5"
+          strokeWidth="1"
+          opacity="0.4"
+        />
       </svg>
 
-      <div className="max-w-2xl mx-auto px-2 sm:px-4 w-full relative z-10 flex-1 flex flex-col gap-6">
+      <div className="max-w-2xl md:max-w-3xl mx-auto px-2 sm:px-4 w-full relative z-10 flex-1 flex flex-col gap-6">
         {/* Header and Back Link */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-white/5 pb-4">
           <div className="flex flex-col gap-1">
             <div className="flex items-center gap-2">
               <h1 className="text-xl font-bold tracking-wide text-white uppercase">
-                {activeTab === "squad" ? "Squad Standings" : "Individual Standings"}
+                {activeTab === "squad"
+                  ? "Squad Standings"
+                  : "Individual Standings"}
               </h1>
               <span className="flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-white/5 border border-white/10">
                 <span
@@ -261,9 +259,9 @@ export default function LeaderboardPage() {
             </div>
             <p className="text-[10px] text-slate-400">
               {activeTab === "squad"
-                ? isLiveFeed
+                ? dbStatus === "connected"
                   ? "Live squad points standings"
-                  : "Simulated squad standby mode"
+                  : "Syncing squad standings"
                 : "Real-time player leaderboards"}
             </p>
           </div>
@@ -307,7 +305,6 @@ export default function LeaderboardPage() {
 
         {/* Leaderboard Card */}
         <div className="bg-glass-card rounded-xl py-5 px-0 border border-white/10 backdrop-blur-md shadow-xl flex flex-col gap-4">
-          
           {/* SEARCH & SORTING BAR */}
           <div className="px-2 sm:px-3">
             {activeTab === "squad" ? (
@@ -328,10 +325,17 @@ export default function LeaderboardPage() {
                   className="bg-black/40 border border-white/10 rounded-lg px-3 py-2 text-xs text-slate-200 placeholder-slate-600 focus:outline-none focus:border-[#06B6D4] flex-1 transition-colors"
                 />
                 <button
-                  onClick={() => setPlayersSortOrder(prev => prev === "desc" ? "asc" : "desc")}
+                  onClick={() =>
+                    setPlayersSortOrder((prev) =>
+                      prev === "desc" ? "asc" : "desc",
+                    )
+                  }
                   className="px-3 py-2 bg-black/40 border border-white/10 hover:border-white/20 rounded-lg text-xs font-bold text-slate-300 hover:text-white transition-colors cursor-pointer flex items-center gap-1.5 whitespace-nowrap shrink-0"
                 >
-                  Score: {playersSortOrder === "desc" ? "High to Low ↓" : "Low to High ↑"}
+                  Score:{" "}
+                  {playersSortOrder === "desc"
+                    ? "High to Low ↓"
+                    : "Low to High ↑"}
                 </button>
               </div>
             )}
@@ -339,182 +343,311 @@ export default function LeaderboardPage() {
 
           {/* STANDINGS TABLE LIST */}
           <div className="flex flex-col">
-            
+            {activeTab === "squad" && !searchQuery && teamsData.length >= 3 && (
+              <div className="px-1.5 sm:px-3 pb-8 pt-4 flex justify-center items-end gap-1.5 sm:gap-4 border-b border-white/5 bg-white/[0.01]">
+                {/* 2nd Place */}
+                <div className="flex-1 max-w-[110px] sm:max-w-[140px] md:max-w-[180px] flex flex-col items-center text-center group">
+                  <div className="relative mb-2 transition-transform duration-300 group-hover:-translate-y-1">
+                    <img
+                      src={getSquadPhoto(teamsData[1].name)}
+                      alt={`${teamsData[1].name} jersey`}
+                      className="w-20 h-20 sm:w-26 sm:h-26 md:w-48 md:h-48 object-contain drop-shadow-[0_8px_16px_rgba(255,255,255,0.05)]"
+                      onError={(e) => {
+                        e.target.onerror = null;
+                        e.target.src = "/players/portugal_front.svg";
+                      }}
+                    />
+                    <span className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-[#94A3B8] border border-white/20 text-black text-[10px] font-black flex items-center justify-center shadow-lg">
+                      2
+                    </span>
+                  </div>
+                  <div className="w-full bg-gradient-to-b from-slate-400/10 via-slate-500/[0.02] to-transparent border-t border-x border-slate-400/20 rounded-t-xl p-1.5 sm:p-2.5 flex flex-col items-center min-h-[90px] sm:min-h-[105px] md:min-h-[130px] justify-center">
+                    <span className="text-[9px] sm:text-xs md:text-sm font-bold text-slate-300 truncate max-w-full flex items-center justify-center gap-1">
+                      <span
+                        className={`fi fi-${teamsData[1].flag} rounded-sm shrink-0`}
+                        style={{ width: "12px", height: "9px" }}
+                      />
+                      <span className="truncate">{teamsData[1].name}</span>
+                    </span>
+                    <span className="text-xs sm:text-sm md:text-lg font-black text-white mt-1">
+                      {teamsData[1].points}{" "}
+                      <span className="text-[8px] sm:text-[9px] text-slate-500 font-semibold uppercase">
+                        pts
+                      </span>
+                    </span>
+                    <span className="text-[8px] sm:text-[9px] md:text-xs text-slate-500 font-semibold mt-0.5 uppercase tracking-wide truncate max-w-full">
+                      {teamsData[1].count} members
+                    </span>
+                  </div>
+                </div>
+
+                {/* 1st Place */}
+                <div className="flex-1 max-w-[130px] sm:max-w-[160px] md:max-w-[210px] flex flex-col items-center text-center group z-10">
+                  <div className="relative mb-2 transition-transform duration-300 group-hover:-translate-y-1">
+                    <img
+                      src={getSquadPhoto(teamsData[0].name)}
+                      alt={`${teamsData[0].name} jersey`}
+                      className="w-24 h-24 sm:w-32 sm:h-32 md:w-56 md:h-56 object-contain drop-shadow-[0_10px_20px_rgba(251,191,36,0.15)]"
+                      onError={(e) => {
+                        e.target.onerror = null;
+                        e.target.src = "/players/brazil_front.svg";
+                      }}
+                    />
+                    <span className="absolute -top-1 -right-1 w-6 h-6 rounded-full bg-[#FBBF24] border border-white/20 text-black text-[11px] font-black flex items-center justify-center shadow-lg">
+                      1
+                    </span>
+                  </div>
+                  <div className="w-full bg-gradient-to-b from-[#FBBF24]/15 via-yellow-600/[0.02] to-transparent border-t border-x border-[#FBBF24]/30 rounded-t-xl p-2 sm:p-3 flex flex-col items-center min-h-[110px] sm:min-h-[130px] md:min-h-[160px] justify-center shadow-[0_-8px_24px_rgba(251,191,36,0.06)]">
+                    <span className="text-[10px] sm:text-sm md:text-base font-extrabold text-[#FBBF24] truncate max-w-full flex items-center justify-center gap-1.5">
+                      <span
+                        className={`fi fi-${teamsData[0].flag} rounded-sm shrink-0`}
+                        style={{ width: "14px", height: "10.5px" }}
+                      />
+                      <span className="truncate">{teamsData[0].name}</span>
+                    </span>
+                    <span className="text-sm sm:text-base md:text-2xl font-black text-white mt-1">
+                      {teamsData[0].points}{" "}
+                      <span className="text-[9px] sm:text-[10px] text-[#FBBF24] font-semibold uppercase">
+                        pts
+                      </span>
+                    </span>
+                    <span className="text-[9px] sm:text-slate-400 md:text-xs font-semibold mt-0.5 uppercase tracking-wide truncate max-w-full">
+                      {teamsData[0].count} members
+                    </span>
+                  </div>
+                </div>
+
+                {/* 3rd Place */}
+                <div className="flex-1 max-w-[100px] sm:max-w-[130px] md:max-w-[160px] flex flex-col items-center text-center group">
+                  <div className="relative mb-2 transition-transform duration-300 group-hover:-translate-y-1">
+                    <img
+                      src={getSquadPhoto(teamsData[2].name)}
+                      alt={`${teamsData[2].name} jersey`}
+                      className="w-18 h-18 sm:w-22 sm:h-22 md:w-40 md:h-40 object-contain drop-shadow-[0_6px_12px_rgba(217,119,6,0.05)]"
+                      onError={(e) => {
+                        e.target.onerror = null;
+                        e.target.src = "/players/argentina_front.svg";
+                      }}
+                    />
+                    <span className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-[#D97706] border border-white/20 text-black text-[10px] font-black flex items-center justify-center shadow-lg">
+                      3
+                    </span>
+                  </div>
+                  <div className="w-full bg-gradient-to-b from-amber-700/10 via-amber-800/[0.02] to-transparent border-t border-x border-amber-700/20 rounded-t-xl p-1.5 sm:p-2.5 flex flex-col items-center min-h-[75px] sm:min-h-[90px] md:min-h-[110px] justify-center">
+                    <span className="text-[9px] sm:text-xs md:text-sm font-bold text-amber-500 truncate max-w-full flex items-center justify-center gap-1">
+                      <span
+                        className={`fi fi-${teamsData[2].flag} rounded-sm shrink-0`}
+                        style={{ width: "12px", height: "9px" }}
+                      />
+                      <span className="truncate">{teamsData[2].name}</span>
+                    </span>
+                    <span className="text-xs sm:text-sm md:text-lg font-black text-white mt-1">
+                      {teamsData[2].points}{" "}
+                      <span className="text-[8px] sm:text-[9px] text-slate-500 font-semibold uppercase">
+                        pts
+                      </span>
+                    </span>
+                    <span className="text-[8px] sm:text-[9px] md:text-xs text-slate-500 font-semibold mt-0.5 uppercase tracking-wide truncate max-w-full">
+                      {teamsData[2].count} members
+                    </span>
+                  </div>
+                </div>
+              </div>
+            )}
+
             {activeTab === "squad" ? (
               /* SQUAD LIST */
               filteredTeams.length > 0 ? (
-                filteredTeams.map((team) => (
-                  <div
-                    key={team.name}
-                    className="flex items-center justify-between py-3 px-2 sm:px-3 border-b border-white/5 hover:bg-white/[0.02] transition-colors group last:border-b-0"
-                  >
-                    <div className="flex items-center gap-3">
-                      {/* Rank Indicator */}
-                      <span
-                        className={`inline-flex items-center justify-center w-6 h-6 rounded-md text-[10px] font-bold border ${getRankStyle(team.rank)}`}
-                      >
-                        {team.rank}
-                      </span>
+                (searchQuery ? filteredTeams : filteredTeams.slice(3)).map(
+                  (team) => (
+                    <div
+                      key={team.name}
+                      className="flex items-center justify-between py-3 px-2 sm:px-3 border-b border-white/5 hover:bg-white/[0.02] transition-colors group last:border-b-0"
+                    >
+                      <div className="flex items-center gap-3">
+                        {/* Rank Indicator */}
+                        <span
+                          className={`inline-flex items-center justify-center w-6 h-6 rounded-md text-[10px] font-bold border ${getRankStyle(team.rank)}`}
+                        >
+                          {team.rank}
+                        </span>
 
-                      {/* Trend Indicator */}
-                      <div className="w-3 flex items-center justify-center">
-                        {team.rankTrend === "up" && (
-                          <span className="text-[#00E676] text-[10px] drop-shadow-[0_0_2px_#00E676]" aria-label="Rank increased">
-                            ▲
+                        {/* Trend Indicator */}
+                        <div className="w-3 flex items-center justify-center">
+                          {team.rankTrend === "up" && (
+                            <span
+                              className="text-[#00E676] text-[10px] drop-shadow-[0_0_2px_#00E676]"
+                              aria-label="Rank increased"
+                            >
+                              ▲
+                            </span>
+                          )}
+                          {team.rankTrend === "down" && (
+                            <span
+                              className="text-[#4F46E5] text-[10px] drop-shadow-[0_0_2px_#4F46E5]"
+                              aria-label="Rank decreased"
+                            >
+                              ▼
+                            </span>
+                          )}
+                          {team.rankTrend === "stable" && (
+                            <span
+                              className="text-slate-700 text-[8px]"
+                              aria-label="Rank stable"
+                            >
+                              •
+                            </span>
+                          )}
+                        </div>
+
+                        {/* Team Flag & Name */}
+                        <span className="text-xs font-semibold text-slate-200 group-hover:text-white transition-colors flex items-center gap-2">
+                          <span
+                            className={`fi fi-${team.flag} rounded-sm shadow-sm border border-white/10 shrink-0`}
+                            style={{ width: "18px", height: "13.5px" }}
+                            role="img"
+                            aria-label={`${team.name} flag`}
+                          />
+                          <span>{team.name}</span>
+                        </span>
+                      </div>
+
+                      {/* Points & Members */}
+                      <div className="flex items-center gap-3">
+                        <div className="flex items-center gap-1">
+                          <span className="text-xs font-bold text-[#06B6D4]">
+                            {team.points}
                           </span>
-                        )}
-                        {team.rankTrend === "down" && (
-                          <span className="text-[#4F46E5] text-[10px] drop-shadow-[0_0_2px_#4F46E5]" aria-label="Rank decreased">
-                            ▼
+                          <span className="text-[12px] text-slate-400 uppercase tracking-wider">
+                            pts
                           </span>
-                        )}
-                        {team.rankTrend === "stable" && (
-                          <span className="text-slate-700 text-[8px]" aria-label="Rank stable">•</span>
-                        )}
-                      </div>
-
-                      {/* Team Flag & Name */}
-                      <span className="text-xs font-semibold text-slate-200 group-hover:text-white transition-colors flex items-center gap-2">
-                        <span className={`fi fi-${team.flag} rounded-sm shadow-sm border border-white/10 shrink-0`} style={{ width: '18px', height: '13.5px' }} role="img" aria-label={`${team.name} flag`} />
-                        <span>{team.name}</span>
-                      </span>
-                    </div>
-
-                    {/* Points & Members */}
-                    <div className="flex items-center gap-3">
-                      <div className="flex items-center gap-1">
-                        <span className="text-xs font-bold text-[#06B6D4]">
-                          {team.points}
-                        </span>
-                        <span className="text-[12px] text-slate-400 uppercase tracking-wider">
-                          pts
-                        </span>
-                      </div>
-                      <div className="text-white/10">|</div>
-                      <div className="flex items-center gap-1">
-                        <span className="text-[12px] font-medium text-slate-200">
-                          {team.count}
-                        </span>
-                        <span className="text-[12px] text-slate-400 uppercase tracking-wider">
-                          members
-                        </span>
+                        </div>
+                        <div className="text-white/10">|</div>
+                        <div className="flex items-center gap-1">
+                          <span className="text-[12px] font-medium text-slate-200">
+                            {team.count}
+                          </span>
+                          <span className="text-[12px] text-slate-400 uppercase tracking-wider">
+                            members
+                          </span>
+                        </div>
                       </div>
                     </div>
-                  </div>
-                ))
+                  ),
+                )
               ) : (
                 <div className="py-12 mx-2 sm:mx-3 text-center text-slate-500 text-xs font-bold border border-white/5 rounded-lg bg-white/[0.005]">
                   No squad matches your search query.
                 </div>
               )
-            ) : (
-              /* INDIVIDUAL PLAYERS LIST */
-              playersLoading && playersData.length === 0 ? (
-                <div className="py-16 flex flex-col items-center justify-center gap-3">
-                  <div className="w-6 h-6 rounded-full border-2 border-[#4F46E5] border-t-transparent animate-spin" />
-                  <span className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">Loading Leaderboard...</span>
-                </div>
-              ) : playersData.length > 0 ? (
-                <>
-                  {playersData.map((player, idx) => {
-                    const rank = idx + 1;
-                    return (
-                      <div
-                        key={player.id}
-                        className="flex items-center justify-between py-3 px-2 sm:px-3 border-b border-white/5 hover:bg-white/[0.02] transition-colors group last:border-b-0 animate-in fade-in duration-200"
-                      >
-                        <div className="flex items-center gap-2.5 min-w-0 flex-1">
-                          {/* Rank */}
-                          <span
-                            className={`inline-flex items-center justify-center w-6 h-6 rounded-md text-[10px] font-bold border shrink-0 ${getRankStyle(rank)}`}
-                          >
-                            {rank}
-                          </span>
+            ) : /* INDIVIDUAL PLAYERS LIST */
+            playersLoading && playersData.length === 0 ? (
+              <div className="py-16 flex flex-col items-center justify-center gap-3">
+                <div className="w-6 h-6 rounded-full border-2 border-[#4F46E5] border-t-transparent animate-spin" />
+                <span className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">
+                  Loading Leaderboard...
+                </span>
+              </div>
+            ) : playersData.length > 0 ? (
+              <>
+                {playersData.map((player, idx) => {
+                  const rank = idx + 1;
+                  return (
+                    <div
+                      key={player.id}
+                      className="flex items-center justify-between py-3 px-2 sm:px-3 border-b border-white/5 hover:bg-white/[0.02] transition-colors group last:border-b-0 animate-in fade-in duration-200"
+                    >
+                      <div className="flex items-center gap-2.5 min-w-0 flex-1">
+                        {/* Rank */}
+                        <span
+                          className={`inline-flex items-center justify-center w-6 h-6 rounded-md text-[10px] font-bold border shrink-0 ${getRankStyle(rank)}`}
+                        >
+                          {rank}
+                        </span>
 
-                          {/* Avatar */}
-                          <div className="w-7 h-7 rounded-full bg-slate-800 border border-white/5 overflow-hidden flex items-center justify-center shrink-0">
-                            {player.avatar_url ? (
-                              <img
-                                src={player.avatar_url}
-                                alt={player.name}
-                                className="w-full h-full object-cover"
-                              />
-                            ) : (
-                              <span className="text-[9px] font-bold text-slate-400">
-                                {getInitials(player.name)}
-                              </span>
-                            )}
-                          </div>
-
-                          {/* Name & Player ID */}
-                          <div className="flex flex-col min-w-0 text-left">
-                            <Link
-                              href={`/profile/${player.user_id}`}
-                              className="text-xs font-semibold text-slate-200 group-hover:text-white hover:underline transition-colors truncate"
-                            >
-                              {player.name}
-                            </Link>
-                            <span className="text-[9px] font-medium text-slate-500 truncate">
-                              @{player.user_id}
+                        {/* Avatar */}
+                        <div className="w-7 h-7 rounded-full bg-slate-800 border border-white/5 overflow-hidden flex items-center justify-center shrink-0">
+                          {player.avatar_url ? (
+                            <img
+                              src={player.avatar_url}
+                              alt={player.name}
+                              className="w-full h-full object-cover"
+                            />
+                          ) : (
+                            <span className="text-[9px] font-bold text-slate-400">
+                              {getInitials(player.name)}
                             </span>
-                          </div>
+                          )}
                         </div>
 
-                        {/* Team & Domain & Points */}
-                        <div className="flex items-center gap-3 shrink-0">
-                          {/* Domain Badge */}
-                          <span className="hidden sm:inline-block px-1.5 py-0.5 rounded text-[8px] font-black uppercase tracking-wider bg-white/5 border border-white/10 text-slate-400">
-                            {player.domain}
+                        {/* Name & Player ID */}
+                        <div className="flex flex-col min-w-0 text-left">
+                          <Link
+                            href={`/profile/${player.user_id}`}
+                            className="text-xs font-semibold text-slate-200 group-hover:text-white hover:underline transition-colors truncate"
+                          >
+                            {player.name}
+                          </Link>
+                          <span className="text-[9px] font-medium text-slate-500 truncate">
+                            @{player.user_id}
                           </span>
-                          
-                          {/* Team flag */}
-                          {FLAGS[player.team] && (
-                            <span 
-                              className={`fi fi-${FLAGS[player.team]} rounded-sm shadow-sm border border-white/10`}
-                              style={{ width: "16px", height: "12px" }}
-                              title={player.team}
-                            />
-                          )}
-                          
-                          {/* Points */}
-                          <div className="flex items-center gap-0.5 min-w-[50px] justify-end">
-                            <span className="text-xs font-bold text-[#06B6D4]">
-                              {player.mu_points || 0}
-                            </span>
-                            <span className="text-[10px] text-slate-500 uppercase tracking-wider font-semibold">
-                              pts
-                            </span>
-                          </div>
                         </div>
                       </div>
-                    );
-                  })}
 
-                  {/* VIEW MORE PAGINATION */}
-                  {hasMorePlayers && (
-                    <div className="pt-4 pb-2 text-center no-print border-t border-white/5">
-                      <button
-                        onClick={() => fetchPlayers(false)}
-                        disabled={playersLoading}
-                        className="px-6 py-2 rounded-xl bg-white/5 border border-white/10 hover:border-white/20 text-xs font-bold uppercase tracking-wider text-slate-300 hover:text-white transition-all cursor-pointer disabled:opacity-50 flex items-center justify-center gap-2 mx-auto"
-                      >
-                        {playersLoading ? (
-                          <>
-                            <span className="w-3 h-3 rounded-full border-2 border-white border-t-transparent animate-spin" />
-                            Loading More...
-                          </>
-                        ) : (
-                          "View More Players"
+                      {/* Team & Domain & Points */}
+                      <div className="flex items-center gap-3 shrink-0">
+                        {/* Domain Badge */}
+                        <span className="hidden sm:inline-block px-1.5 py-0.5 rounded text-[8px] font-black uppercase tracking-wider bg-white/5 border border-white/10 text-slate-400">
+                          {player.domain}
+                        </span>
+
+                        {/* Team flag */}
+                        {FLAGS[player.team] && (
+                          <span
+                            className={`fi fi-${FLAGS[player.team]} rounded-sm shadow-sm border border-white/10`}
+                            style={{ width: "16px", height: "12px" }}
+                            title={player.team}
+                          />
                         )}
-                      </button>
+
+                        {/* Points */}
+                        <div className="flex items-center gap-0.5 min-w-[50px] justify-end">
+                          <span className="text-xs font-bold text-[#06B6D4]">
+                            {player.mu_points || 0}
+                          </span>
+                          <span className="text-[10px] text-slate-500 uppercase tracking-wider font-semibold">
+                            pts
+                          </span>
+                        </div>
+                      </div>
                     </div>
-                  )}
-                </>
-              ) : (
-                <div className="py-12 mx-2 sm:mx-3 text-center text-slate-500 text-xs font-bold border border-white/5 rounded-lg bg-white/[0.005]">
-                  No players match your search query.
-                </div>
-              )
+                  );
+                })}
+
+                {/* VIEW MORE PAGINATION */}
+                {hasMorePlayers && (
+                  <div className="pt-4 pb-2 text-center no-print border-t border-white/5">
+                    <button
+                      onClick={() => fetchPlayers(false)}
+                      disabled={playersLoading}
+                      className="px-6 py-2 rounded-xl bg-white/5 border border-white/10 hover:border-white/20 text-xs font-bold uppercase tracking-wider text-slate-300 hover:text-white transition-all cursor-pointer disabled:opacity-50 flex items-center justify-center gap-2 mx-auto"
+                    >
+                      {playersLoading ? (
+                        <>
+                          <span className="w-3 h-3 rounded-full border-2 border-white border-t-transparent animate-spin" />
+                          Loading More...
+                        </>
+                      ) : (
+                        "View More Players"
+                      )}
+                    </button>
+                  </div>
+                )}
+              </>
+            ) : (
+              <div className="py-12 mx-2 sm:mx-3 text-center text-slate-500 text-xs font-bold border border-white/5 rounded-lg bg-white/[0.005]">
+                No players match your search query.
+              </div>
             )}
           </div>
         </div>

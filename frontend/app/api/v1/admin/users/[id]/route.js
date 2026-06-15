@@ -172,6 +172,40 @@ export async function PATCH(request, { params }) {
     const supabaseUrl = process.env.SUPABASE_URL;
     const supabaseKey = process.env.SUPABASE_KEY;
 
+    const existingRes = await fetch(
+      `${supabaseUrl}/rest/v1/registrations?id=eq.${id}&select=id,team,mu_points`,
+      {
+        method: "GET",
+        headers: {
+          apikey: supabaseKey,
+          Authorization: `Bearer ${supabaseKey}`,
+        },
+      }
+    );
+
+    if (!existingRes.ok) {
+      throw new Error(`Supabase lookup error: ${await existingRes.text()}`);
+    }
+
+    const existingRows = await existingRes.json();
+    if (!existingRows || existingRows.length === 0) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: {
+            code: "NOT_FOUND",
+            message: "User not found.",
+            details: null,
+          },
+        },
+        { status: 404 }
+      );
+    }
+
+    const oldUser = existingRows[0];
+    const oldTeam = oldUser.team;
+    const oldPoints = Number(oldUser.mu_points || 0);
+
     const res = await fetch(
       `${supabaseUrl}/rest/v1/registrations?id=eq.${id}`,
       {
@@ -205,7 +239,28 @@ export async function PATCH(request, { params }) {
     }
 
     const data = await res.json();
-    return NextResponse.json({ success: true, user: data[0], data: data[0] });
+    const updatedUser = data[0];
+
+    if (updatedUser) {
+      const newTeam = updatedUser.team;
+      const newPoints = Number(updatedUser.mu_points || 0);
+
+      if (oldTeam !== newTeam) {
+        if (oldTeam && oldPoints > 0) {
+          await adjustSquadPoints(supabaseUrl, supabaseKey, oldTeam, -oldPoints);
+        }
+        if (newTeam && newPoints > 0) {
+          await adjustSquadPoints(supabaseUrl, supabaseKey, newTeam, newPoints);
+        }
+      } else if (oldPoints !== newPoints) {
+        const pointsDiff = newPoints - oldPoints;
+        if (newTeam && pointsDiff !== 0) {
+          await adjustSquadPoints(supabaseUrl, supabaseKey, newTeam, pointsDiff);
+        }
+      }
+    }
+
+    return NextResponse.json({ success: true, user: updatedUser, data: updatedUser });
   } catch (error) {
     console.error("Admin update user error:", error);
     return NextResponse.json(

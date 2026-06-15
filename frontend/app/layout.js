@@ -17,7 +17,7 @@ export const metadata = {
     template: "%s | µFifa '26",
   },
   description:
-    "For the Game. For the Spirit. A Flagship Gamified Hackathon by µLearn Foundation & µLearn MCE. Complete technical drills, wager µ-Point, and lead your squad to the top of the standings.",
+    "For the Game. For the Spirit. A Flagship Gamified Hackathon by µLearn Foundation & µLearn MCE. Complete technical drills, wager μPoints, and lead your squad to the top of the standings.",
   keywords: [
     "µFifa",
     "mulearn",
@@ -35,6 +35,17 @@ export const metadata = {
   authors: [{ name: "µLearn MCE", url: "https://mulearn.org" }],
   creator: "µLearn Foundation & µLearn MCE",
   publisher: "µLearn MCE",
+  icons: {
+    icon: [
+      { url: "/favicon.ico" },
+      { url: "/favicon-16x16.png", sizes: "16x16", type: "image/png" },
+      { url: "/favicon-32x32.png", sizes: "32x32", type: "image/png" },
+    ],
+    apple: [
+      { url: "/apple-touch-icon.png", sizes: "180x180", type: "image/png" },
+    ],
+  },
+  manifest: "/site.webmanifest",
   formatDetection: {
     email: false,
     address: false,
@@ -43,14 +54,14 @@ export const metadata = {
   openGraph: {
     title: "µFifa '26 | Gamified Hackathon",
     description:
-      "For the Game. For the Spirit. A Flagship Gamified Hackathon by µLearn Foundation & µLearn MCE. Complete technical drills, wager µ-Points, and lead your squad to the top of the standings.",
+      "For the Game. For the Spirit. A Flagship Gamified Hackathon by µLearn Foundation & µLearn MCE. Complete technical drills, wager μPoints, and lead your squad to the top of the standings.",
     url: "https://mufifa.mulearn.org",
     siteName: "µFifa '26",
     locale: "en_US",
     type: "website",
     images: [
       {
-        url: "/MMP_Banner.jpg",
+        url: "/MMP_Banner.webp",
         width: 800,
         height: 600,
         alt: "µFifa '26",
@@ -61,8 +72,8 @@ export const metadata = {
     card: "summary_large_image",
     title: "µFifa '26 | Gamified Hackathon",
     description:
-      "For the Game. For the Spirit. A Flagship Gamified Hackathon by µLearn Foundation & µLearn MCE. Complete technical drills, wager µ-Points, and lead your squad to the top of the standings.",
-    images: ["/MMP_Banner.jpg"],
+      "For the Game. For the Spirit. A Flagship Gamified Hackathon by µLearn Foundation & µLearn MCE. Complete technical drills, wager μPoints, and lead your squad to the top of the standings.",
+    images: ["/MMP_Banner.webp"],
     creator: "@mulearn",
   },
   robots: {
@@ -78,10 +89,61 @@ export const metadata = {
   },
 };
 
+export const viewport = {
+  themeColor: "#090A0F",
+  width: "device-width",
+  initialScale: 1,
+};
+
 function LayoutShell({ children }) {
+  const jsonLd = {
+    "@context": "https://schema.org",
+    "@type": "Event",
+    name: "µFifa '26",
+    description:
+      "For the Game. For the Spirit. A Flagship Gamified Hackathon by µLearn Foundation & µLearn MCE. Complete technical drills wagers, and lead your squad to victory.",
+    image: "https://mufifa.mulearn.org/MMP_Banner.webp",
+    startDate: "2026-06-15T00:00:00+05:30",
+    endDate: "2026-06-25T23:59:59+05:30",
+    eventStatus: "https://schema.org/EventScheduled",
+    eventAttendanceMode: "https://schema.org/MixedEventAttendanceMode",
+    location: [
+      {
+        "@type": "VirtualLocation",
+        url: "https://mufifa.mulearn.org",
+      },
+      {
+        "@type": "Place",
+        name: "Maran Athenaeum",
+        address: {
+          "@type": "PostalAddress",
+          addressLocality: "Trivandrum",
+          addressRegion: "Kerala",
+          addressCountry: "IN",
+        },
+      },
+    ],
+    organizer: [
+      {
+        "@type": "Organization",
+        name: "µLearn Foundation",
+        url: "https://mulearn.org",
+      },
+      {
+        "@type": "Organization",
+        name: "µLearn MCE",
+        url: "https://mulearn.org",
+      },
+    ],
+  };
+
   return (
     <html lang="en" className={`${outfit.variable} h-full antialiased`}>
       <body className="min-h-full flex flex-col bg-[#090A0F] text-slate-100 font-sans relative">
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+        />
         <Script id="microsoft-clarity" strategy="afterInteractive">
           {`
             (function(c,l,a,r,i,t,y){
