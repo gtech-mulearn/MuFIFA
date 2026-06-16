@@ -267,6 +267,7 @@ export async function POST(request) {
         team,
         mu_points: 10,
         password_hash: hashedPassword,
+        referred_by: referrer ? referrer.id : null,
       };
 
       const dbRes = await fetch(`${supabaseUrl}/rest/v1/registrations`, {

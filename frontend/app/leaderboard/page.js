@@ -184,14 +184,6 @@ export default function LeaderboardPage() {
       <div className="absolute top-[10%] right-[5%] w-[55vw] h-[55vw] bg-[#4f46e5]/8 pointer-events-none rounded-full blur-[130px]" />
       <div className="absolute bottom-[10%] left-[-10%] w-[55vw] h-[55vw] bg-[#06b6d4]/8 pointer-events-none rounded-full blur-[130px]" />
 
-      {/* Honeycomb Pattern */}
-      <div
-        className="absolute inset-0 z-0 opacity-[0.025] pointer-events-none"
-        style={{
-          backgroundImage: `url("data:image/svg+xml,%3Csvg width='56' height='32' viewBox='0 0 56 32' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M28 0 L56 16 L56 32 L28 32 L0 32 L0 16 Z M0 0 L28 16 L56 0' fill='none' stroke='%23ffffff' stroke-width='1.2'/%3E%3C/svg%3E")`,
-        }}
-      />
-
       {/* Left Wavy Glow Path */}
       <svg
         className="absolute left-0 top-[20%] w-[250px] h-[500px] pointer-events-none opacity-20 hidden md:block"

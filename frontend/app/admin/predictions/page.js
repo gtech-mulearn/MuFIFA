@@ -140,6 +140,9 @@ export default function AdminPredictionsPage() {
   const [loadingPredictions, setLoadingPredictions] = useState(false);
   const [error, setError] = useState("");
   const [awardingId, setAwardingId] = useState(null);
+  const [isRewarded, setIsRewarded] = useState(false);
+  const [awardingAll, setAwardingAll] = useState(false);
+
 
   // Search & Filter
   const [search, setSearch] = useState("");
@@ -265,6 +268,7 @@ export default function AdminPredictionsPage() {
       const data = await res.json();
       if (data.success) {
         setPredictions(data.data || []);
+        setIsRewarded(!!data.isRewarded);
         setCurrentPage(1); // Reset page on match change
       } else {
         setError(data.error?.message || "Failed to fetch predictions.");
@@ -276,6 +280,41 @@ export default function AdminPredictionsPage() {
       setLoadingPredictions(false);
     }
   }, [selectedMatchId]);
+
+  const handleAwardPointsToAll = async () => {
+    if (!selectedMatchId || !selectedMatch) return;
+    
+    const confirmAward = window.confirm(
+      `Are you sure you want to award points to all players for this match? This action cannot be undone.`
+    );
+    if (!confirmAward) return;
+
+    setAwardingAll(true);
+    setError("");
+    try {
+      const res = await fetch("/api/v1/admin/predictions", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ matchId: selectedMatchId }),
+      });
+
+      const data = await res.json();
+      if (res.ok && data.success) {
+        alert(data.message || "Points awarded to all players successfully!");
+        setIsRewarded(true);
+        await fetchPredictionsList();
+      } else {
+        setError(data.error?.message || "Failed to award points to all.");
+        alert(data.error?.message || "Failed to award points to all.");
+      }
+    } catch (err) {
+      console.error("Award all points error:", err);
+      setError("Failed to award points to all due to a network error.");
+      alert("Failed to award points to all due to a network error.");
+    } finally {
+      setAwardingAll(false);
+    }
+  };
 
   useEffect(() => {
     fetchPredictionsList();
@@ -512,6 +551,64 @@ export default function AdminPredictionsPage() {
                   })}
                 </div>
               </div>
+
+              {/* Award Points to All Button */}
+              <div className="mt-2">
+                {(() => {
+                  const actualHome = selectedMatch?.score?.fullTime?.home;
+                  const actualAway = selectedMatch?.score?.fullTime?.away;
+                  const isMatchFinished = actualHome !== null && actualHome !== undefined && actualAway !== null && actualAway !== undefined;
+
+                  if (isRewarded) {
+                    return (
+                      <div className="flex items-center justify-center gap-2 bg-emerald-50 border border-emerald-200 text-emerald-700 font-bold px-4 py-3 rounded-xl text-xs w-full text-center">
+                        <svg className="w-4 h-4 shrink-0" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                        Points Awarded to All
+                      </div>
+                    );
+                  }
+
+                  if (!isMatchFinished) {
+                    return (
+                      <div className="text-center text-[10px] text-slate-500 font-medium bg-slate-100 border border-slate-200/60 p-2.5 rounded-xl">
+                        Points can only be awarded after the match has finished.
+                      </div>
+                    );
+                  }
+
+                  if (predictions.length === 0) {
+                    return (
+                      <div className="text-center text-[10px] text-slate-500 font-medium bg-slate-100 border border-slate-200/60 p-2.5 rounded-xl">
+                        No predictions submitted for this match.
+                      </div>
+                    );
+                  }
+
+                  return (
+                    <button
+                      onClick={handleAwardPointsToAll}
+                      disabled={awardingAll}
+                      className="cursor-pointer w-full bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-700 hover:to-violet-700 text-white font-bold px-4 py-3 rounded-xl text-xs transition-all duration-300 hover:scale-[1.02] active:scale-[0.98] shadow-md hover:shadow-indigo-500/20 flex items-center justify-center gap-2"
+                    >
+                      {awardingAll ? (
+                        <>
+                          <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                          Awarding Points...
+                        </>
+                      ) : (
+                        <>
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M12 6.042A8.967 8.967 0 006 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 016 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 016-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0018 18a8.967 8.967 0 00-6 2.292m0-14.25v14.25" />
+                          </svg>
+                          Award Points to All
+                        </>
+                      )}
+                    </button>
+                  );
+                })()}
+              </div>
             </div>
           )}
         </div>
@@ -644,7 +741,10 @@ export default function AdminPredictionsPage() {
                     let buttonLabel = "N/A";
                     let buttonStyle = "bg-slate-50 text-slate-400 border-slate-200 cursor-not-allowed";
                     
-                    if (statusObj.status === "EXACT_SCORE") {
+                    if (isRewarded) {
+                      buttonLabel = "Rewarded";
+                      buttonStyle = "bg-slate-50 text-slate-400 border-slate-200 cursor-not-allowed";
+                    } else if (statusObj.status === "EXACT_SCORE") {
                       buttonLabel = "+25 Points";
                       buttonStyle = "bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border-emerald-200 cursor-pointer";
                     } else if (statusObj.status === "CORRECT_OUTCOME") {
@@ -693,7 +793,7 @@ export default function AdminPredictionsPage() {
                           {pred.user?.id ? (
                             <button
                               onClick={() => handleAwardPoints(pred)}
-                              disabled={awardingId === pred.user_id || statusObj.status === "PENDING"}
+                              disabled={isRewarded || awardingId === pred.user_id || statusObj.status === "PENDING"}
                               className={`disabled:opacity-50 text-[10px] font-bold uppercase tracking-wider px-2 py-1 rounded-lg border transition-all font-sans ${buttonStyle}`}
                             >
                               {awardingId === pred.user_id ? "Awarding..." : buttonLabel}

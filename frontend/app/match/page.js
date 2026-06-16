@@ -1,8 +1,8 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import Link from "next/link";
 import MatchCard from "@/components/match/MatchCard";
+import CorrectPredictorsModal from "@/components/match/CorrectPredictorsModal";
 
 const EXCLUDED_STATUSES = new Set(["POSTPONED", "CANCELLED", "SUSPENDED"]);
 
@@ -19,6 +19,7 @@ export default function MatchPage() {
   const [player, setPlayer] = useState(null);
   const [resultsVisible, setResultsVisible] = useState(2);
   const [orderedMatchIds, setOrderedMatchIds] = useState([]);
+  const [selectedMatchForPredictors, setSelectedMatchForPredictors] = useState(null);
 
   // Silently check auth — match page is public, no redirect
   useEffect(() => {
@@ -315,6 +316,7 @@ export default function MatchPage() {
                           player={player}
                           onPredictionSaved={() => {}}
                           compact={false}
+                          onClick={() => setSelectedMatchForPredictors(match)}
                         />
                       ))}
                     </div>
@@ -381,7 +383,7 @@ export default function MatchPage() {
                     </strong>
                     Predictions open daily from{" "}
                     <strong className="text-white font-semibold">
-                      8:00 PM to 12:30 AM IST
+                      10:00 AM to 6:00 PM IST
                     </strong>
                     . Editing locks instantly at match kick-off.
                   </div>
@@ -391,6 +393,12 @@ export default function MatchPage() {
           </div>
         </div>
       </div>
+      {selectedMatchForPredictors && (
+        <CorrectPredictorsModal
+          match={selectedMatchForPredictors}
+          onClose={() => setSelectedMatchForPredictors(null)}
+        />
+      )}
     </div>
   );
 }

@@ -206,7 +206,10 @@ export default function Ticker() {
                 // Overtaking Alert //
               </span>
               <p className="text-slate-100 font-semibold flex items-center gap-1.5 flex-wrap">
-                🔥 
+                <svg className="w-4 h-4 text-amber-500 fill-current animate-pulse shrink-0" viewBox="0 0 24 24" aria-hidden="true">
+                  <path d="M12 2C12 2 15 6 15 9.5C15 12.53 12.53 15 9.5 15C6.47 15 4 12.53 4 9.5C4 6 12 2 12 2Z" />
+                  <path opacity="0.6" d="M12 6C12 6 17 10 17 13.5C17 16.53 14.53 19 11.5 19C8.47 19 6 16.53 6 13.5C6 10 12 6 12 6Z" fill="#ff7043" />
+                </svg>
                 <span className={`fi fi-${toast.teamFlagCode} rounded-sm shadow-sm border border-white/10 shrink-0`} style={{ width: '15px', height: '11.5px' }} role="img" aria-label={`${toast.teamName} flag`} />
                 <span>{toast.teamName}</span>
                 <span className="text-slate-400 font-medium">has overtaken</span>

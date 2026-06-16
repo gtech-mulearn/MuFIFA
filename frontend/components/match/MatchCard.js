@@ -82,7 +82,7 @@ const COUNTRY_CODES = {
   "Northern Ireland": "gb-nir",
 };
 
-function getCountryCode(teamName) {
+export function getCountryCode(teamName) {
   if (!teamName) return null;
   // Try exact match first
   if (COUNTRY_CODES[teamName]) return COUNTRY_CODES[teamName];
@@ -94,7 +94,7 @@ function getCountryCode(teamName) {
   return key ? COUNTRY_CODES[key] : null;
 }
 
-function StatusBadge({ status }) {
+export function StatusBadge({ status }) {
   if (status === "SCHEDULED" || status === "TIMED") {
     return (
       <span className="inline-flex items-center px-2 py-0.5 rounded border text-[9px] font-black uppercase bg-cyan-500/10 border-cyan-500/30 text-cyan-400">
@@ -120,7 +120,7 @@ function StatusBadge({ status }) {
   return null;
 }
 
-function TeamFlag({ teamName }) {
+export function TeamFlag({ teamName }) {
   const code = getCountryCode(teamName);
   if (!code) return null;
   return <span className={`fi fi-${code}`} />;
@@ -154,8 +154,7 @@ export default function MatchCard({ match, player, onPredictionSaved, compact, i
       const istTimeStr = now.toLocaleString("en-US", { timeZone: "Asia/Kolkata" });
       const istDate = new Date(istTimeStr);
       const istHour = istDate.getHours();
-      const istMinute = istDate.getMinutes();
-      setIsTimeWindowOpen((istHour >= 20) || (istHour === 0 && istMinute <= 30));
+      setIsTimeWindowOpen(istHour >= 10 && istHour < 18);
     }
     checkTimeWindow();
     const interval = setInterval(checkTimeWindow, 60000);
@@ -245,10 +244,14 @@ export default function MatchCard({ match, player, onPredictionSaved, compact, i
   return (
     <div
       onClick={onClick}
-      className={`bg-gradient-to-b from-[#131927]/90 to-[#0d101d]/90 border rounded-2xl backdrop-blur-md shadow-xl transition-all flex flex-col ${
+      className={`bg-gradient-to-b from-[#131927]/90 to-[#0d101d]/90 border rounded-2xl backdrop-blur-md shadow-xl transition-all flex flex-col group ${
+        compact || isFinished ? "cursor-pointer" : ""
+      } ${
         compact
-          ? "p-3 hover:border-white/20 cursor-pointer gap-2"
+          ? "p-3 hover:border-white/20 gap-2"
           : "p-4 hover:border-white/15 gap-3"
+      } ${
+        isFinished ? "hover:border-white/25 hover:shadow-[0_0_15px_rgba(255,255,255,0.05)]" : ""
       } ${
         compact && isSelected
           ? "border-[#4f46e5]/80 shadow-[0_0_15px_rgba(79,70,229,0.25)] bg-[#131927]/100"
@@ -386,7 +389,7 @@ export default function MatchCard({ match, player, onPredictionSaved, compact, i
                   </div>
                   {!isTimeWindowOpen && (
                     <span className="text-[9px] text-slate-500 font-mono">
-                      Open 8:00 PM – 12:30 AM IST only.
+                      Open 10:00 AM – 6:00 PM IST only.
                     </span>
                   )}
                 </div>
@@ -421,7 +424,7 @@ export default function MatchCard({ match, player, onPredictionSaved, compact, i
           )}
 
           {/* Not logged in */}
-          {player === null && (
+          {player === null && isPredictionOpen && (
             <Link
               href="/login"
               className="text-[10px] text-slate-500 hover:text-slate-300 underline transition-colors"
@@ -445,12 +448,27 @@ export default function MatchCard({ match, player, onPredictionSaved, compact, i
       )}
       {compact && !oddsData?.myPrediction && isPredictionOpen && !isTimeWindowOpen && (
         <div className="text-[9px] text-slate-500 font-medium flex items-center gap-1 mt-0.5 justify-center bg-white/[0.02] border border-white/5 py-1.5 rounded-xl">
-          <span>Predict at 8:00 PM</span>
+          <span>Predict at 10:00 AM</span>
         </div>
       )}
       {compact && !isPredictionOpen && (
         <div className="text-[9px] text-slate-500 font-medium flex items-center gap-1 mt-0.5 justify-center bg-white/[0.02] border border-white/5 py-1.5 rounded-xl">
           <span>Prediction Closed</span>
+        </div>
+      )}
+
+      {/* Finished Match: Correct Predictions Indicator */}
+      {!compact && isFinished && (
+        <div className="mt-2 flex items-center justify-between gap-2 border-t border-white/5 pt-3">
+          <span className="flex items-center gap-1.5 text-cyan-400 font-bold uppercase tracking-wider text-[9px] group-hover:text-cyan-300 transition-colors">
+            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+            </svg>
+            Correct Predictions
+          </span>
+          <span className="text-[9px] text-slate-500 font-medium group-hover:text-slate-400 transition-colors">
+            Tap to view winners
+          </span>
         </div>
       )}
     </div>

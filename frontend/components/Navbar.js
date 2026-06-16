@@ -10,6 +10,7 @@ export default function Navbar() {
   const router = useRouter();
   const [menuOpen, setMenuOpen] = useState(false);
   const [player, setPlayer] = useState(null);
+  const isArenaActive = pathname?.startsWith("/dashboard");
 
   const handleLogout = async () => {
     try {
@@ -47,6 +48,7 @@ export default function Navbar() {
     { name: "Home", href: "/" },
     { name: "Leaderboard", href: "/leaderboard" },
     { name: "Match", href: "/match" },
+    player ? { name: "Tasks", href: "/tasks" } : null,
     player ? { name: "Profile", href: `/profile/${player.user_id}` } : null,
   ].filter(Boolean);
 
@@ -105,7 +107,11 @@ export default function Navbar() {
             <>
               <Link
                 href="/dashboard"
-                className="hidden md:inline-block cursor-pointer bg-white border border-white hover:bg-white/90 hover:border-white/90 px-4 py-1.5 rounded-full text-xs font-semibold tracking-wider text-black text-center transition-colors"
+                className={`hidden md:inline-block cursor-pointer px-4 py-1.5 rounded-full text-xs font-semibold tracking-wider text-center transition-all ${
+                  isArenaActive
+                    ? "bg-gradient-to-r from-[#4F46E5] to-[#06B6D4] text-white border border-transparent shadow-[0_0_15px_rgba(79,70,229,0.3)] hover:shadow-[0_0_20px_rgba(79,70,229,0.5)] hover:scale-[1.02]"
+                    : "bg-white border border-white text-black hover:bg-white/90 hover:border-white/90"
+                }`}
               >
                 ENTER ARENA
               </Link>
@@ -184,7 +190,11 @@ export default function Navbar() {
               <Link
                 href="/dashboard"
                 onClick={() => setMenuOpen(false)}
-                className="cursor-pointer bg-white border border-white hover:bg-white/90 hover:border-white/90 px-4 py-1.5 rounded-full text-xs font-semibold tracking-wider text-black text-center transition-colors block w-full"
+                className={`cursor-pointer px-4 py-1.5 rounded-full text-xs font-semibold tracking-wider text-center transition-all block w-full ${
+                  isArenaActive
+                    ? "bg-gradient-to-r from-[#4F46E5] to-[#06B6D4] text-white border border-transparent shadow-[0_0_12px_rgba(79,70,229,0.25)]"
+                    : "bg-white border border-white text-black hover:bg-white/90 hover:border-white/90"
+                }`}
               >
                 ENTER ARENA
               </Link>

@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { requireRole } from "@/utils/auth";
+import { requireRole, hashPassword } from "@/utils/auth";
 import { z } from "zod";
 import { adjustSquadPoints } from "@/utils/squad";
 
@@ -26,6 +26,7 @@ const userPatchSchema = z.object({
   domain: z.enum(DOMAINS, { errorMap: () => ({ message: "Invalid domain selected." }) }).optional(),
   team: z.enum(TEAMS, { errorMap: () => ({ message: "Invalid team selected." }) }).optional(),
   mu_points: z.number().int().min(0, "Points must be a positive integer.").optional(),
+  password: z.string().min(6, "Password must be at least 6 characters long.").optional(),
 });
 
 export async function GET(request, { params }) {
@@ -153,7 +154,12 @@ export async function PATCH(request, { params }) {
       );
     }
 
-    const updates = validationResult.data;
+    const updates = { ...validationResult.data };
+
+    if (updates.password) {
+      updates.password_hash = await hashPassword(updates.password);
+      delete updates.password;
+    }
 
     if (Object.keys(updates).length === 0) {
       return NextResponse.json(

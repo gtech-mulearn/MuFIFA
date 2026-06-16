@@ -21,6 +21,12 @@ export default function AdminUserEditPage({ params }) {
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
 
+  const [newPassword, setNewPassword] = useState("");
+  const [pwdError, setPwdError] = useState("");
+  const [pwdSuccess, setPwdSuccess] = useState("");
+  const [pwdResetting, setPwdResetting] = useState(false);
+  const [copied, setCopied] = useState(false);
+
   useEffect(() => {
     async function fetchUser() {
       try {
@@ -82,6 +88,47 @@ export default function AdminUserEditPage({ params }) {
       setError("Network error.");
     } finally {
       setSaving(false);
+    }
+  };
+
+  const handleGeneratePassword = () => {
+    const chars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+    let pwd = "";
+    for (let i = 0; i < 8; i++) {
+      pwd += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
+    setNewPassword(pwd);
+  };
+
+  const handleResetPassword = async () => {
+    if (!newPassword || newPassword.trim().length < 6) {
+      setPwdError("Password must be at least 6 characters long.");
+      return;
+    }
+
+    setPwdResetting(true);
+    setPwdError("");
+    setPwdSuccess("");
+
+    try {
+      const res = await fetch(`/api/v1/admin/users/${id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ password: newPassword }),
+      });
+
+      const data = await res.json();
+
+      if (data.success) {
+        setPwdSuccess(newPassword);
+        setNewPassword("");
+      } else {
+        setPwdError(data.error?.message || data.error || "Failed to reset password.");
+      }
+    } catch {
+      setPwdError("Network error.");
+    } finally {
+      setPwdResetting(false);
     }
   };
 
@@ -273,6 +320,88 @@ export default function AdminUserEditPage({ params }) {
           </div>
         )}
       </form>
+
+      {!isViewer && (
+        <div className={`${THEME.panel} rounded-2xl p-6 flex flex-col gap-4`}>
+          <div className="flex items-center gap-2 border-b border-slate-100 pb-3">
+            <svg className="w-4 h-4 text-slate-500" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 5.25a3 3 0 013 3m3 0a6 6 0 01-7.029 5.912c-.563-.097-1.159.026-1.563.43L10.5 17.25H8.25v2.25H6v2.25H2.25v-2.818c0-.597.237-1.17.659-1.591l6.499-6.499c.404-.404.527-1 .43-1.563A6 6 0 1121.75 8.25z" />
+            </svg>
+            <h3 className="text-xs font-black uppercase tracking-wider text-slate-700">
+              Reset Player Password
+            </h3>
+          </div>
+
+          <p className="text-xs text-slate-500">
+            Change the player's password. Once updated, the player will have to log in using the new password.
+          </p>
+
+          {pwdError && (
+            <div className="bg-rose-500/10 border border-rose-500/30 text-rose-500 text-xs py-2 px-3 rounded-xl">
+              {pwdError}
+            </div>
+          )}
+
+          {pwdSuccess && (
+            <div className="bg-emerald-500/10 border border-emerald-500/30 text-emerald-700 text-xs py-3 px-4 rounded-xl flex flex-col gap-2">
+              <div className="font-semibold flex items-center gap-1.5">
+                <svg className="w-4 h-4 text-emerald-600" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                Password reset successfully!
+              </div>
+              <div className="flex items-center justify-between bg-white border border-slate-200 rounded-lg p-2.5 mt-1">
+                <span className="font-mono text-sm text-slate-800 tracking-wider font-semibold">
+                  {pwdSuccess}
+                </span>
+                <button
+                  type="button"
+                  onClick={() => {
+                    navigator.clipboard.writeText(pwdSuccess);
+                    setCopied(true);
+                    setTimeout(() => setCopied(false), 2000);
+                  }}
+                  className="cursor-pointer text-[10px] uppercase font-bold text-sky-600 hover:text-sky-500 transition-colors flex items-center gap-1"
+                >
+                  {copied ? "Copied!" : "Copy"}
+                </button>
+              </div>
+            </div>
+          )}
+
+          <div className="flex flex-col sm:flex-row gap-3 items-end">
+            <div className="flex flex-col gap-1.5 flex-1">
+              <label className="text-[10px] font-black uppercase tracking-wider text-slate-500">
+                New Password
+              </label>
+              <input
+                type="text"
+                value={newPassword}
+                onChange={(e) => setNewPassword(e.target.value)}
+                placeholder="Enter new password"
+                className={`rounded-xl px-4 py-2.5 text-xs transition-colors focus:outline-none ${THEME.input}`}
+              />
+            </div>
+            <div className="flex gap-2">
+              <button
+                type="button"
+                onClick={handleGeneratePassword}
+                className="cursor-pointer bg-slate-100 hover:bg-slate-200 border border-slate-300 text-slate-700 font-bold py-2.5 px-4 rounded-xl text-xs tracking-wider uppercase transition-colors h-[38px] flex items-center justify-center"
+              >
+                Auto-generate
+              </button>
+              <button
+                type="button"
+                onClick={handleResetPassword}
+                disabled={pwdResetting || !newPassword || newPassword.trim().length < 6}
+                className="cursor-pointer bg-sky-500 hover:bg-sky-400 text-slate-950 font-bold py-2.5 px-5 rounded-xl text-xs tracking-wider uppercase transition-all disabled:opacity-50 disabled:cursor-not-allowed h-[38px] flex items-center justify-center"
+              >
+                {pwdResetting ? "Updating..." : "Update"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

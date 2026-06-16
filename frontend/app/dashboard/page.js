@@ -138,6 +138,22 @@ export default function Dashboard() {
   const [generatingReferral, setGeneratingReferral] = useState(false);
   const [copied, setCopied] = useState(false);
   const [error, setError] = useState("");
+  const [referrals, setReferrals] = useState([]);
+  const [loadingReferrals, setLoadingReferrals] = useState(true);
+
+  async function fetchReferrals() {
+    try {
+      const res = await fetch("/api/v1/profile/referrals");
+      const data = await res.json();
+      if (res.ok && data.success) {
+        setReferrals(data.data);
+      }
+    } catch (err) {
+      console.error("Failed to fetch referrals:", err);
+    } finally {
+      setLoadingReferrals(false);
+    }
+  }
 
   useEffect(() => {
     async function checkAuth() {
@@ -146,6 +162,7 @@ export default function Dashboard() {
         const data = await res.json();
         if (res.ok && data.success) {
           setPlayer(data.data);
+          fetchReferrals();
         } else {
           router.push("/login");
         }
@@ -207,9 +224,6 @@ export default function Dashboard() {
     <div className="w-full min-h-screen bg-[#090A0F] text-white flex flex-col font-sans relative select-none pb-16 pt-16 md:pt-20 overflow-hidden">
       {/* Stadium Background Image */}
       <div className="absolute inset-0 z-0 bg-[url('/stadium_bg.png')] bg-cover bg-center opacity-20 pointer-events-none" />
-
-
-
 
       {/* Left Wavy Glow Path */}
       <svg
@@ -474,7 +488,7 @@ export default function Dashboard() {
             </div>
 
             {/* Title Section */}
-            <div className="pr-20">
+            <div className="pr-20" id="#ref-prgrm">
               <h2 className="text-2xl font-extrabold text-white tracking-wide uppercase">
                 Referral Program
               </h2>
@@ -557,38 +571,89 @@ export default function Dashboard() {
               </div>
             )}
 
-            {/* Link Copy Field */}
-            <div className="flex flex-col gap-2 mt-auto">
-              <label className="text-[10px] font-black uppercase tracking-wider text-slate-400">
-                Your Referral Link
-              </label>
-              <div className="flex gap-2">
-                <input
-                  type="text"
-                  readOnly
-                  value={referralUrl || "No referral link generated yet."}
-                  placeholder="Click generate to create your link..."
-                  className="bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-xs text-slate-300 select-all focus:outline-none flex-1 truncate"
-                />
-                {!player?.referal_id ? (
-                  <button
-                    onClick={handleCreateReferral}
-                    disabled={generatingReferral}
-                    className="cursor-pointer px-5 bg-[#4F46E5] hover:bg-[#4338CA] disabled:opacity-50 text-white font-bold rounded-xl text-xs transition-colors shrink-0 flex items-center justify-center min-w-[120px] shadow-[0_0_15px_rgba(79,70,229,0.3)] hover:shadow-[0_0_20px_rgba(79,70,229,0.5)]"
-                  >
-                    {generatingReferral ? (
-                      <span className="w-3.5 h-3.5 rounded-full border-2 border-white border-t-transparent animate-spin" />
-                    ) : (
-                      "Generate"
-                    )}
-                  </button>
+            {/* Link Copy & Referrals List Container */}
+            <div className="flex flex-col gap-5 mt-auto">
+              {/* Link Copy Field */}
+              <div className="flex flex-col gap-2">
+                <label className="text-[10px] font-black uppercase tracking-wider text-slate-400">
+                  Your Referral Link
+                </label>
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    readOnly
+                    value={referralUrl || "No referral link generated yet."}
+                    placeholder="Click generate to create your link..."
+                    className="bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-xs text-slate-300 select-all focus:outline-none flex-1 truncate"
+                  />
+                  {!player?.referal_id ? (
+                    <button
+                      onClick={handleCreateReferral}
+                      disabled={generatingReferral}
+                      className="cursor-pointer px-5 bg-[#4F46E5] hover:bg-[#4338CA] disabled:opacity-50 text-white font-bold rounded-xl text-xs transition-colors shrink-0 flex items-center justify-center min-w-[120px] shadow-[0_0_15px_rgba(79,70,229,0.3)] hover:shadow-[0_0_20px_rgba(79,70,229,0.5)]"
+                    >
+                      {generatingReferral ? (
+                        <span className="w-3.5 h-3.5 rounded-full border-2 border-white border-t-transparent animate-spin" />
+                      ) : (
+                        "Generate"
+                      )}
+                    </button>
+                  ) : (
+                    <button
+                      onClick={handleCopyLink}
+                      className="cursor-pointer px-5 bg-[#131927] hover:bg-white/5 active:bg-[#0d101d] text-[#38BDF8] border border-white/10 hover:border-white/20 transition-all font-semibold rounded-xl text-xs shrink-0 flex items-center justify-center min-w-[120px]"
+                    >
+                      {copied ? "Copied!" : "Copy Link"}
+                    </button>
+                  )}
+                </div>
+              </div>
+
+              {/* Referred Users Area */}
+              <div className="flex flex-col gap-3 pt-4 border-t border-white/5">
+                <div className="flex justify-between items-center">
+                  <label className="text-[10px] font-black uppercase tracking-wider text-slate-400">
+                    Registrations Via Your Link ({referrals.length})
+                  </label>
+                </div>
+                {loadingReferrals ? (
+                  <div className="flex items-center justify-center py-4">
+                    <div className="w-4 h-4 rounded-full border-2 border-cyan-400 border-t-transparent animate-spin" />
+                  </div>
+                ) : referrals.length === 0 ? (
+                  <p className="text-xs text-slate-500 italic py-1">
+                    No registrations via your link yet. Share it to earn
+                    μPoints!
+                  </p>
                 ) : (
-                  <button
-                    onClick={handleCopyLink}
-                    className="cursor-pointer px-5 bg-[#131927] hover:bg-white/5 active:bg-[#0d101d] text-[#38BDF8] border border-white/10 hover:border-white/20 transition-all font-semibold rounded-xl text-xs shrink-0 flex items-center justify-center min-w-[120px]"
-                  >
-                    {copied ? "Copied!" : "Copy Link"}
-                  </button>
+                  <div className="max-h-[140px] overflow-y-auto pr-1 flex flex-col gap-2 scrollbar-thin scrollbar-thumb-white/10 scrollbar-track-transparent">
+                    {referrals.map((ref) => (
+                      <div
+                        key={ref.id}
+                        className="flex justify-between items-center bg-black/20 border border-white/5 rounded-xl p-3 hover:border-white/10 hover:bg-black/30 transition-all"
+                      >
+                        <div className="flex flex-col min-w-0">
+                          <span className="text-xs font-bold text-slate-200 truncate">
+                            {ref.name}
+                          </span>
+                          <span className="text-[9px] text-cyan-400 font-semibold tracking-wider">
+                            @{ref.user_id}
+                          </span>
+                        </div>
+                        <span className="text-[10px] text-slate-500 shrink-0 font-medium">
+                          {new Date(ref.created_at).toLocaleDateString(
+                            "en-US",
+                            {
+                              month: "short",
+                              day: "numeric",
+                              hour: "2-digit",
+                              minute: "2-digit",
+                            },
+                          )}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
                 )}
               </div>
             </div>
