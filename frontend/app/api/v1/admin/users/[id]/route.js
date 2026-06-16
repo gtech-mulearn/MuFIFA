@@ -299,7 +299,7 @@ export async function DELETE(request, { params }) {
     const supabaseKey = process.env.SUPABASE_KEY;
 
     const existingRes = await fetch(
-      `${supabaseUrl}/rest/v1/registrations?id=eq.${id}&select=id,team,mu_points`,
+      `${supabaseUrl}/rest/v1/registrations?id=eq.${id}&select=id,user_id,team,mu_points`,
       {
         method: "GET",
         headers: {
@@ -329,6 +329,24 @@ export async function DELETE(request, { params }) {
     }
 
     const user = existingRows[0];
+
+    // Delete foreign-key referenced rows in match_predictions if user_id exists
+    if (user.user_id) {
+      const deletePredsRes = await fetch(
+        `${supabaseUrl}/rest/v1/match_predictions?user_id=eq.${encodeURIComponent(user.user_id)}`,
+        {
+          method: "DELETE",
+          headers: {
+            apikey: supabaseKey,
+            Authorization: `Bearer ${supabaseKey}`,
+          },
+        }
+      );
+
+      if (!deletePredsRes.ok) {
+        throw new Error(`Failed to delete user predictions: ${await deletePredsRes.text()}`);
+      }
+    }
 
     const res = await fetch(
       `${supabaseUrl}/rest/v1/registrations?id=eq.${id}`,

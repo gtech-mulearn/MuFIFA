@@ -17,11 +17,10 @@ export const metadata = {
     template: "%s | µFifa '26",
   },
   description:
-    "For the Game. For the Spirit. A Flagship Gamified Hackathon by µLearn Foundation & µLearn MCE. Complete technical drills, wager μPoints, and lead your squad to the top of the standings.",
+    "Build. Compete. Conquer. A gamified experience by µLearn Foundation & µLearn MCE. Complete technical drills, wager μPoints, and lead your squad to the top of the standings.",
   keywords: [
     "µFifa",
     "mulearn",
-    "hackathon",
     "gamified",
     "football",
     "fifa",
@@ -52,9 +51,9 @@ export const metadata = {
     telephone: false,
   },
   openGraph: {
-    title: "µFifa '26 | Gamified Hackathon",
+    title: "µFifa '26 | Build. Compete. Conquer.",
     description:
-      "For the Game. For the Spirit. A Flagship Gamified Hackathon by µLearn Foundation & µLearn MCE. Complete technical drills, wager μPoints, and lead your squad to the top of the standings.",
+      "Build. Compete. Conquer. A gamified experience by µLearn Foundation & µLearn MCE. Complete technical drills, wager μPoints, and lead your squad to the top of the standings.",
     url: "https://mufifa.mulearn.org",
     siteName: "µFifa '26",
     locale: "en_US",
@@ -70,9 +69,9 @@ export const metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "µFifa '26 | Gamified Hackathon",
+    title: "µFifa '26",
     description:
-      "For the Game. For the Spirit. A Flagship Gamified Hackathon by µLearn Foundation & µLearn MCE. Complete technical drills, wager μPoints, and lead your squad to the top of the standings.",
+      "Build. Compete. Conquer. A gamified experience by µLearn Foundation & µLearn MCE. Complete technical drills, wager μPoints, and lead your squad to the top of the standings.",
     images: ["/MMP_Banner.webp"],
     creator: "@mulearn",
   },
@@ -101,7 +100,7 @@ function LayoutShell({ children }) {
     "@type": "Event",
     name: "µFifa '26",
     description:
-      "For the Game. For the Spirit. A Flagship Gamified Hackathon by µLearn Foundation & µLearn MCE. Complete technical drills wagers, and lead your squad to victory.",
+      "Build. Compete. Conquer. A gamified experience by µLearn Foundation & µLearn MCE. Complete technical drills, wager μPoints, and lead your squad to victory.",
     image: "https://mufifa.mulearn.org/MMP_Banner.webp",
     startDate: "2026-06-15T00:00:00+05:30",
     endDate: "2026-06-25T23:59:59+05:30",
