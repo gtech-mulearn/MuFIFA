@@ -239,7 +239,7 @@ export async function POST(request) {
       let referrer = null;
       if (referralId && referralId.trim()) {
         try {
-          const refQuery = `${supabaseUrl}/rest/v1/registrations?referal_id=eq.${encodeURIComponent(referralId.trim())}&select=id,user_id,email,team,mu_points,referal`;
+          const refQuery = `${supabaseUrl}/rest/v1/registrations?referal_id=eq.${encodeURIComponent(referralId.trim())}&select=id,user_id,email,team,mu_points,tasks`;
           const refRes = await fetch(refQuery, {
             method: "GET",
             headers: {
@@ -313,8 +313,34 @@ export async function POST(request) {
       // Award referral bonus: increment referal count, +5 μPoints to referrer, +5 squad points
       if (referrer) {
         try {
-          const newReferalCount = (referrer.referal || 0) + 1;
+          let tasksObj = {};
+          if (referrer.tasks) {
+            if (typeof referrer.tasks === "string") {
+              try {
+                tasksObj = JSON.parse(referrer.tasks);
+              } catch (e) {
+                console.error("Failed to parse referrer tasks JSON string:", e);
+              }
+            } else if (typeof referrer.tasks === "object") {
+              tasksObj = referrer.tasks;
+            }
+          }
+
+          let prevReferalCount = 0;
+          if (tasksObj && typeof tasksObj.referal === "number") {
+            prevReferalCount = tasksObj.referal;
+          } else if (tasksObj && typeof tasksObj.referal === "string") {
+            const parsedVal = parseInt(tasksObj.referal, 10);
+            if (!isNaN(parsedVal)) prevReferalCount = parsedVal;
+          }
+
+          const newReferalCount = prevReferalCount + 1;
           const newPoints = (referrer.mu_points || 0) + 5;
+          const updatedTasks = {
+            ...tasksObj,
+            referal: newReferalCount,
+          };
+
           const referrerPatchUrl = `${supabaseUrl}/rest/v1/registrations?id=eq.${referrer.id}`;
           await fetch(referrerPatchUrl, {
             method: "PATCH",
@@ -323,7 +349,10 @@ export async function POST(request) {
               Authorization: `Bearer ${supabaseKey}`,
               "Content-Type": "application/json",
             },
-            body: JSON.stringify({ referal: newReferalCount, mu_points: newPoints }),
+            body: JSON.stringify({
+              mu_points: newPoints,
+              tasks: updatedTasks,
+            }),
           });
 
           // Award +5 squad points to the referrer's team

@@ -2,7 +2,10 @@ const OTP_TTL_MS = 5 * 60 * 1000;
 const OTP_RESEND_MS = 2 * 60 * 1000;
 const OTP_MAX_ATTEMPTS = 5;
 
-const otpStore = new Map();
+const otpStore = globalThis.otpStore || new Map();
+if (process.env.NODE_ENV !== "production") {
+  globalThis.otpStore = otpStore;
+}
 
 function normalizeEmail(email) {
   return email.trim().toLowerCase();
