@@ -326,7 +326,7 @@ export default function TasksPage() {
           Earn community ranking, link your socials, and put your profile on the pitch.
         </span>
       ),
-      completed: isTask3Completed,
+      completed: false, // verification code will be done later
       actionLabel: "Go to Repository",
       actionUrl: "https://github.com/gtech-mulearn/mufifa-2026",
       icon: (
@@ -620,13 +620,15 @@ export default function TasksPage() {
 
                         <div className="flex flex-col sm:flex-row gap-3 w-full justify-end items-center mt-auto">
                           {/* Verify Button */}
-                          <button
-                            onClick={() => handleVerifyTask(task)}
-                            disabled={verifyingTaskId === task.id || dbTasks[`task${task.id}`]}
-                            className="cursor-pointer w-full sm:w-auto px-6 py-3.5 border border-[#10b981]/40 hover:border-[#10b981] text-[#10b981] font-black text-[10px] tracking-widest uppercase rounded-full flex items-center justify-center transition-all bg-[#10b981]/5 hover:bg-[#10b981]/10 disabled:opacity-40 disabled:cursor-not-allowed"
-                          >
-                            {verifyingTaskId === task.id ? "Verifying..." : dbTasks[`task${task.id}`] ? "Verified" : "Verify Task"}
-                          </button>
+                          {task.id !== 3 && (
+                            <button
+                              onClick={() => handleVerifyTask(task)}
+                              disabled={verifyingTaskId === task.id || dbTasks[`task${task.id}`]}
+                              className="cursor-pointer w-full sm:w-auto px-6 py-3.5 border border-[#10b981]/40 hover:border-[#10b981] text-[#10b981] font-black text-[10px] tracking-widest uppercase rounded-full flex items-center justify-center transition-all bg-[#10b981]/5 hover:bg-[#10b981]/10 disabled:opacity-40 disabled:cursor-not-allowed"
+                            >
+                              {verifyingTaskId === task.id ? "Verifying..." : dbTasks[`task${task.id}`] ? "Verified" : "Verify Task"}
+                            </button>
+                          )}
 
                           {/* Action Button */}
                           <Link
