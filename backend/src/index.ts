@@ -107,7 +107,10 @@ const checkApiKey = async (c: any, next: any) => {
     return c.json(
       {
         success: false,
-        error: { code: "UNAUTHORIZED", message: "Unauthorized request API key mismatch." },
+        error: {
+          code: "UNAUTHORIZED",
+          message: "Unauthorized request API key mismatch.",
+        },
       },
       401,
     );
@@ -195,7 +198,6 @@ function getNewUserEmailHtml(player: any, ticketUrl: string) {
             letter-spacing: 0.15em;
             color: #ffffff;
             margin: 0;
-            text-transform: uppercase;
           }
           .logo-subtext {
             font-size: 11px;
@@ -400,7 +402,6 @@ function getOtpEmailHtml(name: string, otp: string) {
             letter-spacing: 0.15em;
             color: #ffffff;
             margin: 0;
-            text-transform: uppercase;
           }
           .greeting {
             font-size: 18px;
@@ -560,7 +561,10 @@ app.post("/api/v1/send-otp", checkApiKey, async (c: any) => {
       return c.json(
         {
           success: false,
-          error: { code: "BAD_REQUEST", message: `Invalid JSON body: ${parseErr.message}` },
+          error: {
+            code: "BAD_REQUEST",
+            message: `Invalid JSON body: ${parseErr.message}`,
+          },
         },
         400,
       );
@@ -581,13 +585,16 @@ app.post("/api/v1/send-otp", checkApiKey, async (c: any) => {
     const port = parseInt(process.env.SMTP_PORT || "587", 10);
     const user = process.env.SMTP_USER;
     const pass = process.env.SMTP_PASS;
-    const from = process.env.SMTP_FROM || `"noreply@mulearn.org" <noreply@mulearn.org>`;
+    const from = `"noreply@mulearn.org" <noreply@mulearn.org>`;
 
     if (!host || !user || !pass) {
       return c.json(
         {
           success: false,
-          error: { code: "SMTP_CONFIG_ERROR", message: "SMTP credentials not configured" },
+          error: {
+            code: "SMTP_CONFIG_ERROR",
+            message: "SMTP credentials not configured",
+          },
         },
         500,
       );
@@ -606,8 +613,8 @@ app.post("/api/v1/send-otp", checkApiKey, async (c: any) => {
       secure: port === 465,
       auth: { user, pass },
       tls: {
-        rejectUnauthorized: false
-      }
+        rejectUnauthorized: false,
+      },
     });
 
     const mailSubject = "Verify your registration OTP | μFIFA";
@@ -619,7 +626,7 @@ app.post("/api/v1/send-otp", checkApiKey, async (c: any) => {
       to: email,
       subject: mailSubject,
       text: mailText,
-      html: mailHtml
+      html: mailHtml,
     });
 
     return c.json({
@@ -627,7 +634,7 @@ app.post("/api/v1/send-otp", checkApiKey, async (c: any) => {
       otp,
       resendAvailableAt,
       expiresAt,
-      messageId: info.messageId
+      messageId: info.messageId,
     });
   } catch (error: any) {
     console.error("Failed to generate and send OTP email:", error);
@@ -643,21 +650,15 @@ app.post("/api/v1/send-otp", checkApiKey, async (c: any) => {
 
 app.post("/api/v1/send-ticket", checkApiKey, async (c: any) => {
   try {
-    const { player, supabaseUrl, supabaseKey } = await c.req.json();
+    const { player } = await c.req.json();
     if (!player || !player.email || !player.user_id) {
       return c.json(
         {
           success: false,
-          error: { code: "BAD_REQUEST", message: "Player details are required" },
-        },
-        400,
-      );
-    }
-    if (!supabaseUrl || !supabaseKey) {
-      return c.json(
-        {
-          success: false,
-          error: { code: "BAD_REQUEST", message: "Supabase configuration is required" },
+          error: {
+            code: "BAD_REQUEST",
+            message: "Player details are required",
+          },
         },
         400,
       );
@@ -667,13 +668,16 @@ app.post("/api/v1/send-ticket", checkApiKey, async (c: any) => {
     const port = parseInt(process.env.SMTP_PORT || "587", 10);
     const user = process.env.SMTP_USER;
     const pass = process.env.SMTP_PASS;
-    const from = process.env.SMTP_FROM || `"noreply@mulearn.org" <noreply@mulearn.org>`;
+    const from = `"noreply@mulearn.org" <noreply@mulearn.org>`;
 
     if (!host || !user || !pass) {
       return c.json(
         {
           success: false,
-          error: { code: "SMTP_CONFIG_ERROR", message: "SMTP credentials not configured" },
+          error: {
+            code: "SMTP_CONFIG_ERROR",
+            message: "SMTP credentials not configured",
+          },
         },
         500,
       );
@@ -681,92 +685,39 @@ app.post("/api/v1/send-ticket", checkApiKey, async (c: any) => {
 
     const pngBuffer = await generateTicketPng(player);
 
-    const bucketName = "tickets";
-    const filePath = `tickets/${player.user_id}.png`;
-
-    try {
-      await fetch(`${supabaseUrl}/storage/v1/bucket`, {
-        method: "POST",
-        headers: {
-          apikey: supabaseKey,
-          Authorization: `Bearer ${supabaseKey}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          id: bucketName,
-          name: bucketName,
-          public: true,
-        }),
-      });
-    } catch (err: any) {
-      console.warn(`[Supabase Storage] Bucket '${bucketName}' creation warning:`, err.message);
-    }
-
-    const uploadUrl = `${supabaseUrl}/storage/v1/object/${bucketName}/${filePath}`;
-    const uploadRes = await fetch(uploadUrl, {
-      method: "POST",
-      headers: {
-        apikey: supabaseKey,
-        Authorization: `Bearer ${supabaseKey}`,
-        "Content-Type": "image/png",
-        "x-upsert": "true",
-      },
-      body: new Uint8Array(pngBuffer),
-    });
-
-    if (!uploadRes.ok) {
-      const errorText = await uploadRes.text();
-      console.error("[Supabase Storage] Upload failed on backend:", errorText);
-      return c.json(
-        {
-          success: false,
-          error: { code: "STORAGE_UPLOAD_FAILED", message: `Failed to upload ticket image: ${errorText}` },
-        },
-        500,
-      );
-    }
-
-    const publicUrl = `${supabaseUrl}/storage/v1/object/public/${bucketName}/${filePath}`;
-    console.log(`[Supabase Storage] Backend ticket uploaded successfully: ${publicUrl}`);
-
-    if (player.id) {
-      try {
-        const dbRes = await fetch(`${supabaseUrl}/rest/v1/registrations?id=eq.${player.id}`, {
-          method: "PATCH",
-          headers: {
-            apikey: supabaseKey,
-            Authorization: `Bearer ${supabaseKey}`,
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            ticket_url: publicUrl,
-          }),
-        });
-        if (!dbRes.ok) {
-          console.warn(`[Supabase DB] Failed to save ticket_url:`, await dbRes.text());
-        }
-      } catch (dbErr: any) {
-        console.warn(`[Supabase DB] Failed to update registration row:`, dbErr.message);
-      }
-    }
-
     const transporter = nodemailer.createTransport({
       host,
       port,
       secure: port === 465,
       auth: { user, pass },
       tls: {
-        rejectUnauthorized: false
-      }
+        rejectUnauthorized: false,
+      },
     });
 
-    const displayUserId = player.user_id.startsWith("@") ? player.user_id : `@${player.user_id}`;
+    const displayUserId = player.user_id.startsWith("@")
+      ? player.user_id
+      : `@${player.user_id}`;
     const teamLabel = TEAM_FLAGS[player.team] || player.team;
-    const whatsappUrl = TEAM_WHATSAPP_LINKS[player.team] || "https://chat.whatsapp.com/";
+    const whatsappUrl =
+      TEAM_WHATSAPP_LINKS[player.team] || "https://chat.whatsapp.com/";
 
     const subjectLine = `Access Pass Confirmed - ${displayUserId} | μFIFA`;
-    const textContent = `Hello ${player.name}, welcome to μFIFA'26! Your arena access pass has been confirmed under Player ID ${displayUserId} playing for ${teamLabel}. You can view your access pass online here: ${publicUrl}. Join your squad WhatsApp group here: ${whatsappUrl}`;
-    const htmlContent = getNewUserEmailHtml(player, publicUrl);
+    const textContent = `Hello ${player.name},
+
+Welcome to μFIFA'26! We are thrilled to have you join us for the ultimate celebration of sportsmanship, innovation, and peer learning.
+
+Your arena access pass has been officially confirmed:
+- Player ID: ${displayUserId}
+- Team: ${teamLabel}
+
+Your digital access pass is attached to this email.
+
+Join your official squad channel on WhatsApp here to connect with your team: ${whatsappUrl}
+
+Best regards,
+μLearn Foundation`;
+    const htmlContent = getNewUserEmailHtml(player, "");
 
     const info = await transporter.sendMail({
       from,
@@ -778,15 +729,14 @@ app.post("/api/v1/send-ticket", checkApiKey, async (c: any) => {
         {
           filename: "ticket.png",
           content: pngBuffer,
-          cid: "ticket_image"
-        }
-      ]
+          cid: "ticket_image",
+        },
+      ],
     });
 
     return c.json({
       success: true,
-      ticketUrl: publicUrl,
-      messageId: info.messageId
+      messageId: info.messageId,
     });
   } catch (error: any) {
     console.error("Failed to generate and send ticket email:", error);
@@ -801,94 +751,34 @@ app.post("/api/v1/send-ticket", checkApiKey, async (c: any) => {
 });
 
 app.post("/api/v1/ticket-email", checkApiKey, async (c: any) => {
-  // Alias for send-ticket
   try {
     const body = await c.req.json();
-    // Re-map fields if necessary for ticket-email backward compatibility
     const player = {
       id: body.id,
       name: body.name || body.playerName,
       email: body.email || body.recipientEmail,
       user_id: body.user_id || body.recipientEmail?.split("@")[0] || "player",
       team: body.team || "Brazil",
-      created_at: body.created_at
+      created_at: body.created_at,
     };
-    
-    const supabaseUrl = body.supabaseUrl || process.env.SUPABASE_URL;
-    const supabaseKey = body.supabaseKey || process.env.SUPABASE_KEY;
-
-    // Call the exact same logic
-    const reqMock = {
-      json: async () => ({ player, supabaseUrl, supabaseKey })
-    };
-    
-    // We can just construct a new Context or call our implementation helper
-    // For simplicity, we execute the exact same call inline:
-    const pngBuffer = await generateTicketPng(player);
-
-    const bucketName = "tickets";
-    const filePath = `tickets/${player.user_id}.png`;
-
-    try {
-      await fetch(`${supabaseUrl}/storage/v1/bucket`, {
-        method: "POST",
-        headers: {
-          apikey: supabaseKey,
-          Authorization: `Bearer ${supabaseKey}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          id: bucketName,
-          name: bucketName,
-          public: true,
-        }),
-      });
-    } catch (err: any) {
-      console.warn(`[Supabase Storage] Bucket '${bucketName}' creation warning:`, err.message);
-    }
-
-    const uploadUrl = `${supabaseUrl}/storage/v1/object/${bucketName}/${filePath}`;
-    const uploadRes = await fetch(uploadUrl, {
-      method: "POST",
-      headers: {
-        apikey: supabaseKey,
-        Authorization: `Bearer ${supabaseKey}`,
-        "Content-Type": "image/png",
-        "x-upsert": "true",
-      },
-      body: new Uint8Array(pngBuffer),
-    });
-
-    let publicUrl = "";
-    if (uploadRes.ok) {
-      publicUrl = `${supabaseUrl}/storage/v1/object/public/${bucketName}/${filePath}`;
-      
-      if (player.id) {
-        try {
-          await fetch(`${supabaseUrl}/rest/v1/registrations?id=eq.${player.id}`, {
-            method: "PATCH",
-            headers: {
-              apikey: supabaseKey,
-              Authorization: `Bearer ${supabaseKey}`,
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify({
-              ticket_url: publicUrl,
-            }),
-          });
-        } catch {}
-      }
-    }
 
     const host = process.env.SMTP_HOST;
     const port = parseInt(process.env.SMTP_PORT || "587", 10);
     const user = process.env.SMTP_USER;
     const pass = process.env.SMTP_PASS;
-    const from = process.env.SMTP_FROM || `"noreply@mulearn.org" <noreply@mulearn.org>`;
+    const from = `"noreply@mulearn.org" <noreply@mulearn.org>`;
 
     if (!host || !user || !pass) {
-      return c.json({ success: false, error: { code: "SMTP_CONFIG_ERROR", message: "SMTP not configured" } }, 500);
+      return c.json(
+        {
+          success: false,
+          error: { code: "SMTP_CONFIG_ERROR", message: "SMTP not configured" },
+        },
+        500,
+      );
     }
+
+    const pngBuffer = await generateTicketPng(player);
 
     const transporter = nodemailer.createTransport({
       host,
@@ -896,16 +786,32 @@ app.post("/api/v1/ticket-email", checkApiKey, async (c: any) => {
       secure: port === 465,
       auth: { user, pass },
       tls: {
-        rejectUnauthorized: false
-      }
+        rejectUnauthorized: false,
+      },
     });
-    const displayUserId = player.user_id.startsWith("@") ? player.user_id : `@${player.user_id}`;
+    const displayUserId = player.user_id.startsWith("@")
+      ? player.user_id
+      : `@${player.user_id}`;
     const teamLabel = TEAM_FLAGS[player.team] || player.team;
-    const whatsappUrl = TEAM_WHATSAPP_LINKS[player.team] || "https://chat.whatsapp.com/";
+    const whatsappUrl =
+      TEAM_WHATSAPP_LINKS[player.team] || "https://chat.whatsapp.com/";
 
     const subjectLine = `Access Pass Confirmed - ${displayUserId} | μFIFA`;
-    const textContent = `Hello ${player.name}, welcome to μFIFA'26! Your arena access pass has been confirmed under Player ID ${displayUserId} playing for ${teamLabel}. You can view your access pass online here: ${publicUrl}. Join your squad WhatsApp group here: ${whatsappUrl}`;
-    const htmlContent = getNewUserEmailHtml(player, publicUrl);
+    const textContent = `Hello ${player.name},
+
+Welcome to μFIFA'26! We are thrilled to have you join us for the ultimate celebration of sportsmanship, innovation, and peer learning.
+
+Your arena access pass has been officially confirmed:
+- Player ID: ${displayUserId}
+- Team: ${teamLabel}
+
+Your digital access pass is attached to this email.
+
+Join your official squad channel on WhatsApp here to connect with your team: ${whatsappUrl}
+
+Best regards,
+μLearn Foundation`;
+    const htmlContent = getNewUserEmailHtml(player, "");
 
     const info = await transporter.sendMail({
       from,
@@ -913,16 +819,23 @@ app.post("/api/v1/ticket-email", checkApiKey, async (c: any) => {
       subject: subjectLine,
       text: textContent,
       html: htmlContent,
-      attachments: [{ filename: "ticket.png", content: pngBuffer, cid: "ticket_image" }]
+      attachments: [
+        { filename: "ticket.png", content: pngBuffer, cid: "ticket_image" },
+      ],
     });
 
     return c.json({
       success: true,
-      ticketUrl: publicUrl,
-      messageId: info.messageId
+      messageId: info.messageId,
     });
   } catch (error: any) {
-    return c.json({ success: false, error: { code: "EMAIL_SEND_FAILED", message: error.message } }, 500);
+    return c.json(
+      {
+        success: false,
+        error: { code: "EMAIL_SEND_FAILED", message: error.message },
+      },
+      500,
+    );
   }
 });
 
@@ -931,7 +844,7 @@ console.log(`Server is running on port ${port}`);
 
 serve({
   fetch: app.fetch,
-  port
+  port,
 });
 
 export default app;
