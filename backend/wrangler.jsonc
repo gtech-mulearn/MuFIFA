@@ -1,0 +1,14 @@
+{
+  "name": "elevup",
+  "main": "src/index.ts",
+  "compatibility_date": "2026-06-08",
+  "compatibility_flags": ["nodejs_compat"],
+  "triggers": {
+    "crons": [
+      "0 * * * *"
+    ]
+  },
+  "dev": {
+    "port": 3005,
+  }
+}
