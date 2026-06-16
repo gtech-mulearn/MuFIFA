@@ -2,13 +2,28 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import Image from "next/image";
 
 export default function Navbar() {
   const pathname = usePathname();
+  const router = useRouter();
   const [menuOpen, setMenuOpen] = useState(false);
   const [player, setPlayer] = useState(null);
+
+  const handleLogout = async () => {
+    try {
+      const res = await fetch("/api/v1/auth/logout", { method: "POST" });
+      if (res.ok) {
+        setPlayer(null);
+        router.push("/login");
+      } else {
+        console.error("Logout failed.");
+      }
+    } catch (err) {
+      console.error("Logout request error:", err);
+    }
+  };
 
   useEffect(() => {
     async function checkAuth() {
@@ -33,7 +48,6 @@ export default function Navbar() {
     { name: "Leaderboard", href: "/leaderboard" },
     { name: "Match", href: "/match" },
     player ? { name: "Profile", href: `/profile/${player.user_id}` } : null,
-    !player ? { name: "Register", href: "/register" } : null,
   ].filter(Boolean);
 
   return (
@@ -88,12 +102,20 @@ export default function Navbar() {
 
         <div className="flex items-center gap-3">
           {player ? (
-            <Link
-              href="/dashboard"
-              className="hidden md:inline-block cursor-pointer bg-white border border-white hover:bg-white/90 hover:border-white/90 px-4 py-1.5 rounded-full text-xs font-semibold tracking-wider text-black text-center transition-colors"
-            >
-              ENTER ARENA
-            </Link>
+            <>
+              <Link
+                href="/dashboard"
+                className="hidden md:inline-block cursor-pointer bg-white border border-white hover:bg-white/90 hover:border-white/90 px-4 py-1.5 rounded-full text-xs font-semibold tracking-wider text-black text-center transition-colors"
+              >
+                ENTER ARENA
+              </Link>
+              <button
+                onClick={handleLogout}
+                className="hidden md:inline-block cursor-pointer border border-white/20 hover:border-white text-white hover:bg-white/10 px-4 py-1.5 rounded-full text-xs font-semibold tracking-wider text-center transition-colors"
+              >
+                SIGNOUT
+              </button>
+            </>
           ) : (
             <>
               <Link
@@ -158,13 +180,24 @@ export default function Navbar() {
           })}
 
           {player ? (
-            <Link
-              href="/dashboard"
-              onClick={() => setMenuOpen(false)}
-              className="cursor-pointer bg-white border border-white hover:bg-white/90 hover:border-white/90 px-4 py-1.5 rounded-full text-xs font-semibold tracking-wider text-black text-center transition-colors"
-            >
-              ENTER ARENA
-            </Link>
+            <div className="flex flex-col gap-2 w-full mt-1">
+              <Link
+                href="/dashboard"
+                onClick={() => setMenuOpen(false)}
+                className="cursor-pointer bg-white border border-white hover:bg-white/90 hover:border-white/90 px-4 py-1.5 rounded-full text-xs font-semibold tracking-wider text-black text-center transition-colors block w-full"
+              >
+                ENTER ARENA
+              </Link>
+              <button
+                onClick={() => {
+                  setMenuOpen(false);
+                  handleLogout();
+                }}
+                className="cursor-pointer border border-white/20 hover:border-white text-white hover:bg-white/10 px-4 py-1.5 rounded-full text-xs font-semibold tracking-wider text-center transition-colors block w-full"
+              >
+                SIGNOUT
+              </button>
+            </div>
           ) : (
             <div className="flex flex-col gap-2 w-full mt-1">
               <Link

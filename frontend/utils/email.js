@@ -182,8 +182,8 @@ export async function sendRegistrationOtpEmail({ email, name, otp }) {
 
   try {
     const htmlContent = getOtpEmailHtml(name, otp);
-    const textContent = `Hello ${name}, welcome to μFIFA'26! Use the one-time password (OTP) ${otp} to verify your email and complete your registration. This OTP is valid for 5 minutes.`;
-    const subjectLine = `Verify your registration OTP | μFIFA`;
+    const textContent = `Hello ${name}, welcome to μFIFA'26! Use the Verification Code: ${otp} to verify your email and complete your registration. This Verification Code is valid for 5 minutes.`;
+    const subjectLine = `Verify your registration Verification Code | μFIFA'26`;
 
     await transporter.sendMail({
       from: fromAddress,
@@ -193,10 +193,15 @@ export async function sendRegistrationOtpEmail({ email, name, otp }) {
       html: htmlContent,
     });
 
-    console.log(`[Next.js SMTP] OTP email sent successfully to: ${email}`);
+    console.log(
+      `[Next.js SMTP] Verification code email sent successfully to: ${email}`,
+    );
     return true;
   } catch (error) {
-    console.error("[Next.js SMTP] Failed to send OTP email:", error);
+    console.error(
+      "[Next.js SMTP] Failed to send Verification Code email:",
+      error,
+    );
     return false;
   }
 }
@@ -310,7 +315,7 @@ Welcome to μFIFA'26! We are thrilled to have you join us for the ultimate celeb
 
 Your arena access pass has been officially confirmed:
 - Player ID: ${displayUserId}
-${player.plainPassword ? `- Password: ${player.plainPassword}\n` : ''}- Team: ${teamLabel}
+${player.plainPassword ? `- Password: ${player.plainPassword}\n` : ""}- Team: ${teamLabel}
 
 Your digital access pass is attached to this email.
 
@@ -549,11 +554,12 @@ Best regards,
       text: textContent,
       html: htmlContent,
     });
-    console.log(`[SMTP] Player forgot password email sent successfully to: ${email}`);
+    console.log(
+      `[SMTP] Player forgot password email sent successfully to: ${email}`,
+    );
     return true;
   } catch (error) {
     console.error("[SMTP] Player forgot password email send failed:", error);
     return false;
   }
 }
-
