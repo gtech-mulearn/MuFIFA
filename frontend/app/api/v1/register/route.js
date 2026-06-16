@@ -217,7 +217,7 @@ export async function POST(request) {
         return jsonError(400, "INVALID_OTP", `Invalid OTP. ${remaining} attempts remaining.`);
       }
 
-      const { name, email: sessionEmail, phone, domain, team } = session.payload;
+      const { name, email: sessionEmail, phone, domain, team, referralId } = session.payload;
       const userId = sessionEmail.split("@")[0];
 
       // Generate random 8-character password for the registrant
@@ -235,19 +235,49 @@ export async function POST(request) {
         Prefer: "return=representation",
       };
 
+      // Resolve the referrer if a referral ID was provided
+      let referrer = null;
+      if (referralId && referralId.trim()) {
+        try {
+          const refQuery = `${supabaseUrl}/rest/v1/registrations?referal_id=eq.${encodeURIComponent(referralId.trim())}&select=id,user_id,email,team,mu_points`;
+          const refRes = await fetch(refQuery, {
+            method: "GET",
+            headers: {
+              apikey: supabaseKey,
+              Authorization: `Bearer ${supabaseKey}`,
+            },
+          });
+          if (refRes.ok) {
+            const refRows = await refRes.json();
+            if (refRows && refRows.length > 0) {
+              referrer = refRows[0];
+            }
+          }
+        } catch (refErr) {
+          console.error("Referral lookup failed (non-fatal):", refErr);
+        }
+      }
+
+      const registrationPayload = {
+        name,
+        email: sessionEmail,
+        user_id: userId,
+        phone,
+        domain,
+        team,
+        mu_points: 10,
+        password_hash: hashedPassword,
+      };
+
+      // Store who referred this player (if valid referrer found)
+      if (referrer) {
+        registrationPayload.referred_by = referrer.user_id;
+      }
+
       const dbRes = await fetch(`${supabaseUrl}/rest/v1/registrations`, {
         method: "POST",
         headers,
-        body: JSON.stringify({
-          name,
-          email: sessionEmail,
-          user_id: userId,
-          phone,
-          domain,
-          team,
-          mu_points: 10,
-          password_hash: hashedPassword,
-        }),
+        body: JSON.stringify(registrationPayload),
       });
 
       if (!dbRes.ok) {
@@ -283,6 +313,32 @@ export async function POST(request) {
 
       if (player.team) {
         await adjustSquadPoints(supabaseUrl, supabaseKey, player.team, 10);
+      }
+
+      // Award referral bonus: +5 μPoints to the referrer and +5 squad points to their team
+      if (referrer) {
+        try {
+          const newPoints = (referrer.mu_points || 0) + 5;
+          const referrerPatchUrl = `${supabaseUrl}/rest/v1/registrations?id=eq.${referrer.id}`;
+          await fetch(referrerPatchUrl, {
+            method: "PATCH",
+            headers: {
+              apikey: supabaseKey,
+              Authorization: `Bearer ${supabaseKey}`,
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({ mu_points: newPoints }),
+          });
+
+          // Award +5 squad points to the referrer's team
+          if (referrer.team) {
+            await adjustSquadPoints(supabaseUrl, supabaseKey, referrer.team, 5);
+          }
+
+          console.log(`Referral bonus awarded: +5 μPoints to ${referrer.user_id} (referral ID: ${referralId})`);
+        } catch (referralErr) {
+          console.error("Referral bonus award failed (non-fatal):", referralErr);
+        }
       }
 
       // Trigger the access pass rendering, Supabase storage upload, and SMTP backend routing.
