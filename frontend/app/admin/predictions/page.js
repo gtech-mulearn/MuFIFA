@@ -218,13 +218,20 @@ export default function AdminPredictionsPage() {
           (a, b) => new Date(a.utcDate) - new Date(b.utcDate)
         );
         setMatches(sorted);
-
-        // Preselect the first live/completed match, or the first upcoming match
+ 
+        // Preselect the last live/completed match, or the first match as fallback
         if (sorted.length > 0) {
-          const liveOrCompleted = sorted.find(
-            (m) => m.status === "FINISHED" || m.status === "IN_PLAY" || m.status === "PAUSED"
-          );
-          setSelectedMatchId(liveOrCompleted ? String(liveOrCompleted.id) : String(sorted[0].id));
+          setSelectedMatchId((prev) => {
+            if (prev && sorted.some((m) => String(m.id) === prev)) {
+              return prev;
+            }
+            const happened = sorted.filter(
+              (m) => m.status === "FINISHED" || m.status === "IN_PLAY" || m.status === "PAUSED"
+            );
+            return happened.length > 0
+              ? String(happened[happened.length - 1].id)
+              : String(sorted[0].id);
+          });
         }
       } else {
         setError(data.error?.message || "Failed to fetch matches.");

@@ -45,7 +45,7 @@ export default function HeroSection() {
 
         <div className="flex flex-row gap-3 md:gap-4 items-center justify-start w-full max-w-md px-2">
           <Link
-            href={player ? `/profile/${player.user_id}` : "/register"}
+            href={player ? "/dashboard" : "/register"}
             className="cursor-pointer bg-[#4F46E5] text-white px-3 py-2.5 md:px-8 md:py-3 rounded-lg text-xs md:text-sm font-bold tracking-wider hover:bg-[#4338CA] transition-all glow-indigo-btn border border-[#4F46E5]/50 whitespace-nowrap flex-1 text-center block"
           >
             {player ? "Enter The Arena" : "Register For Arena"}

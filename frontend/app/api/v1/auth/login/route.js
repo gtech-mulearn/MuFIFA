@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { signToken } from "@/utils/auth";
+import { signToken, comparePassword } from "@/utils/auth";
 
 const PLAYER_COOKIE = "player_token";
 
@@ -34,7 +34,7 @@ export async function POST(request) {
           success: false,
           error: {
             code: "BAD_REQUEST",
-            message: "Email/Player ID and Phone Number are required.",
+            message: "Email/Player ID and Password are required.",
           },
         },
         { status: 400 }
@@ -97,17 +97,28 @@ export async function POST(request) {
 
     const player = rows[0];
 
-    // Verify phone number (compare last 10 digits to bypass +91 / 0 prefix variations)
-    const cleanSubmittedPhone = phone.trim().replace(/\D/g, "");
-    const cleanPlayerPhone = player.phone.trim().replace(/\D/g, "");
+    // Verify credential (either password_hash if set, otherwise phone fallback)
+    let authenticated = false;
+    let authErrorMsg = "";
 
-    if (cleanSubmittedPhone.slice(-10) !== cleanPlayerPhone.slice(-10)) {
+    if (player.password_hash) {
+      authenticated = await comparePassword(phone.trim(), player.password_hash);
+      authErrorMsg = "Verification failed. Incorrect password.";
+    } else {
+      // Fallback: Verify phone number (compare last 10 digits to bypass +91 / 0 prefix variations)
+      const cleanSubmittedPhone = phone.trim().replace(/\D/g, "");
+      const cleanPlayerPhone = player.phone.trim().replace(/\D/g, "");
+      authenticated = cleanSubmittedPhone.slice(-10) === cleanPlayerPhone.slice(-10);
+      authErrorMsg = "Verification failed. Incorrect password.";
+    }
+
+    if (!authenticated) {
       return NextResponse.json(
         {
           success: false,
           error: {
             code: "UNAUTHORIZED",
-            message: "Verification failed. Phone number does not match.",
+            message: authErrorMsg,
           },
         },
         { status: 401 }

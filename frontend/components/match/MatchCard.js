@@ -141,7 +141,7 @@ function formatMatchDate(utcDate) {
   }
 }
 
-export default function MatchCard({ match, player, onPredictionSaved }) {
+export default function MatchCard({ match, player, onPredictionSaved, compact, isSelected, onClick }) {
   const [oddsData, setOddsData] = useState(null);
   const [oddsLoading, setOddsLoading] = useState(true);
   const [oddsError, setOddsError] = useState(false);
@@ -239,8 +239,22 @@ export default function MatchCard({ match, player, onPredictionSaved }) {
   // Predictions only open before kick-off; no editing once the match has started
   const isPredictionOpen = isScheduled;
 
+  const homeDisplayName = compact ? (homeTeam?.shortName || homeTeam?.name) : homeTeam?.name;
+  const awayDisplayName = compact ? (awayTeam?.shortName || awayTeam?.name) : awayTeam?.name;
+
   return (
-    <div className="bg-gradient-to-b from-[#131927]/90 to-[#0d101d]/90 border border-white/10 rounded-2xl p-4 backdrop-blur-md shadow-xl hover:border-white/15 transition-all flex flex-col gap-3">
+    <div
+      onClick={onClick}
+      className={`bg-gradient-to-b from-[#131927]/90 to-[#0d101d]/90 border rounded-2xl backdrop-blur-md shadow-xl transition-all flex flex-col ${
+        compact
+          ? "p-3 hover:border-white/20 cursor-pointer gap-2"
+          : "p-4 hover:border-white/15 gap-3"
+      } ${
+        compact && isSelected
+          ? "border-[#4f46e5]/80 shadow-[0_0_15px_rgba(79,70,229,0.25)] bg-[#131927]/100"
+          : "border-white/10"
+      }`}
+    >
       {/* Header row: competition name + status badge */}
       <div className="flex items-center justify-between gap-2">
         <span className="text-[10px] text-slate-500 font-semibold truncate uppercase tracking-wider">
@@ -255,7 +269,7 @@ export default function MatchCard({ match, player, onPredictionSaved }) {
         <div className="flex items-center gap-1.5 flex-1 min-w-0">
           <TeamFlag teamName={homeTeam?.name} />
           <span className="text-sm font-bold text-white truncate">
-            {homeTeam?.name}
+            {homeDisplayName}
           </span>
         </div>
 
@@ -277,9 +291,9 @@ export default function MatchCard({ match, player, onPredictionSaved }) {
         </div>
 
         {/* Away team */}
-        <div className="flex items-center justify-end gap-1.5 flex-1 min-w-0">
+        <div className="flex items-center justify-end gap-1.5 flex-1 min-w-0 font-medium">
           <span className="text-sm font-bold text-white truncate text-right">
-            {awayTeam?.name}
+            {awayDisplayName}
           </span>
           <TeamFlag teamName={awayTeam?.name} />
         </div>
@@ -291,116 +305,154 @@ export default function MatchCard({ match, player, onPredictionSaved }) {
       </div>
 
       {/* Divider */}
-      <div className="border-t border-white/5" />
+      {!compact && <div className="border-t border-white/5" />}
 
       {/* Odds section */}
-      <div>
-        {oddsLoading && (
-          <div className="bg-white/5 h-7 rounded-lg animate-pulse" />
-        )}
-        {!oddsLoading && oddsError && (
-          <span className="text-[10px] text-slate-600 italic">—</span>
-        )}
-        {!oddsLoading && !oddsError && oddsData && (
-          <OddsBar
-            odds={oddsData.odds}
-            total={oddsData.total}
-            homeTeam={homeTeam?.name}
-            awayTeam={awayTeam?.name}
-            myPrediction={oddsData.myPrediction?.predicted_outcome ?? null}
-          />
-        )}
-      </div>
+      {!compact && (
+        <div>
+          {oddsLoading && (
+            <div className="bg-white/5 h-7 rounded-lg animate-pulse" />
+          )}
+          {!oddsLoading && oddsError && (
+            <span className="text-[10px] text-slate-600 italic">—</span>
+          )}
+          {!oddsLoading && !oddsError && oddsData && (
+            <OddsBar
+              odds={oddsData.odds}
+              total={oddsData.total}
+              homeTeam={homeTeam?.name}
+              awayTeam={awayTeam?.name}
+              myPrediction={oddsData.myPrediction?.predicted_outcome ?? null}
+            />
+          )}
+        </div>
+      )}
 
       {/* Prediction section */}
-      <div>
-        {/* Logged-in player, match is open for predictions (before kick-off only) */}
-        {player !== null && isPredictionOpen && (
-          <>
-            {!showForm ? (
-              <div className="flex flex-col gap-2">
-                <div className="flex items-center gap-2 flex-wrap">
-                  {oddsData?.myPrediction ? (
-                    <>
-                      <span className="text-[9px] text-slate-400 bg-slate-700/30 border border-slate-600/30 px-2 py-1 rounded">
-                        Your pick: {oddsData.myPrediction.predicted_home_goals} – {oddsData.myPrediction.predicted_away_goals}
-                      </span>
-                      {isTimeWindowOpen ? (
-                        <button
-                          onClick={() => setShowForm(true)}
-                          className="cursor-pointer bg-slate-800 hover:bg-slate-700 border border-slate-600/50 text-white text-[9px] font-bold px-2.5 py-1 rounded transition-colors"
-                        >
-                          Edit
-                        </button>
-                      ) : (
-                        <span className="text-[9px] text-slate-500 italic">
-                          (Editing locked)
+      {!compact && (
+        <div>
+          {/* Logged-in player, match is open for predictions (before kick-off only) */}
+          {player !== null && isPredictionOpen && (
+            <>
+              {!showForm ? (
+                <div className="flex flex-col gap-2">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    {oddsData?.myPrediction ? (
+                      <>
+                        <span className="text-[9px] text-slate-400 bg-slate-700/30 border border-slate-600/30 px-2 py-1 rounded">
+                          Your pick: {oddsData.myPrediction.predicted_home_goals} – {oddsData.myPrediction.predicted_away_goals}
                         </span>
-                      )}
-                    </>
-                  ) : (
-                    <>
-                      {isTimeWindowOpen ? (
-                        <button
-                          onClick={() => setShowForm(true)}
-                          className="cursor-pointer bg-[#4F46E5] hover:bg-[#4338CA] text-white text-xs font-bold px-4 py-2 rounded-xl transition-colors"
-                        >
-                          Predict
-                        </button>
-                      ) : (
-                        <span className="text-[10px] text-slate-500 font-medium italic">
-                          Predictions closed for today
-                        </span>
-                      )}
-                    </>
+                        {isTimeWindowOpen ? (
+                          Number(player?.mu_points || 0) < 0 ? (
+                            <span className="text-[9px] text-red-400 font-semibold italic bg-red-500/10 border border-red-500/20 px-2 py-1 rounded">
+                              Editing locked (negative points)
+                            </span>
+                          ) : (
+                            <button
+                              onClick={() => setShowForm(true)}
+                              className="cursor-pointer bg-slate-800 hover:bg-slate-700 border border-slate-600/50 text-white text-[9px] font-bold px-2.5 py-1 rounded transition-colors"
+                            >
+                              Edit
+                            </button>
+                          )
+                        ) : (
+                          <span className="text-[9px] text-slate-500 italic">
+                            (Editing locked)
+                          </span>
+                        )}
+                      </>
+                    ) : (
+                      <>
+                        {isTimeWindowOpen ? (
+                          Number(player?.mu_points || 0) < 0 ? (
+                            <span className="text-[10px] text-red-400 font-semibold italic bg-red-500/10 border border-red-500/20 px-2.5 py-1.5 rounded-xl">
+                              Predictions locked (insufficient points)
+                            </span>
+                          ) : (
+                            <button
+                              onClick={() => setShowForm(true)}
+                              className="cursor-pointer bg-[#4F46E5] hover:bg-[#4338CA] text-white text-xs font-bold px-4 py-2 rounded-xl transition-colors"
+                            >
+                              Predict
+                            </button>
+                          )
+                        ) : (
+                          <span className="text-[10px] text-slate-500 font-medium italic">
+                            Predictions closed for today
+                          </span>
+                        )}
+                      </>
+                    )}
+                  </div>
+                  {!isTimeWindowOpen && (
+                    <span className="text-[9px] text-slate-500 font-mono">
+                      Open 8:00 PM – 12:30 AM IST only.
+                    </span>
                   )}
                 </div>
-                {!isTimeWindowOpen && (
-                  <span className="text-[9px] text-slate-500 font-mono">
-                    Open 8:00 PM – 12:30 AM IST only.
+              ) : (
+                <PredictionForm
+                  matchId={String(match.id)}
+                  homeTeam={homeTeam?.name}
+                  awayTeam={awayTeam?.name}
+                  existingPrediction={oddsData?.myPrediction ?? null}
+                  onSave={handlePredictionSaved}
+                  onCancel={() => setShowForm(false)}
+                />
+              )}
+            </>
+          )}
+
+          {/* Logged-in player, match has started or finished — locked */}
+          {player !== null && !isPredictionOpen && (
+            <div className="flex items-center gap-2 flex-wrap">
+              <span className="bg-slate-700/30 border border-slate-600/30 text-slate-500 text-[9px] font-bold uppercase px-2 py-1 rounded">
+                {isFinished ? "Match ended" : "Match started"}
+              </span>
+              {oddsData?.myPrediction && (
+                <div className="flex items-center gap-1.5 flex-wrap">
+                  <span className="text-[9px] text-slate-500">
+                    Your pick: {oddsData.myPrediction.predicted_home_goals} – {oddsData.myPrediction.predicted_away_goals}
                   </span>
-                )}
-              </div>
-            ) : (
-              <PredictionForm
-                matchId={String(match.id)}
-                homeTeam={homeTeam?.name}
-                awayTeam={awayTeam?.name}
-                existingPrediction={oddsData?.myPrediction ?? null}
-                onSave={handlePredictionSaved}
-                onCancel={() => setShowForm(false)}
-              />
-            )}
-          </>
-        )}
+                  {isFinished && getPredictionBadge()}
+                </div>
+              )}
+            </div>
+          )}
 
-        {/* Logged-in player, match has started or finished — locked */}
-        {player !== null && !isPredictionOpen && (
-          <div className="flex items-center gap-2 flex-wrap">
-            <span className="bg-slate-700/30 border border-slate-600/30 text-slate-500 text-[9px] font-bold uppercase px-2 py-1 rounded">
-              {isFinished ? "Match ended" : "Match started"}
-            </span>
-            {oddsData?.myPrediction && (
-              <div className="flex items-center gap-1.5 flex-wrap">
-                <span className="text-[9px] text-slate-500">
-                  Your pick: {oddsData.myPrediction.predicted_home_goals} – {oddsData.myPrediction.predicted_away_goals}
-                </span>
-                {isFinished && getPredictionBadge()}
-              </div>
-            )}
-          </div>
-        )}
+          {/* Not logged in */}
+          {player === null && (
+            <Link
+              href="/login"
+              className="text-[10px] text-slate-500 hover:text-slate-300 underline transition-colors"
+            >
+              Login to predict
+            </Link>
+          )}
+        </div>
+      )}
 
-        {/* Not logged in */}
-        {player === null && (
-          <Link
-            href="/login"
-            className="text-[10px] text-slate-500 hover:text-slate-300 underline transition-colors"
-          >
-            Login to predict
-          </Link>
-        )}
-      </div>
+      {/* Compact layout prediction status indicator */}
+      {compact && oddsData?.myPrediction && (
+        <div className="text-[9px] text-[#06B6D4] font-bold flex items-center gap-1 mt-0.5 justify-center bg-[#06B6D4]/5 border border-[#06B6D4]/10 py-1.5 rounded-xl">
+          <span>Predicted: {oddsData.myPrediction.predicted_home_goals} – {oddsData.myPrediction.predicted_away_goals}</span>
+        </div>
+      )}
+      {compact && !oddsData?.myPrediction && isPredictionOpen && isTimeWindowOpen && (
+        <div className="text-[9px] text-slate-400 font-semibold flex items-center gap-1 mt-0.5 justify-center bg-white/5 border border-dashed border-white/10 py-1.5 rounded-xl group-hover:border-[#4F46E5]/40 transition-colors">
+          <span>Click to Predict</span>
+        </div>
+      )}
+      {compact && !oddsData?.myPrediction && isPredictionOpen && !isTimeWindowOpen && (
+        <div className="text-[9px] text-slate-500 font-medium flex items-center gap-1 mt-0.5 justify-center bg-white/[0.02] border border-white/5 py-1.5 rounded-xl">
+          <span>Predict at 8:00 PM</span>
+        </div>
+      )}
+      {compact && !isPredictionOpen && (
+        <div className="text-[9px] text-slate-500 font-medium flex items-center gap-1 mt-0.5 justify-center bg-white/[0.02] border border-white/5 py-1.5 rounded-xl">
+          <span>Prediction Closed</span>
+        </div>
+      )}
     </div>
   );
 }

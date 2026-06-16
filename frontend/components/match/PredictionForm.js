@@ -20,11 +20,11 @@ function deriveOutcome(home, away) {
 function outcomeDisplay(outcome) {
   switch (outcome) {
     case "home_win":
-      return { label: "🏠 Home Win", className: "text-[#818CF8]" };
+      return { label: "Home Win", className: "text-[#818CF8]" };
     case "draw":
-      return { label: "⚖️ Draw", className: "text-slate-400" };
+      return { label: "Draw", className: "text-slate-400" };
     case "away_win":
-      return { label: "✈️ Away Win", className: "text-[#06B6D4]" };
+      return { label: "Away Win", className: "text-[#06B6D4]" };
     default:
       return { label: "—", className: "text-slate-500" };
   }

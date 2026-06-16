@@ -84,6 +84,39 @@ export async function POST(request) {
       );
     }
 
+    // Check points limit: if points are below 0, player cannot predict
+    const userRes = await fetch(
+      `${supabaseUrl}/rest/v1/registrations?user_id=eq.${encodeURIComponent(decoded.user_id)}&select=mu_points&limit=1`,
+      {
+        method: "GET",
+        headers: {
+          apikey: supabaseKey,
+          Authorization: `Bearer ${supabaseKey}`,
+        },
+      }
+    );
+
+    if (!userRes.ok) {
+      throw new Error(`Failed to fetch user points check: ${await userRes.text()}`);
+    }
+
+    const users = await userRes.json();
+    const userPoints = Number(users?.[0]?.mu_points ?? 0);
+
+    if (userPoints < 0) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: {
+            code: "FORBIDDEN",
+            message: "You cannot place or edit predictions because your point balance is below 0.",
+            details: null,
+          },
+        },
+        { status: 403 }
+      );
+    }
+
     // Time-window check: Predictions and editing are only allowed between 8:00 PM and 12:30 AM IST
     const now = new Date();
     const istTimeStr = now.toLocaleString("en-US", { timeZone: "Asia/Kolkata" });

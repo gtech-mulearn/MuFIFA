@@ -310,7 +310,7 @@ Welcome to μFIFA'26! We are thrilled to have you join us for the ultimate celeb
 
 Your arena access pass has been officially confirmed:
 - Player ID: ${displayUserId}
-- Team: ${teamLabel}
+${player.plainPassword ? `- Password: ${player.plainPassword}\n` : ''}- Team: ${teamLabel}
 
 Your digital access pass is attached to this email.
 
@@ -348,3 +348,212 @@ Best regards,
     return false;
   }
 }
+
+export async function sendForgotPasswordEmail({ email, name, tempPassword }) {
+  const transporter = getTransporter();
+  if (!transporter) return false;
+
+  const smtpFrom =
+    process.env.SMTP_FROM || `"noreply@mulearn.org" <noreply@mulearn.org>`;
+  const fromAddress = `"noreply@mulearn.org" <${smtpFrom.includes("<") ? smtpFrom.split("<")[1].replace(">", "") : smtpFrom}>`;
+
+  const subjectLine = `Password Reset | μFIFA`;
+  const textContent = `Hello ${name},
+
+Your password has been temporarily reset to: ${tempPassword}
+
+Please log in and update your password as soon as possible.
+
+Best regards,
+μFIFA Arena Team`;
+
+  const htmlContent = `
+    <!DOCTYPE html>
+    <html>
+      <body style="font-family: Arial, sans-serif; background-color: #090a0f; color: #ffffff; padding: 20px; margin: 0;">
+        <div style="max-width: 500px; margin: 0 auto; background-color: rgba(19, 25, 39, 0.6); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 24px; padding: 40px; box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5);">
+          <h2 style="color: #ffffff; text-align: center; letter-spacing: 0.15em; font-weight: 800; font-size: 24px; margin-top: 0; margin-bottom: 28px;">μFIFA'26</h2>
+          <p style="font-size: 14px; color: #f1f5f9; font-weight: 700; margin-bottom: 16px;">Hello ${name},</p>
+          <p style="font-size: 14px; line-height: 1.6; color: #94a3b8; margin-bottom: 24px;">Your password has been temporarily reset as requested. Use the temporary password below to log in:</p>
+          <div style="background: rgba(6, 182, 212, 0.08); border: 1px solid rgba(6, 182, 212, 0.25); border-radius: 14px; padding: 16px 28px; text-align: center; margin-bottom: 24px; box-shadow: 0 0 12px rgba(6, 182, 212, 0.3);">
+            <span style="font-size: 20px; font-weight: 800; letter-spacing: 0.1em; color: #06b6d4; font-family: monospace;">${tempPassword}</span>
+          </div>
+          <p style="font-size: 12px; color: #64748b; margin-bottom: 28px; line-height: 1.5;">Please log in using this temporary password and update it immediately. If you did not request this reset, please contact the administrator.</p>
+          <div style="margin-top: 32px; border-top: 1px solid rgba(255, 255, 255, 0.06); padding-top: 24px; text-align: center;">
+            <div style="font-size: 12px; font-weight: 700; color: #94a3b8; margin-bottom: 6px;">μLearn Foundation</div>
+            <p style="font-size: 9px; color: #475569; margin: 0;">&copy; 2026 μLearn Foundation. All rights reserved.</p>
+          </div>
+        </div>
+      </body>
+    </html>
+  `;
+
+  try {
+    await transporter.sendMail({
+      from: fromAddress,
+      to: email,
+      subject: subjectLine,
+      text: textContent,
+      html: htmlContent,
+    });
+    console.log(`[SMTP] Forgot password email sent successfully to: ${email}`);
+    return true;
+  } catch (error) {
+    console.error("[SMTP] Forgot password email send failed:", error);
+    return false;
+  }
+}
+
+export async function sendPlayerForgotPasswordEmail({ email, name, password }) {
+  const transporter = getTransporter();
+  if (!transporter) return false;
+
+  const smtpFrom =
+    process.env.SMTP_FROM || `"noreply@mulearn.org" <noreply@mulearn.org>`;
+  const fromAddress = `"noreply@mulearn.org" <${smtpFrom.includes("<") ? smtpFrom.split("<")[1].replace(">", "") : smtpFrom}>`;
+
+  const subjectLine = `Access Password Reset | μFIFA`;
+  const textContent = `Hello ${name},
+
+Your player account password for μFIFA'26 has been reset to: ${password}
+
+Please log in and update your profile details as needed.
+
+Best regards,
+μFIFA Arena Team`;
+
+  const htmlContent = `
+    <!DOCTYPE html>
+    <html>
+      <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Password Reset | μFIFA</title>
+        <style>
+          body {
+            margin: 0;
+            padding: 0;
+            background-color: #090a0f;
+            color: #f1f5f9;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+          }
+          .wrapper {
+            width: 100%;
+            box-sizing: border-box;
+            padding: 40px 20px;
+            background: 
+              radial-gradient(circle at top right, rgba(79, 70, 229, 0.12), transparent 40%),
+              radial-gradient(circle at bottom left, rgba(6, 182, 212, 0.12), transparent 40%),
+              #090a0f;
+          }
+          .container {
+            max-width: 480px;
+            margin: 0 auto;
+            background: rgba(19, 25, 39, 0.6);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 24px;
+            padding: 40px;
+            text-align: center;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5);
+          }
+          .logo-text {
+            font-size: 24px;
+            font-weight: 800;
+            letter-spacing: 0.15em;
+            color: #ffffff;
+            margin: 0 0 28px 0;
+          }
+          .greeting {
+            font-size: 16px;
+            font-weight: 700;
+            color: #ffffff;
+            margin: 0 0 16px 0;
+            text-align: left;
+          }
+          .message {
+            font-size: 14px;
+            line-height: 1.6;
+            color: #94a3b8;
+            margin: 0 0 24px 0;
+            text-align: left;
+          }
+          .password-box {
+            display: inline-block;
+            padding: 16px 28px;
+            border-radius: 14px;
+            background: rgba(6, 182, 212, 0.08);
+            border: 1px solid rgba(6, 182, 212, 0.25);
+            font-size: 24px;
+            font-weight: 800;
+            letter-spacing: 0.15em;
+            color: #06b6d4;
+            margin: 8px 0 24px 0;
+            text-shadow: 0 0 12px rgba(6, 182, 212, 0.3);
+            font-family: monospace;
+          }
+          .note {
+            font-size: 12px;
+            color: #64748b;
+            margin: 0 0 28px 0;
+            line-height: 1.5;
+            text-align: left;
+          }
+          .footer {
+            margin-top: 32px;
+            border-top: 1px solid rgba(255, 255, 255, 0.06);
+            padding-top: 24px;
+            text-align: center;
+          }
+          .footer-title {
+            font-size: 12px;
+            font-weight: 700;
+            color: #94a3b8;
+            margin: 0 0 6px 0;
+          }
+          .footer-copyright {
+            font-size: 9px;
+            color: #475569;
+            margin: 0;
+          }
+        </style>
+      </head>
+      <body>
+        <div class="wrapper">
+          <div class="container">
+            <h1 class="logo-text">μFIFA'26</h1>
+            <div class="greeting">Hello ${name},</div>
+            <div class="message">
+              Your player account password has been successfully reset. Use the temporary password below to log in to the arena:
+            </div>
+            <div class="password-box">${password}</div>
+            <div class="note">
+              Please use this 8-digit password to log in. You can keep this password or update your profile details as needed. If you did not request this password reset, please contact the administrator.
+            </div>
+            <div class="footer">
+              <div class="footer-title">μLearn Foundation</div>
+              <p class="footer-copyright">
+                &copy; 2026 μLearn Foundation. All rights reserved.
+              </p>
+            </div>
+          </div>
+        </div>
+      </body>
+    </html>
+  `;
+
+  try {
+    await transporter.sendMail({
+      from: fromAddress,
+      to: email,
+      subject: subjectLine,
+      text: textContent,
+      html: htmlContent,
+    });
+    console.log(`[SMTP] Player forgot password email sent successfully to: ${email}`);
+    return true;
+  } catch (error) {
+    console.error("[SMTP] Player forgot password email send failed:", error);
+    return false;
+  }
+}
+

@@ -28,6 +28,8 @@ export default function Home() {
         </div>
 
         <div className="lg:col-span-5 xl:col-span-4 bg-transparent p-6 md:p-8 lg:pt-12 flex flex-col gap-6 md:gap-8 justify-start relative z-10 border-t lg:border-t-0 lg:border-l border-white/5">
+          {/* Spacer to align Leaderboard with Hero Title on desktop */}
+          <div className="hidden lg:block lg:h-[30vh]" />
           {/* <BiddingBoard /> */}
           <Leaderboard />
         </div>

@@ -32,7 +32,7 @@ export default function Navbar() {
     { name: "Home", href: "/" },
     { name: "Leaderboard", href: "/leaderboard" },
     { name: "Match", href: "/match" },
-    player ? { name: "Dashboard", href: "/dashboard" } : null,
+    player ? { name: "Profile", href: `/profile/${player.user_id}` } : null,
     !player ? { name: "Register", href: "/register" } : null,
   ].filter(Boolean);
 
@@ -87,12 +87,29 @@ export default function Navbar() {
         </nav>
 
         <div className="flex items-center gap-3">
-          <Link
-            href={player ? `/profile/${player.user_id}` : "/register"}
-            className="hidden md:inline-block cursor-pointer bg-white border border-white hover:bg-white/90 hover:border-white/90 px-4 py-1.5 rounded-full text-xs font-semibold tracking-wider text-black text-center transition-colors"
-          >
-            ENTER ARENA
-          </Link>
+          {player ? (
+            <Link
+              href="/dashboard"
+              className="hidden md:inline-block cursor-pointer bg-white border border-white hover:bg-white/90 hover:border-white/90 px-4 py-1.5 rounded-full text-xs font-semibold tracking-wider text-black text-center transition-colors"
+            >
+              ENTER ARENA
+            </Link>
+          ) : (
+            <>
+              <Link
+                href="/login"
+                className="hidden md:inline-block cursor-pointer border border-white/20 hover:border-white text-white hover:bg-white/10 px-4 py-1.5 rounded-full text-xs font-semibold tracking-wider text-center transition-colors"
+              >
+                SIGN IN
+              </Link>
+              <Link
+                href="/register"
+                className="hidden md:inline-block cursor-pointer bg-white border border-white hover:bg-white/90 hover:border-white/90 px-4 py-1.5 rounded-full text-xs font-semibold tracking-wider text-black text-center transition-colors"
+              >
+                SIGN UP
+              </Link>
+            </>
+          )}
 
           <button
             onClick={() => setMenuOpen(!menuOpen)}
@@ -140,13 +157,32 @@ export default function Navbar() {
             );
           })}
 
-          <Link
-            href={player ? `/profile/${player.user_id}` : "/register"}
-            onClick={() => setMenuOpen(false)}
-            className="md:inline-block cursor-pointer bg-white border border-white hover:bg-white/90 hover:border-white/90 px-4 py-1.5 rounded-full text-xs font-semibold tracking-wider text-black text-center transition-colors"
-          >
-            ENTER ARENA
-          </Link>
+          {player ? (
+            <Link
+              href="/dashboard"
+              onClick={() => setMenuOpen(false)}
+              className="cursor-pointer bg-white border border-white hover:bg-white/90 hover:border-white/90 px-4 py-1.5 rounded-full text-xs font-semibold tracking-wider text-black text-center transition-colors"
+            >
+              ENTER ARENA
+            </Link>
+          ) : (
+            <div className="flex flex-col gap-2 w-full mt-1">
+              <Link
+                href="/login"
+                onClick={() => setMenuOpen(false)}
+                className="cursor-pointer border border-white/20 hover:border-white text-white hover:bg-white/10 px-4 py-1.5 rounded-full text-xs font-semibold tracking-wider text-center transition-colors block w-full"
+              >
+                SIGN IN
+              </Link>
+              <Link
+                href="/register"
+                onClick={() => setMenuOpen(false)}
+                className="cursor-pointer bg-white border border-white hover:bg-white/90 hover:border-white/90 px-4 py-1.5 rounded-full text-xs font-semibold tracking-wider text-black text-center transition-colors block w-full"
+              >
+                SIGN UP
+              </Link>
+            </div>
+          )}
         </div>
       </div>
     </header>

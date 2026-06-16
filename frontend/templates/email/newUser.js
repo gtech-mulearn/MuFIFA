@@ -1,7 +1,7 @@
 import { TEAM_WHATSAPP_LINKS, TEAM_FLAGS } from "../../utils/constants";
 
 function getNewUserEmailHtml(player, assets = {}) {
-  const { name, user_id, team } = player;
+  const { name, user_id, team, plainPassword } = player;
   const teamLabel = TEAM_FLAGS[team] || team || "Assigned Team";
   const whatsappUrl = TEAM_WHATSAPP_LINKS[team] || "https://chat.whatsapp.com/";
   const displayId = user_id.startsWith("@") ? user_id : `@${user_id}`;
@@ -173,6 +173,11 @@ function getNewUserEmailHtml(player, assets = {}) {
               <div class="highlight-item">
                 <span class="highlight-label">Player ID:</span> ${displayId}
               </div>
+              ${plainPassword ? `
+              <div class="highlight-item">
+                <span class="highlight-label">Password:</span> <strong>${plainPassword}</strong>
+              </div>
+              ` : ""}
             </div>
 
             <!-- Access Pass Image -->

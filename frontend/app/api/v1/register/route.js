@@ -8,7 +8,7 @@ import {
   OTP_MAX_ATTEMPTS,
 } from "@/utils/registerOtp";
 import { sendRegistrationOtpEmail, sendRegistrationEmail } from "@/utils/email";
-import { signToken } from "@/utils/auth";
+import { signToken, hashPassword } from "@/utils/auth";
 import { adjustSquadPoints } from "@/utils/squad";
 
 const PLAYER_COOKIE = "player_token";
@@ -220,6 +220,14 @@ export async function POST(request) {
       const { name, email: sessionEmail, phone, domain, team } = session.payload;
       const userId = sessionEmail.split("@")[0];
 
+      // Generate random 8-character password for the registrant
+      const chars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+      let plainPassword = "";
+      for (let i = 0; i < 8; i++) {
+        plainPassword += chars.charAt(Math.floor(Math.random() * chars.length));
+      }
+      const hashedPassword = await hashPassword(plainPassword);
+
       const headers = {
         apikey: supabaseKey,
         Authorization: `Bearer ${supabaseKey}`,
@@ -238,6 +246,7 @@ export async function POST(request) {
           domain,
           team,
           mu_points: 10,
+          password_hash: hashedPassword,
         }),
       });
 
@@ -266,6 +275,9 @@ export async function POST(request) {
 
       const dbData = await dbRes.json();
       const player = dbData[0];
+      
+      // Pass the generated plain-text password to the email template
+      player.plainPassword = plainPassword;
 
       clearOtpSession(email);
 
