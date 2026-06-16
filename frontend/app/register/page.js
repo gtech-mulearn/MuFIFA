@@ -322,8 +322,8 @@ function RegisterForm() {
           otp: "",
           error: "",
           message: data.message || "OTP sent to your email.",
-          resendAvailableAt: data.data.resendAvailableAt,
-          expiresAt: data.data.expiresAt,
+          resendAvailableAt: Date.now() + (data.data.resendAvailableInMs !== undefined ? data.data.resendAvailableInMs : 120000),
+          expiresAt: Date.now() + (data.data.expiresInMs !== undefined ? data.data.expiresInMs : 300000),
         });
       } else {
         if (applyApiErrors(data)) {
@@ -469,8 +469,8 @@ function RegisterForm() {
           otp: "",
           error: "",
           message: data.message || "A new OTP has been sent to your email.",
-          resendAvailableAt: data.data.resendAvailableAt,
-          expiresAt: data.data.expiresAt,
+          resendAvailableAt: Date.now() + (data.data.resendAvailableInMs !== undefined ? data.data.resendAvailableInMs : 120000),
+          expiresAt: Date.now() + (data.data.expiresInMs !== undefined ? data.data.expiresInMs : 300000),
         }));
       } else {
         setOtpModal((prev) => ({
@@ -537,326 +537,326 @@ function RegisterForm() {
       <div className="max-w-4xl mx-auto px-4 sm:px-6 w-full relative z-10 flex-1 flex flex-col justify-center items-center">
         {/* REGISTRATION FORM VIEW */}
         <div className="w-full max-w-lg bg-glass-card rounded-2xl p-5 sm:p-6 md:p-8 border border-white/10 backdrop-blur-md shadow-2xl flex flex-col gap-5 sm:gap-6 bg-[linear-gradient(115deg,rgba(255,255,255,0.02),rgba(79, 70, 229,0.015))]">
-            {/* Header */}
-            <div className="text-center flex flex-col gap-1.5">
-              <h1 className="text-2xl md:text-3xl font-extrabold tracking-wider bg-gradient-to-r from-white to-slate-400 bg-clip-text text-transparent uppercase">
-                Arena Registration
-              </h1>
-              <p className="text-xs text-slate-400">
-                Register as an player, select your squad domain, and choose your
-                team.
-              </p>
+          {/* Header */}
+          <div className="text-center flex flex-col gap-1.5">
+            <h1 className="text-2xl md:text-3xl font-extrabold tracking-wider bg-gradient-to-r from-white to-slate-400 bg-clip-text text-transparent uppercase">
+              Arena Registration
+            </h1>
+            <p className="text-xs text-slate-400">
+              Register as an player, select your squad domain, and choose your
+              team.
+            </p>
+          </div>
+
+          {apiError && (
+            <div className="bg-indigo-500/10 border border-indigo-500/30 text-indigo-400 text-xs py-3 px-4 rounded-xl font-medium flex items-center gap-2">
+              <span className="text-base">⚠️</span> {apiError}
+            </div>
+          )}
+
+          {/* Form */}
+          <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+            {/* Name */}
+            <div className="flex flex-col gap-1.5">
+              <label
+                htmlFor="agent-name-input"
+                className="text-[10px] font-black uppercase tracking-wider text-slate-300"
+              >
+                Player Full Name
+              </label>
+              <input
+                id="agent-name-input"
+                type="text"
+                name="name"
+                value={formData.name}
+                onChange={handleInputChange}
+                placeholder="e.g. Your Full Name"
+                aria-invalid={!!validationErrors.name}
+                aria-describedby={
+                  validationErrors.name ? "name-error" : undefined
+                }
+                className="bg-black/40 border border-white/10 rounded-xl px-4 py-2.5 text-xs text-slate-200 placeholder-slate-500 focus:outline-none focus:border-[#4F46E5] transition-colors"
+              />
+              {validationErrors.name && (
+                <span
+                  id="name-error"
+                  className="text-[10px] text-indigo-400 font-semibold"
+                >
+                  {validationErrors.name}
+                </span>
+              )}
             </div>
 
-            {apiError && (
-              <div className="bg-indigo-500/10 border border-indigo-500/30 text-indigo-400 text-xs py-3 px-4 rounded-xl font-medium flex items-center gap-2">
-                <span className="text-base">⚠️</span> {apiError}
-              </div>
-            )}
+            {/* Email */}
+            <div className="flex flex-col gap-1.5">
+              <label
+                htmlFor="agent-email-input"
+                className="text-[10px] font-black uppercase tracking-wider text-slate-300"
+              >
+                Email Address
+              </label>
+              <input
+                id="agent-email-input"
+                type="email"
+                name="email"
+                value={formData.email}
+                onChange={handleInputChange}
+                placeholder="e.g. mulearn@gmail.com"
+                aria-invalid={!!validationErrors.email}
+                aria-describedby={
+                  validationErrors.email ? "email-error" : undefined
+                }
+                className="bg-black/40 border border-white/10 rounded-xl px-4 py-2.5 text-xs text-slate-200 placeholder-slate-500 focus:outline-none focus:border-[#4F46E5] transition-colors"
+              />
+              {validationErrors.email && (
+                <span
+                  id="email-error"
+                  className="text-[10px] text-indigo-400 font-semibold"
+                >
+                  {validationErrors.email}
+                </span>
+              )}
+            </div>
 
-            {/* Form */}
-            <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-              {/* Name */}
+            {/* Phone */}
+            <div className="flex flex-col gap-1.5">
+              <label
+                htmlFor="agent-phone-input"
+                className="text-[10px] font-black uppercase tracking-wider text-slate-300"
+              >
+                Phone Number
+              </label>
+              <input
+                id="agent-phone-input"
+                type="tel"
+                name="phone"
+                value={formData.phone}
+                onChange={handleInputChange}
+                placeholder="e.g. 1234567890"
+                aria-invalid={!!validationErrors.phone}
+                aria-describedby={
+                  validationErrors.phone ? "phone-error" : undefined
+                }
+                className="bg-black/40 border border-white/10 rounded-xl px-4 py-2.5 text-xs text-slate-200 placeholder-slate-500 focus:outline-none focus:border-[#4F46E5] transition-colors"
+              />
+              {validationErrors.phone && (
+                <span
+                  id="phone-error"
+                  className="text-[10px] text-indigo-400 font-semibold"
+                >
+                  {validationErrors.phone}
+                </span>
+              )}
+            </div>
+
+            {/* Domain & FIFA Team Selector Side-by-Side */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              {/* Domain Select */}
               <div className="flex flex-col gap-1.5">
                 <label
-                  htmlFor="agent-name-input"
+                  htmlFor="domain-select-btn"
                   className="text-[10px] font-black uppercase tracking-wider text-slate-300"
                 >
-                  Player Full Name
+                  Squad Domain
                 </label>
-                <input
-                  id="agent-name-input"
-                  type="text"
-                  name="name"
-                  value={formData.name}
-                  onChange={handleInputChange}
-                  placeholder="e.g. Your Full Name"
-                  aria-invalid={!!validationErrors.name}
-                  aria-describedby={
-                    validationErrors.name ? "name-error" : undefined
-                  }
-                  className="bg-black/40 border border-white/10 rounded-xl px-4 py-2.5 text-xs text-slate-200 placeholder-slate-500 focus:outline-none focus:border-[#4F46E5] transition-colors"
-                />
-                {validationErrors.name && (
-                  <span
-                    id="name-error"
-                    className="text-[10px] text-indigo-400 font-semibold"
-                  >
-                    {validationErrors.name}
-                  </span>
-                )}
-              </div>
-
-              {/* Email */}
-              <div className="flex flex-col gap-1.5">
-                <label
-                  htmlFor="agent-email-input"
-                  className="text-[10px] font-black uppercase tracking-wider text-slate-300"
-                >
-                  Email Address
-                </label>
-                <input
-                  id="agent-email-input"
-                  type="email"
-                  name="email"
-                  value={formData.email}
-                  onChange={handleInputChange}
-                  placeholder="e.g. mulearn@gmail.com"
-                  aria-invalid={!!validationErrors.email}
-                  aria-describedby={
-                    validationErrors.email ? "email-error" : undefined
-                  }
-                  className="bg-black/40 border border-white/10 rounded-xl px-4 py-2.5 text-xs text-slate-200 placeholder-slate-500 focus:outline-none focus:border-[#4F46E5] transition-colors"
-                />
-                {validationErrors.email && (
-                  <span
-                    id="email-error"
-                    className="text-[10px] text-indigo-400 font-semibold"
-                  >
-                    {validationErrors.email}
-                  </span>
-                )}
-              </div>
-
-              {/* Phone */}
-              <div className="flex flex-col gap-1.5">
-                <label
-                  htmlFor="agent-phone-input"
-                  className="text-[10px] font-black uppercase tracking-wider text-slate-300"
-                >
-                  Phone Number
-                </label>
-                <input
-                  id="agent-phone-input"
-                  type="tel"
-                  name="phone"
-                  value={formData.phone}
-                  onChange={handleInputChange}
-                  placeholder="e.g. 1234567890"
-                  aria-invalid={!!validationErrors.phone}
-                  aria-describedby={
-                    validationErrors.phone ? "phone-error" : undefined
-                  }
-                  className="bg-black/40 border border-white/10 rounded-xl px-4 py-2.5 text-xs text-slate-200 placeholder-slate-500 focus:outline-none focus:border-[#4F46E5] transition-colors"
-                />
-                {validationErrors.phone && (
-                  <span
-                    id="phone-error"
-                    className="text-[10px] text-indigo-400 font-semibold"
-                  >
-                    {validationErrors.phone}
-                  </span>
-                )}
-              </div>
-
-              {/* Domain & FIFA Team Selector Side-by-Side */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                {/* Domain Select */}
-                <div className="flex flex-col gap-1.5">
-                  <label
-                    htmlFor="domain-select-btn"
-                    className="text-[10px] font-black uppercase tracking-wider text-slate-300"
-                  >
-                    Squad Domain
-                  </label>
-                  <Select
-                    id="domain-select-btn"
-                    value={formData.domain}
-                    onChange={(val) => {
-                      setFormData((prev) => ({ ...prev, domain: val }));
-                      if (validationErrors.domain) {
-                        setValidationErrors((prev) => ({
-                          ...prev,
-                          domain: "",
-                        }));
-                      }
-                    }}
-                    options={DOMAINS}
-                    placeholder="Select Domain"
-                    error={!!validationErrors.domain}
-                  />
-                  {validationErrors.domain && (
-                    <span
-                      id="domain-error"
-                      className="text-[10px] text-indigo-400 font-semibold"
-                    >
-                      {validationErrors.domain}
-                    </span>
-                  )}
-                </div>
-
-                {/* Team Select */}
-                <div className="flex flex-col gap-1.5">
-                  <label
-                    htmlFor="team-select-btn"
-                    className="text-[10px] font-black uppercase tracking-wider text-slate-300"
-                  >
-                    FIFA Country Team
-                  </label>
-                  <Select
-                    id="team-select-btn"
-                    value={
-                      formData.team ? (
-                        <span className="flex items-center gap-2">
-                          <span
-                            className={`fi fi-${TEAM_FLAGS[formData.team]} rounded-sm shadow-sm border border-white/10 shrink-0`}
-                            style={{ width: "16px", height: "12px" }}
-                            aria-hidden="true"
-                          />
-                          <span>{formData.team}</span>
-                        </span>
-                      ) : (
-                        ""
-                      )
+                <Select
+                  id="domain-select-btn"
+                  value={formData.domain}
+                  onChange={(val) => {
+                    setFormData((prev) => ({ ...prev, domain: val }));
+                    if (validationErrors.domain) {
+                      setValidationErrors((prev) => ({
+                        ...prev,
+                        domain: "",
+                      }));
                     }
-                    onChange={(val) => {
-                      setFormData((prev) => ({ ...prev, team: val }));
-                      if (validationErrors.team) {
-                        setValidationErrors((prev) => ({ ...prev, team: "" }));
-                      }
-                    }}
-                    optionRenderer={(team) => (
+                  }}
+                  options={DOMAINS}
+                  placeholder="Select Domain"
+                  error={!!validationErrors.domain}
+                />
+                {validationErrors.domain && (
+                  <span
+                    id="domain-error"
+                    className="text-[10px] text-indigo-400 font-semibold"
+                  >
+                    {validationErrors.domain}
+                  </span>
+                )}
+              </div>
+
+              {/* Team Select */}
+              <div className="flex flex-col gap-1.5">
+                <label
+                  htmlFor="team-select-btn"
+                  className="text-[10px] font-black uppercase tracking-wider text-slate-300"
+                >
+                  FIFA Country Team
+                </label>
+                <Select
+                  id="team-select-btn"
+                  value={
+                    formData.team ? (
                       <span className="flex items-center gap-2">
                         <span
-                          className={`fi fi-${TEAM_FLAGS[team]} rounded-sm shadow-sm border border-white/10 shrink-0`}
+                          className={`fi fi-${TEAM_FLAGS[formData.team]} rounded-sm shadow-sm border border-white/10 shrink-0`}
                           style={{ width: "16px", height: "12px" }}
                           aria-hidden="true"
                         />
-                        <span>{team}</span>
+                        <span>{formData.team}</span>
                       </span>
-                    )}
-                    placeholder="Select Team"
-                    options={TEAMS}
-                    error={!!validationErrors.team}
-                  />
-                  {validationErrors.team && (
-                    <span
-                      id="team-error"
-                      className="text-[10px] text-indigo-400 font-semibold"
-                    >
-                      {validationErrors.team}
+                    ) : (
+                      ""
+                    )
+                  }
+                  onChange={(val) => {
+                    setFormData((prev) => ({ ...prev, team: val }));
+                    if (validationErrors.team) {
+                      setValidationErrors((prev) => ({ ...prev, team: "" }));
+                    }
+                  }}
+                  optionRenderer={(team) => (
+                    <span className="flex items-center gap-2">
+                      <span
+                        className={`fi fi-${TEAM_FLAGS[team]} rounded-sm shadow-sm border border-white/10 shrink-0`}
+                        style={{ width: "16px", height: "12px" }}
+                        aria-hidden="true"
+                      />
+                      <span>{team}</span>
                     </span>
                   )}
-                </div>
-              </div>
-
-              {/* Referral ID Input */}
-              <div className="flex flex-col gap-1.5">
-                <label
-                  htmlFor="referral-id-input"
-                  className="text-[10px] font-black uppercase tracking-wider text-slate-300"
-                >
-                  Referral ID (Optional)
-                </label>
-                <input
-                  id="referral-id-input"
-                  type="text"
-                  name="referralId"
-                  value={formData.referralId}
-                  onChange={handleInputChange}
-                  placeholder={refParam ? refParam : "e.g. H8F9X2"}
-                  disabled={!!refParam}
-                  className="bg-black/40 border border-white/10 rounded-xl px-4 py-2.5 text-xs text-slate-200 placeholder-slate-500 focus:outline-none focus:border-[#4F46E5] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  placeholder="Select Team"
+                  options={TEAMS}
+                  error={!!validationErrors.team}
                 />
-                {refParam && (
-                  <span className="text-[9.5px] text-[#06B6D4] font-medium text-left">
-                    ✓ Referral applied.
-                  </span>
-                )}
-              </div>
-
-              {/* Data Consent Checkbox */}
-              <div className="flex flex-col gap-1.5 mt-2">
-                <label className="flex items-start gap-2.5 cursor-pointer group select-none">
-                  <div className="relative flex items-center mt-0.5">
-                    <input
-                      type="checkbox"
-                      name="consent"
-                      checked={formData.consent}
-                      onChange={handleInputChange}
-                      className="sr-only peer"
-                      aria-invalid={!!validationErrors.consent}
-                      aria-describedby={
-                        validationErrors.consent ? "consent-error" : undefined
-                      }
-                    />
-                    {/* Visual Checkbox */}
-                    <div
-                      className={`w-4 h-4 rounded-md border bg-black/40 flex items-center justify-center transition-all duration-200 peer-focus-visible:ring-2 peer-focus-visible:ring-[#4F46E5] ${
-                        formData.consent
-                          ? "border-[#4F46E5] bg-gradient-to-r from-indigo-500/20 to-transparent"
-                          : "border-white/10 group-hover:border-white/20"
-                      }`}
-                    >
-                      {formData.consent && (
-                        <svg
-                          className="w-2.5 h-2.5 text-[#4F46E5]"
-                          fill="none"
-                          stroke="currentColor"
-                          strokeWidth="3.5"
-                          viewBox="0 0 24 24"
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            d="M4.5 12.75l6 6 9-13.5"
-                          />
-                        </svg>
-                      )}
-                    </div>
-                  </div>
-                  <span className="text-[10.5px] font-medium text-slate-300 leading-normal group-hover:text-white transition-colors text-left">
-                    I accept the{" "}
-                    <button
-                      type="button"
-                      onClick={(e) => {
-                        e.preventDefault();
-                        e.stopPropagation();
-                        setIsPrivacyModalOpen(true);
-                      }}
-                      className="underline text-[#06B6D4] hover:text-[#4F46E5] cursor-pointer font-bold focus:outline-none"
-                    >
-                      Privacy Policy
-                    </button>{" "}
-                    and consent to share my data.
-                  </span>
-                </label>
-                {validationErrors.consent && (
+                {validationErrors.team && (
                   <span
-                    id="consent-error"
-                    className="text-[10px] text-indigo-400 font-semibold text-left"
+                    id="team-error"
+                    className="text-[10px] text-indigo-400 font-semibold"
                   >
-                    {validationErrors.consent}
+                    {validationErrors.team}
                   </span>
                 )}
               </div>
-
-              <button
-                type="submit"
-                disabled={isSubmitting}
-                className="mt-2 w-full cursor-pointer bg-white border border-white hover:bg-white/90 text-black font-bold py-3 rounded-xl text-xs tracking-wider uppercase flex items-center justify-center gap-2 transition-colors"
-              >
-                {isSubmitting ? (
-                  <>
-                    <span className="w-3.5 h-3.5 rounded-full border-2 border-black border-t-transparent animate-spin" />
-                    Submitting...
-                  </>
-                ) : (
-                  "ENTER THE ARENA"
-                )}
-              </button>
-            </form>
-
-            <div className="text-center text-xs text-slate-400 mt-2">
-              Already registered?{" "}
-              <Link
-                href="/login"
-                className="text-[#06B6D4] hover:text-[#4F46E5] font-bold underline transition-colors cursor-pointer"
-              >
-                Log In
-              </Link>
             </div>
+
+            {/* Referral ID Input */}
+            <div className="flex flex-col gap-1.5">
+              <label
+                htmlFor="referral-id-input"
+                className="text-[10px] font-black uppercase tracking-wider text-slate-300"
+              >
+                Referral ID (Optional)
+              </label>
+              <input
+                id="referral-id-input"
+                type="text"
+                name="referralId"
+                value={formData.referralId}
+                onChange={handleInputChange}
+                placeholder={refParam ? refParam : "e.g. H8F9X2"}
+                disabled={!!refParam}
+                className="bg-black/40 border border-white/10 rounded-xl px-4 py-2.5 text-xs text-slate-200 placeholder-slate-500 focus:outline-none focus:border-[#4F46E5] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              />
+              {refParam && (
+                <span className="text-[9.5px] text-[#06B6D4] font-medium text-left">
+                  ✓ Referral applied.
+                </span>
+              )}
+            </div>
+
+            {/* Data Consent Checkbox */}
+            <div className="flex flex-col gap-1.5 mt-2">
+              <label className="flex items-start gap-2.5 cursor-pointer group select-none">
+                <div className="relative flex items-center mt-0.5">
+                  <input
+                    type="checkbox"
+                    name="consent"
+                    checked={formData.consent}
+                    onChange={handleInputChange}
+                    className="sr-only peer"
+                    aria-invalid={!!validationErrors.consent}
+                    aria-describedby={
+                      validationErrors.consent ? "consent-error" : undefined
+                    }
+                  />
+                  {/* Visual Checkbox */}
+                  <div
+                    className={`w-4.5 h-4.5 rounded-md border bg-black flex items-center justify-center transition-all duration-200 peer-focus-visible:ring-2 peer-focus-visible:ring-[#06B6D4] ${
+                      formData.consent
+                        ? "border-[#06B6D4] bg-gradient-to-r from-[#06B6D4]/30 to-[#4F46E5]/20"
+                        : "border-slate-400 group-hover:border-[#06B6D4]"
+                    }`}
+                  >
+                    {formData.consent && (
+                      <svg
+                        className="w-4 h-4 text-white"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="3.5"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          d="M4.5 12.75l6 6 9-13.5"
+                        />
+                      </svg>
+                    )}
+                  </div>
+                </div>
+                <span className="text-[12px] font-medium text-slate-300 leading-normal group-hover:text-white transition-colors text-left">
+                  I accept the{" "}
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      setIsPrivacyModalOpen(true);
+                    }}
+                    className="underline text-[#06B6D4] hover:text-[#4F46E5] cursor-pointer font-bold focus:outline-none"
+                  >
+                    Privacy Policy
+                  </button>{" "}
+                  and consent to share my data.
+                </span>
+              </label>
+              {validationErrors.consent && (
+                <span
+                  id="consent-error"
+                  className="text-[10px] text-indigo-400 font-semibold text-left"
+                >
+                  {validationErrors.consent}
+                </span>
+              )}
+            </div>
+
+            <button
+              type="submit"
+              disabled={isSubmitting}
+              className="mt-2 w-full cursor-pointer bg-white border border-white hover:bg-white/90 text-black font-bold py-3 rounded-xl text-xs tracking-wider uppercase flex items-center justify-center gap-2 transition-colors"
+            >
+              {isSubmitting ? (
+                <>
+                  <span className="w-3.5 h-3.5 rounded-full border-2 border-black border-t-transparent animate-spin" />
+                  Submitting...
+                </>
+              ) : (
+                "ENTER THE ARENA"
+              )}
+            </button>
+          </form>
+
+          <div className="text-center text-xs text-slate-400 mt-2">
+            Already registered?{" "}
+            <Link
+              href="/login"
+              className="text-[#06B6D4] hover:text-[#4F46E5] font-bold underline transition-colors cursor-pointer"
+            >
+              Log In
+            </Link>
           </div>
+        </div>
       </div>
 
       {/* Privacy Policy Modal */}
@@ -1315,8 +1315,7 @@ function RegisterForm() {
               </h2>
               <p className="text-xs text-slate-400">
                 We sent a 6-digit OTP to{" "}
-                <span className="text-slate-200">{otpModal.email}</span>. Your
-                registration will be saved only after successful verification.
+                <span className="text-slate-200">{otpModal.email}</span>. Please check your inbox and <span className="text-slate-200 font-bold">spam/junk folder</span>. Your registration will be saved only after successful verification.
               </p>
             </div>
 
@@ -1351,7 +1350,7 @@ function RegisterForm() {
                   className="bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-sm tracking-[0.4em] text-slate-100 placeholder-slate-500 focus:outline-none focus:border-[#4F46E5] transition-colors text-center"
                 />
                 <div className="flex items-center justify-between text-[10px] text-slate-500">
-                  <span>Valid for 10 minutes</span>
+                  <span>Valid for 5 minutes</span>
                   <span>
                     {otpCountdownMs > 0
                       ? `Resend in ${formatCountdown(otpCountdownMs)}`
@@ -1360,14 +1359,7 @@ function RegisterForm() {
                 </div>
               </div>
 
-              <div className="grid grid-cols-3 gap-3">
-                <button
-                  type="button"
-                  onClick={closeOtpModal}
-                  className="cursor-pointer bg-white/5 hover:bg-white/10 border border-white/10 text-slate-300 font-bold py-2.5 rounded-xl text-xs tracking-wider uppercase transition-colors"
-                >
-                  Cancel
-                </button>
+              <div className="grid grid-cols-2 gap-3">
                 <button
                   type="button"
                   onClick={handleResendOtp}
@@ -1379,7 +1371,7 @@ function RegisterForm() {
                 <button
                   type="submit"
                   disabled={isVerifyingOtp}
-                  className="cursor-pointer bg-glass border border-[#4F46E5]/40 hover:border-[#4F46E5]/90 text-[#4F46E5] hover:text-white font-bold py-2.5 rounded-xl text-xs tracking-wider uppercase glow-indigo-btn bg-gradient-to-r from-red-500/10 to-transparent transition-colors disabled:opacity-50"
+                  className="cursor-pointer bg-white border border-white hover:bg-white/90 text-black font-bold py-2.5 rounded-xl text-xs tracking-wider uppercase transition-colors disabled:opacity-50"
                 >
                   {isVerifyingOtp ? "Verifying" : "Verify"}
                 </button>

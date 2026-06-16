@@ -50,7 +50,6 @@ function getNewUserEmailHtml(player, assets = {}) {
             letter-spacing: 0.15em;
             color: #ffffff;
             margin: 0;
-            text-transform: uppercase;
           }
           .logo-subtext {
             font-size: 11px;

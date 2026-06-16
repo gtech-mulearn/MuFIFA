@@ -106,6 +106,17 @@ export async function POST(request) {
       const { name, email, phone, domain, team, referralId } = validationResult.data;
       const userId = email.split("@")[0];
 
+      if (action === "resend_otp") {
+        const existingSession = getOtpSession(email);
+        if (!existingSession) {
+          return jsonError(400, "SESSION_EXPIRED", "OTP session has expired or does not exist. Please request a new OTP.");
+        }
+        if (Date.now() < existingSession.resendAvailableAt) {
+          const secondsLeft = Math.ceil((existingSession.resendAvailableAt - Date.now()) / 1000);
+          return jsonError(429, "TOO_MANY_REQUESTS", `Please wait ${secondsLeft} seconds before requesting a new OTP.`);
+        }
+      }
+
       const headers = {
         apikey: supabaseKey,
         Authorization: `Bearer ${supabaseKey}`,
@@ -132,15 +143,24 @@ export async function POST(request) {
       if (userRows && userRows.length > 0) {
         return jsonError(409, "CONFLICT_ERROR", "This email address or user ID has already been registered.");
       }
-      const otpResult = await sendRegistrationOtpEmail({ email, name });
-      if (!otpResult || !otpResult.success) {
+
+      // Check if this phone number is already registered.
+      const phoneQuery = `${supabaseUrl}/rest/v1/registrations?phone=eq.${encodeURIComponent(phone)}&select=id`;
+      const phoneRes = await fetch(phoneQuery, { method: "GET", headers });
+      if (!phoneRes.ok) {
+        throw new Error(`Supabase duplicate check failed: ${await phoneRes.text()}`);
+      }
+      const phoneRows = await phoneRes.json();
+      if (phoneRows && phoneRows.length > 0) {
+        return jsonError(409, "CONFLICT_ERROR", "This phone number has already been registered.");
+      }
+      const otp = Math.floor(100000 + Math.random() * 900000).toString();
+      const session = createOtpSession(email, { name, email, phone, domain, team, referralId }, otp);
+
+      const mailSent = await sendRegistrationOtpEmail({ email, name, otp });
+      if (!mailSent) {
         return jsonError(500, "EMAIL_SEND_FAILED", "Failed to send verification email. Please try again.");
       }
-
-      const { otp, resendAvailableAt, expiresAt } = otpResult;
-      const session = createOtpSession(email, { name, email, phone, domain, team, referralId }, otp);
-      if (resendAvailableAt) session.resendAvailableAt = resendAvailableAt;
-      if (expiresAt) session.expiresAt = expiresAt;
 
       return NextResponse.json({
         success: true,
@@ -149,6 +169,8 @@ export async function POST(request) {
           email: email,
           resendAvailableAt: session.resendAvailableAt,
           expiresAt: session.expiresAt,
+          resendAvailableInMs: Math.max(session.resendAvailableAt - Date.now(), 0),
+          expiresInMs: Math.max(session.expiresAt - Date.now(), 0),
         },
       });
     }
@@ -219,8 +241,23 @@ export async function POST(request) {
 
       if (!dbRes.ok) {
         const errText = await dbRes.text();
-        if (errText.includes("duplicate") || errText.includes("unique")) {
-          return jsonError(409, "CONFLICT_ERROR", "This email address or user ID has already been registered.");
+        console.error("Database registration failed response:", errText);
+        try {
+          const errObj = JSON.parse(errText);
+          if (errObj.code === "23505" || errText.includes("duplicate") || errText.includes("unique")) {
+            let conflictMsg = "This email address, user ID, or phone number has already been registered.";
+            const errMsg = errObj.message || errText;
+            if (errMsg.includes("phone")) {
+              conflictMsg = "This phone number has already been registered.";
+            } else if (errMsg.includes("email")) {
+              conflictMsg = "This email address has already been registered.";
+            } else if (errMsg.includes("user_id")) {
+              conflictMsg = "This user ID/email prefix has already been registered.";
+            }
+            return jsonError(409, "CONFLICT_ERROR", conflictMsg);
+          }
+        } catch (parseErr) {
+          console.error("Failed to parse database error:", parseErr);
         }
         throw new Error(`Database registration failed: ${errText}`);
       }
@@ -279,6 +316,8 @@ export async function GET(request) {
         email: session.payload.email,
         resendAvailableAt: session.resendAvailableAt,
         expiresAt: session.expiresAt,
+        resendAvailableInMs: Math.max(session.resendAvailableAt - Date.now(), 0),
+        expiresInMs: Math.max(session.expiresAt - Date.now(), 0),
         attempts: session.attempts,
       },
     });
