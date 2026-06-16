@@ -147,8 +147,10 @@ export default function Leaderboard() {
   }, [isLiveFeed]);
 
   const getRankStyle = (rank) => {
-    if (rank === 1) return "bg-[#FBBF24]/10 border-[#FBBF24]/30 text-[#FBBF24] shadow-[0_0_8px_rgba(251,191,36,0.15)]";
-    if (rank === 2) return "bg-[#94A3B8]/10 border-[#94A3B8]/30 text-[#E2E8F0] shadow-[0_0_8px_rgba(148,163,184,0.15)]";
+    if (rank === 1)
+      return "bg-[#FBBF24]/10 border-[#FBBF24]/30 text-[#FBBF24] shadow-[0_0_8px_rgba(251,191,36,0.15)]";
+    if (rank === 2)
+      return "bg-[#94A3B8]/10 border-[#94A3B8]/30 text-[#E2E8F0] shadow-[0_0_8px_rgba(148,163,184,0.15)]";
     if (rank === 3) return "bg-[#D97706]/10 border-[#D97706]/30 text-[#F97316]";
     return "bg-white/5 border-white/10 text-slate-400";
   };
@@ -182,7 +184,7 @@ export default function Leaderboard() {
       </div>
 
       {/* Leaderboard Rankings List */}
-      <div className="flex-grow flex flex-col gap-2 overflow-y-auto max-h-[300px] pr-1 custom-scrollbar">
+      <div className="flex flex-col gap-2">
         {teamsData.map((team) => (
           <div
             key={team.name}
@@ -197,23 +199,39 @@ export default function Leaderboard() {
                 </span>
                 <div className="w-2.5 flex items-center justify-center">
                   {team.rankTrend === "up" && (
-                    <span className="text-[#00E676] text-[9px] drop-shadow-[0_0_2px_#00E676]" aria-label="Rank increased">
+                    <span
+                      className="text-[#00E676] text-[9px] drop-shadow-[0_0_2px_#00E676]"
+                      aria-label="Rank increased"
+                    >
                       ▲
                     </span>
                   )}
                   {team.rankTrend === "down" && (
-                    <span className="text-[#4F46E5] text-[9px] drop-shadow-[0_0_2px_#4F46E5]" aria-label="Rank decreased">
+                    <span
+                      className="text-[#4F46E5] text-[9px] drop-shadow-[0_0_2px_#4F46E5]"
+                      aria-label="Rank decreased"
+                    >
                       ▼
                     </span>
                   )}
                   {team.rankTrend === "stable" && (
-                    <span className="text-slate-700 text-[7px]" aria-label="Rank stable">•</span>
+                    <span
+                      className="text-slate-700 text-[7px]"
+                      aria-label="Rank stable"
+                    >
+                      •
+                    </span>
                   )}
                 </div>
               </div>
 
               <span className="text-xs font-semibold text-slate-200 group-hover:text-white transition-colors flex items-center gap-1.5">
-                <span className={`fi fi-${team.flag} rounded-sm shadow-sm border border-white/10 shrink-0`} style={{ width: '18px', height: '13.5px' }} role="img" aria-label={`${team.name} flag`} />
+                <span
+                  className={`fi fi-${team.flag} rounded-sm shadow-sm border border-white/10 shrink-0`}
+                  style={{ width: "18px", height: "13.5px" }}
+                  role="img"
+                  aria-label={`${team.name} flag`}
+                />
                 <span>{team.name}</span>
               </span>
             </div>

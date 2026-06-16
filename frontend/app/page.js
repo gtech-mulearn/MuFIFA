@@ -4,7 +4,7 @@ import React from "react";
 import BackgroundVideo from "@/components/BackgroundVideo";
 import HeroSection from "@/components/HeroSection";
 import MetagameSection from "@/components/MetagameSection";
-import BiddingBoard from "@/components/BiddingBoard";
+// import BiddingBoard from "@/components/BiddingBoard";
 import Leaderboard from "@/components/Leaderboard";
 
 export default function Home() {
@@ -27,8 +27,8 @@ export default function Home() {
           <MetagameSection />
         </div>
 
-        <div className="lg:col-span-5 xl:col-span-4 bg-transparent p-6 md:p-8 lg:pt-[48vh] flex flex-col gap-6 md:gap-8 justify-start relative z-10 border-t lg:border-t-0 lg:border-l border-white/5">
-          <BiddingBoard />
+        <div className="lg:col-span-5 xl:col-span-4 bg-transparent p-6 md:p-8 lg:pt-12 flex flex-col gap-6 md:gap-8 justify-start relative z-10 border-t lg:border-t-0 lg:border-l border-white/5">
+          {/* <BiddingBoard /> */}
           <Leaderboard />
         </div>
       </div>

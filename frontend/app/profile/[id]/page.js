@@ -249,25 +249,6 @@ export default function ProfilePage({ params }) {
                 >
                   ← Leaderboard
                 </Link>
-                <button
-                  onClick={() => window.print()}
-                  className="cursor-pointer px-3 py-2 rounded-xl bg-glass border border-white/10 hover:border-white/30 text-slate-400 hover:text-white transition-all flex items-center justify-center"
-                  title="Print Pass"
-                >
-                  <svg
-                    className="w-4 h-4"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      d="M6.72 13.829c-.24.03-.48.062-.72.096m.72-.096a42.415 42.415 0 0 1 10.56 0m-10.56 0L6.34 18m10.94-4.171c.24.03.48.062.72.096m-.72-.096L17.66 18m0 0 .229 2.523a1.125 1.125 0 0 1-1.12 1.227H7.231c-.662 0-1.18-.568-1.12-1.227L6.34 18m11.318 0h1.091A2.25 2.25 0 0 0 21 15.75V9.456c0-1.081-.768-2.015-1.837-2.175a48.865 48.865 0 0 0-14.326 0C3.768 7.44 3 8.375 3 9.456v6.294a2.25 2.25 0 0 0 2.25 2.25h1.091M12 10.5h.008v.008H12V10.5Zm3 0h.008v.008H15V10.5ZM9 10.5h.008v.008H9V10.5ZM18 13.5h.008v.008H18V13.5ZM6 13.5h.008v.008H6V13.5M16.5 7.5v-3a3 3 0 0 0-3-3h-3a3 3 0 0 0-3 3v3m6 0h-6"
-                    />
-                  </svg>
-                </button>
               </div>
               <div className="flex gap-2">
                 <Link
@@ -294,6 +275,30 @@ export default function ProfilePage({ params }) {
               </span>
               <CountdownSection />
             </div>
+
+            {/* Squad WhatsApp Joining CTA (Only visible to owner, no-print) */}
+            {isOwner && (
+              <div className="w-full no-print">
+                <a
+                  href={
+                    TEAM_WHATSAPP_LINKS[player.team] ||
+                    "https://chat.whatsapp.com/"
+                  }
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="cursor-pointer bg-[#25D366] text-white hover:bg-[#20ba5a] w-full py-3.5 rounded-2xl text-xs font-black tracking-widest uppercase transition-all flex items-center justify-center gap-2 shadow-[0_0_20px_rgba(37,211,102,0.25)] hover:shadow-[0_0_35px_rgba(37,211,102,0.55)] transform hover:-translate-y-0.5"
+                >
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    viewBox="0 0 32 32"
+                    className="w-4.5 h-4.5 fill-current"
+                  >
+                    <path d="M16.004 3C8.82 3 3 8.82 3 16.004c0 2.293.598 4.532 1.734 6.504L3 29l6.676-1.706a12.95 12.95 0 0 0 6.328 1.636C23.18 28.93 29 23.11 29 15.926 29 8.82 23.18 3 16.004 3zm0 23.798a10.74 10.74 0 0 1-5.47-1.496l-.392-.232-3.96 1.01 1.056-3.86-.254-.4a10.72 10.72 0 0 1-1.646-5.816c0-5.94 4.83-10.77 10.766-10.77 2.878 0 5.584 1.12 7.617 3.154a10.69 10.69 0 0 1 3.148 7.612c0 5.94-4.83 10.798-10.766 10.798zm5.906-8.052c-.322-.16-1.904-.94-2.198-1.046-.294-.106-.508-.16-.722.16-.214.32-.83 1.046-1.018 1.26-.186.214-.374.24-.694.08-.32-.16-1.35-.498-2.572-1.586-.95-.846-1.59-1.89-1.776-2.21-.188-.32-.02-.492.14-.65.144-.144.32-.374.48-.56.16-.188.214-.32.32-.534.106-.214.054-.4-.026-.56-.08-.16-.722-1.74-.99-2.386-.26-.626-.524-.54-.722-.55l-.614-.01c-.214 0-.56.08-.854.4-.294.32-1.122 1.096-1.122 2.674 0 1.578 1.15 3.102 1.31 3.316.16.214 2.262 3.454 5.48 4.842.766.33 1.364.526 1.83.674.77.244 1.47.21 2.024.128.618-.092 1.904-.778 2.172-1.53.268-.752.268-1.396.188-1.53-.08-.132-.294-.212-.616-.372z" />
+                  </svg>
+                  <span>Join {player.team} WhatsApp Group</span>
+                </a>
+              </div>
+            )}
 
             {/* Combined Ticket & Profile Pass Card */}
             <div
@@ -459,29 +464,7 @@ export default function ProfilePage({ params }) {
               </div>
             </div>
 
-            {/* Squad WhatsApp Joining CTA (Only visible to owner, no-print) */}
-            {isOwner && (
-              <div className="flex flex-col gap-3 w-full max-w-sm justify-center no-print mt-1">
-                <a
-                  href={
-                    TEAM_WHATSAPP_LINKS[player.team] ||
-                    "https://chat.whatsapp.com/"
-                  }
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="cursor-pointer bg-[#25D366] text-white hover:bg-[#20ba5a] px-6 py-3 rounded-xl text-xs font-bold tracking-wider uppercase transition-all flex items-center justify-center gap-2 shadow-[0_0_20px_rgba(37,211,102,0.2)] hover:shadow-[0_0_35px_rgba(37,211,102,0.45)] transform hover:-translate-y-0.5"
-                >
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    viewBox="0 0 32 32"
-                    className="w-4 h-4 fill-current"
-                  >
-                    <path d="M16.004 3C8.82 3 3 8.82 3 16.004c0 2.293.598 4.532 1.734 6.504L3 29l6.676-1.706a12.95 12.95 0 0 0 6.328 1.636C23.18 28.93 29 23.11 29 15.926 29 8.82 23.18 3 16.004 3zm0 23.798a10.74 10.74 0 0 1-5.47-1.496l-.392-.232-3.96 1.01 1.056-3.86-.254-.4a10.72 10.72 0 0 1-1.646-5.816c0-5.94 4.83-10.77 10.766-10.77 2.878 0 5.584 1.12 7.617 3.154a10.69 10.69 0 0 1 3.148 7.612c0 5.94-4.83 10.798-10.766 10.798zm5.906-8.052c-.322-.16-1.904-.94-2.198-1.046-.294-.106-.508-.16-.722.16-.214.32-.83 1.046-1.018 1.26-.186.214-.374.24-.694.08-.32-.16-1.35-.498-2.572-1.586-.95-.846-1.59-1.89-1.776-2.21-.188-.32-.02-.492.14-.65.144-.144.32-.374.48-.56.16-.188.214-.32.32-.534.106-.214.054-.4-.026-.56-.08-.16-.722-1.74-.99-2.386-.26-.626-.524-.54-.722-.55l-.614-.01c-.214 0-.56.08-.854.4-.294.32-1.122 1.096-1.122 2.674 0 1.578 1.15 3.102 1.31 3.316.16.214 2.262 3.454 5.48 4.842.766.33 1.364.526 1.83.674.77.244 1.47.21 2.024.128.618-.092 1.904-.778 2.172-1.53.268-.752.268-1.396.188-1.53-.08-.132-.294-.212-.616-.372z" />
-                  </svg>
-                  <span>Join {player.team} WhatsApp Group</span>
-                </a>
-              </div>
-            )}
+
 
             <Link
               href="/leaderboard"

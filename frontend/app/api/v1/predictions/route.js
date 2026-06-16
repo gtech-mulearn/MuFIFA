@@ -84,6 +84,29 @@ export async function POST(request) {
       );
     }
 
+    // Time-window check: Predictions and editing are only allowed between 8:00 PM and 12:30 AM IST
+    const now = new Date();
+    const istTimeStr = now.toLocaleString("en-US", { timeZone: "Asia/Kolkata" });
+    const istDate = new Date(istTimeStr);
+    const istHour = istDate.getHours();
+    const istMinute = istDate.getMinutes();
+
+    const isOpen = (istHour >= 20) || (istHour === 0 && istMinute <= 30);
+
+    if (!isOpen) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: {
+            code: "FORBIDDEN",
+            message: "Predictions are only allowed between 8:00 PM and 12:30 AM IST.",
+            details: null,
+          },
+        },
+        { status: 403 }
+      );
+    }
+
     // b. Parse request body JSON
     let body;
     try {

@@ -36,7 +36,7 @@ export async function GET(request) {
     }
 
     const rawLimit = parseInt(searchParams.get("limit") ?? "20", 10);
-    const limit = Math.max(1, Math.min(100, isNaN(rawLimit) ? 20 : rawLimit));
+    const limit = Math.max(1, Math.min(5000, isNaN(rawLimit) ? 20 : rawLimit));
 
     const rawOffset = parseInt(searchParams.get("offset") ?? "0", 10);
     const offset = Math.max(0, isNaN(rawOffset) ? 0 : rawOffset);
@@ -83,9 +83,45 @@ export async function GET(request) {
 
     const hasMore = offset + predictions.length < total;
 
+    // In-memory join: Fetch user profile info (name, email, team) from registrations
+    let enrichedPredictions = predictions;
+    const userIds = [...new Set(predictions.map((p) => p.user_id).filter(Boolean))];
+    if (userIds.length > 0) {
+      const formattedIds = userIds.map(id => `"${id.replace(/"/g, '\\"')}"`).join(",");
+      const userRes = await fetch(
+        `${supabaseUrl}/rest/v1/registrations?user_id=in.(${encodeURIComponent(formattedIds)})&select=id,user_id,name,email,team,mu_points`,
+        {
+          headers: supabaseHeaders,
+          next: { revalidate: 0 },
+        }
+      );
+
+      if (userRes.ok) {
+        const users = await userRes.json();
+        const usersMap = {};
+        users.forEach((u) => {
+          usersMap[u.user_id] = u;
+        });
+
+        enrichedPredictions = predictions.map((p) => ({
+          ...p,
+          user: usersMap[p.user_id] || {
+            id: null,
+            user_id: p.user_id,
+            name: "Unknown Player",
+            email: "N/A",
+            team: "N/A",
+            mu_points: 0,
+          },
+        }));
+      } else {
+        console.error("Failed to fetch registrations for predictions:", await userRes.text());
+      }
+    }
+
     return NextResponse.json({
       success: true,
-      data: predictions,
+      data: enrichedPredictions,
       pagination: {
         total,
         limit,

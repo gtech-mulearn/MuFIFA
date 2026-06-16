@@ -9,6 +9,7 @@ import {
 } from "@/utils/registerOtp";
 import { sendRegistrationOtpEmail, sendRegistrationEmail } from "@/utils/email";
 import { signToken } from "@/utils/auth";
+import { adjustSquadPoints } from "@/utils/squad";
 
 const PLAYER_COOKIE = "player_token";
 
@@ -236,6 +237,7 @@ export async function POST(request) {
           phone,
           domain,
           team,
+          mu_points: 10,
         }),
       });
 
@@ -266,6 +268,10 @@ export async function POST(request) {
       const player = dbData[0];
 
       clearOtpSession(email);
+
+      if (player.team) {
+        await adjustSquadPoints(supabaseUrl, supabaseKey, player.team, 10);
+      }
 
       // Trigger the access pass rendering, Supabase storage upload, and SMTP backend routing.
       await sendRegistrationEmail(player);

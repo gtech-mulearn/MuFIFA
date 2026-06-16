@@ -146,6 +146,21 @@ export default function MatchCard({ match, player, onPredictionSaved }) {
   const [oddsLoading, setOddsLoading] = useState(true);
   const [oddsError, setOddsError] = useState(false);
   const [showForm, setShowForm] = useState(false);
+  const [isTimeWindowOpen, setIsTimeWindowOpen] = useState(false);
+
+  useEffect(() => {
+    function checkTimeWindow() {
+      const now = new Date();
+      const istTimeStr = now.toLocaleString("en-US", { timeZone: "Asia/Kolkata" });
+      const istDate = new Date(istTimeStr);
+      const istHour = istDate.getHours();
+      const istMinute = istDate.getMinutes();
+      setIsTimeWindowOpen((istHour >= 20) || (istHour === 0 && istMinute <= 30));
+    }
+    checkTimeWindow();
+    const interval = setInterval(checkTimeWindow, 60000);
+    return () => clearInterval(interval);
+  }, []);
 
   const fetchOdds = useCallback(async () => {
     setOddsLoading(true);
@@ -175,6 +190,45 @@ export default function MatchCard({ match, player, onPredictionSaved }) {
     await fetchOdds();
     if (onPredictionSaved) {
       onPredictionSaved(prediction);
+    }
+  };
+
+  const getPredictionBadge = () => {
+    if (!oddsData?.myPrediction) return null;
+    if (!score?.fullTime) return null;
+    const actualHome = score.fullTime.home;
+    const actualAway = score.fullTime.away;
+    if (actualHome === null || actualHome === undefined || actualAway === null || actualAway === undefined) return null;
+
+    const predHome = Number(oddsData.myPrediction.predicted_home_goals);
+    const predAway = Number(oddsData.myPrediction.predicted_away_goals);
+    const predOutcome = oddsData.myPrediction.predicted_outcome;
+
+    let actualOutcome = "draw";
+    if (actualHome > actualAway) actualOutcome = "home_win";
+    else if (actualAway > actualHome) actualOutcome = "away_win";
+
+    const isExactScore = (predHome === actualHome && predAway === actualAway);
+    const isCorrectOutcome = (predOutcome === actualOutcome);
+
+    if (isExactScore) {
+      return (
+        <span className="inline-flex items-center px-1.5 py-0.5 rounded border text-[8px] font-bold uppercase bg-emerald-500/10 border-emerald-500/30 text-[#00E676] ml-2">
+          Exact Score (+50 pts)
+        </span>
+      );
+    } else if (isCorrectOutcome) {
+      return (
+        <span className="inline-flex items-center px-1.5 py-0.5 rounded border text-[8px] font-bold uppercase bg-sky-500/10 border-sky-500/30 text-sky-400 ml-2">
+          Correct Outcome
+        </span>
+      );
+    } else {
+      return (
+        <span className="inline-flex items-center px-1.5 py-0.5 rounded border text-[8px] font-bold uppercase bg-rose-500/10 border-rose-500/30 text-rose-400 ml-2">
+          Incorrect
+        </span>
+      );
     }
   };
 
@@ -264,19 +318,47 @@ export default function MatchCard({ match, player, onPredictionSaved }) {
         {player !== null && isPredictionOpen && (
           <>
             {!showForm ? (
-              <div className="flex items-center gap-2">
-                {oddsData?.myPrediction ? (
-                  // Already predicted — show their pick, no edit button
-                  <span className="text-[9px] text-slate-400 bg-slate-700/30 border border-slate-600/30 px-2 py-1 rounded">
-                    Your pick: {oddsData.myPrediction.predicted_home_goals} – {oddsData.myPrediction.predicted_away_goals}
+              <div className="flex flex-col gap-2">
+                <div className="flex items-center gap-2 flex-wrap">
+                  {oddsData?.myPrediction ? (
+                    <>
+                      <span className="text-[9px] text-slate-400 bg-slate-700/30 border border-slate-600/30 px-2 py-1 rounded">
+                        Your pick: {oddsData.myPrediction.predicted_home_goals} – {oddsData.myPrediction.predicted_away_goals}
+                      </span>
+                      {isTimeWindowOpen ? (
+                        <button
+                          onClick={() => setShowForm(true)}
+                          className="cursor-pointer bg-slate-800 hover:bg-slate-700 border border-slate-600/50 text-white text-[9px] font-bold px-2.5 py-1 rounded transition-colors"
+                        >
+                          Edit
+                        </button>
+                      ) : (
+                        <span className="text-[9px] text-slate-500 italic">
+                          (Editing locked)
+                        </span>
+                      )}
+                    </>
+                  ) : (
+                    <>
+                      {isTimeWindowOpen ? (
+                        <button
+                          onClick={() => setShowForm(true)}
+                          className="cursor-pointer bg-[#4F46E5] hover:bg-[#4338CA] text-white text-xs font-bold px-4 py-2 rounded-xl transition-colors"
+                        >
+                          Predict
+                        </button>
+                      ) : (
+                        <span className="text-[10px] text-slate-500 font-medium italic">
+                          Predictions closed for today
+                        </span>
+                      )}
+                    </>
+                  )}
+                </div>
+                {!isTimeWindowOpen && (
+                  <span className="text-[9px] text-slate-500 font-mono">
+                    Open 8:00 PM – 12:30 AM IST only.
                   </span>
-                ) : (
-                  <button
-                    onClick={() => setShowForm(true)}
-                    className="cursor-pointer bg-[#4F46E5] hover:bg-[#4338CA] text-white text-xs font-bold px-4 py-2 rounded-xl transition-colors"
-                  >
-                    Predict
-                  </button>
                 )}
               </div>
             ) : (
@@ -299,9 +381,12 @@ export default function MatchCard({ match, player, onPredictionSaved }) {
               {isFinished ? "Match ended" : "Match started"}
             </span>
             {oddsData?.myPrediction && (
-              <span className="text-[9px] text-slate-500">
-                Your pick: {oddsData.myPrediction.predicted_home_goals} – {oddsData.myPrediction.predicted_away_goals}
-              </span>
+              <div className="flex items-center gap-1.5 flex-wrap">
+                <span className="text-[9px] text-slate-500">
+                  Your pick: {oddsData.myPrediction.predicted_home_goals} – {oddsData.myPrediction.predicted_away_goals}
+                </span>
+                {isFinished && getPredictionBadge()}
+              </div>
             )}
           </div>
         )}
