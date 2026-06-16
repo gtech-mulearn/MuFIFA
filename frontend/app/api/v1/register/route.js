@@ -239,7 +239,7 @@ export async function POST(request) {
       let referrer = null;
       if (referralId && referralId.trim()) {
         try {
-          const refQuery = `${supabaseUrl}/rest/v1/registrations?referal_id=eq.${encodeURIComponent(referralId.trim())}&select=id,user_id,email,team,mu_points`;
+          const refQuery = `${supabaseUrl}/rest/v1/registrations?referal_id=eq.${encodeURIComponent(referralId.trim())}&select=id,user_id,email,team,mu_points,referal`;
           const refRes = await fetch(refQuery, {
             method: "GET",
             headers: {
@@ -268,11 +268,6 @@ export async function POST(request) {
         mu_points: 10,
         password_hash: hashedPassword,
       };
-
-      // Store who referred this player (if valid referrer found)
-      if (referrer) {
-        registrationPayload.referred_by = referrer.user_id;
-      }
 
       const dbRes = await fetch(`${supabaseUrl}/rest/v1/registrations`, {
         method: "POST",
@@ -315,9 +310,10 @@ export async function POST(request) {
         await adjustSquadPoints(supabaseUrl, supabaseKey, player.team, 10);
       }
 
-      // Award referral bonus: +5 μPoints to the referrer and +5 squad points to their team
+      // Award referral bonus: increment referal count, +5 μPoints to referrer, +5 squad points
       if (referrer) {
         try {
+          const newReferalCount = (referrer.referal || 0) + 1;
           const newPoints = (referrer.mu_points || 0) + 5;
           const referrerPatchUrl = `${supabaseUrl}/rest/v1/registrations?id=eq.${referrer.id}`;
           await fetch(referrerPatchUrl, {
@@ -327,7 +323,7 @@ export async function POST(request) {
               Authorization: `Bearer ${supabaseKey}`,
               "Content-Type": "application/json",
             },
-            body: JSON.stringify({ mu_points: newPoints }),
+            body: JSON.stringify({ referal: newReferalCount, mu_points: newPoints }),
           });
 
           // Award +5 squad points to the referrer's team
@@ -335,7 +331,7 @@ export async function POST(request) {
             await adjustSquadPoints(supabaseUrl, supabaseKey, referrer.team, 5);
           }
 
-          console.log(`Referral bonus awarded: +5 μPoints to ${referrer.user_id} (referral ID: ${referralId})`);
+          console.log(`Referral bonus awarded: +5 μPoints to ${referrer.user_id}, referal count now ${newReferalCount}`);
         } catch (referralErr) {
           console.error("Referral bonus award failed (non-fatal):", referralErr);
         }
