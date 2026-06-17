@@ -383,7 +383,7 @@ export default function MatchPage() {
                     </strong>
                     Predictions open daily from{" "}
                     <strong className="text-white font-semibold">
-                      10:00 AM to 6:00 PM IST
+                      10:00 AM to 10:30 PM IST
                     </strong>
                     . Editing locks instantly at match kick-off.
                   </div>

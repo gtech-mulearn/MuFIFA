@@ -117,13 +117,14 @@ export async function POST(request) {
       );
     }
 
-    // Time-window check: Predictions and editing are only allowed between 10:00 AM and 6:00 PM IST
+    // Time-window check: Predictions and editing are only allowed between 10:00 AM and 10:30 PM IST
     const now = new Date();
     const istTimeStr = now.toLocaleString("en-US", { timeZone: "Asia/Kolkata" });
     const istDate = new Date(istTimeStr);
     const istHour = istDate.getHours();
+    const istMinute = istDate.getMinutes();
 
-    const isOpen = (istHour >= 10 && istHour < 18);
+    const isOpen = (istHour >= 10 && (istHour < 22 || (istHour === 22 && istMinute <= 30)));
 
     if (!isOpen) {
       return NextResponse.json(
@@ -131,7 +132,7 @@ export async function POST(request) {
           success: false,
           error: {
             code: "FORBIDDEN",
-            message: "Predictions are only allowed between 10:00 AM and 6:00 PM IST.",
+            message: "Predictions are only allowed between 10:00 AM and 10:30 PM IST.",
             details: null,
           },
         },

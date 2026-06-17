@@ -154,7 +154,8 @@ export default function MatchCard({ match, player, onPredictionSaved, compact, i
       const istTimeStr = now.toLocaleString("en-US", { timeZone: "Asia/Kolkata" });
       const istDate = new Date(istTimeStr);
       const istHour = istDate.getHours();
-      setIsTimeWindowOpen(istHour >= 10 && istHour < 18);
+      const istMinute = istDate.getMinutes();
+      setIsTimeWindowOpen(istHour >= 10 && (istHour < 22 || (istHour === 22 && istMinute <= 30)));
     }
     checkTimeWindow();
     const interval = setInterval(checkTimeWindow, 60000);
@@ -389,7 +390,7 @@ export default function MatchCard({ match, player, onPredictionSaved, compact, i
                   </div>
                   {!isTimeWindowOpen && (
                     <span className="text-[9px] text-slate-500 font-mono">
-                      Open 10:00 AM – 6:00 PM IST only.
+                      Open 10:00 AM – 10:30 PM IST only.
                     </span>
                   )}
                 </div>
