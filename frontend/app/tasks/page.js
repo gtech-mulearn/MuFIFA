@@ -94,7 +94,7 @@ export default function TasksPage() {
       } catch (e) {}
     }
   }
-  const isTask3Completed = (githubUser.trim().length > 0 && hasPredictions) || !!dbTasks.task3;
+  const isTask3Completed = !!dbTasks.task3;
 
   const handleExpandTask = (taskId) => {
     setVerifyError("");
@@ -119,12 +119,6 @@ export default function TasksPage() {
         );
         if (!isProfileComplete) {
           setVerifyError("Profile details incomplete. Please ensure both your bio and college/institution are updated on your profile.");
-        } else if (!hasPredictions) {
-          setVerifyError("Prediction not found. Please ensure you have made at least 1 prediction on any match.");
-        }
-      } else if (task.id === 3) {
-        if (githubUser.trim().length === 0) {
-          setVerifyError("GitHub link missing. Please ensure your GitHub profile is connected in your profile settings.");
         } else if (!hasPredictions) {
           setVerifyError("Prediction not found. Please ensure you have made at least 1 prediction on any match.");
         }
@@ -643,13 +637,15 @@ export default function TasksPage() {
 
                         <div className="flex flex-col sm:flex-row gap-3 w-full justify-end items-center mt-auto">
                           {/* Verify Button */}
-                          <button
-                            onClick={() => handleVerifyTask(task)}
-                            disabled={verifyingTaskId === task.id || dbTasks[`task${task.id}`]}
-                            className="cursor-pointer w-full sm:w-auto px-6 py-3.5 border border-[#10b981]/40 hover:border-[#10b981] text-[#10b981] font-black text-[10px] tracking-widest uppercase rounded-full flex items-center justify-center transition-all bg-[#10b981]/5 hover:bg-[#10b981]/10 disabled:opacity-40 disabled:cursor-not-allowed"
-                          >
-                            {verifyingTaskId === task.id ? "Verifying..." : dbTasks[`task${task.id}`] ? "Verified" : "Verify Task"}
-                          </button>
+                          {task.id !== 3 && (
+                            <button
+                              onClick={() => handleVerifyTask(task)}
+                              disabled={verifyingTaskId === task.id || dbTasks[`task${task.id}`]}
+                              className="cursor-pointer w-full sm:w-auto px-6 py-3.5 border border-[#10b981]/40 hover:border-[#10b981] text-[#10b981] font-black text-[10px] tracking-widest uppercase rounded-full flex items-center justify-center transition-all bg-[#10b981]/5 hover:bg-[#10b981]/10 disabled:opacity-40 disabled:cursor-not-allowed"
+                            >
+                              {verifyingTaskId === task.id ? "Verifying..." : dbTasks[`task${task.id}`] ? "Verified" : "Verify Task"}
+                            </button>
+                          )}
 
                           {/* Action Button */}
                           <Link
