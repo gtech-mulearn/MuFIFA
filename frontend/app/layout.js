@@ -1,4 +1,5 @@
 import { Outfit } from "next/font/google";
+import { Suspense } from "react";
 import "./globals.css";
 import "flag-icons/css/flag-icons.min.css";
 import Script from "next/script";
@@ -161,7 +162,13 @@ function LayoutShell({ children }) {
 export default function RootLayout({ children }) {
   return (
     <LayoutShell>
-      <LayoutContent>{children}</LayoutContent>
+      <Suspense fallback={
+        <div className="w-full min-h-screen bg-[#090A0F] flex items-center justify-center">
+          <div className="w-8 h-8 rounded-full border-2 border-violet-500 border-t-transparent animate-spin" />
+        </div>
+      }>
+        <LayoutContent>{children}</LayoutContent>
+      </Suspense>
     </LayoutShell>
   );
 }
