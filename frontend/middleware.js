@@ -20,7 +20,8 @@ export async function middleware(request) {
   }
 
   try {
-    const isUnderMaintenance = await underMaintenanceFlag();
+    const flagVal = await underMaintenanceFlag();
+    const isUnderMaintenance = flagVal?.under_maintainence === true;
     if (isUnderMaintenance) {
       const devUrl = new URL("/development", request.url);
       return NextResponse.redirect(devUrl);

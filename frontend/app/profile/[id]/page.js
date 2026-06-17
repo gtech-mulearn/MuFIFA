@@ -1141,6 +1141,13 @@ function ProfilePageContent({ params }) {
 
   return (
     <div className="w-full relative flex flex-col gap-6 md:gap-8 pb-10 px-4 md:px-8 pt-6">
+      {/* Full-page stadium background */}
+      <div
+        className="fixed inset-0 z-0 bg-cover bg-center opacity-[0.28] pointer-events-none"
+        style={{ backgroundImage: `url('/stadium_bg_pruble.png')` }}
+      />
+      <div className="fixed inset-0 z-0 bg-gradient-to-b from-[#030207]/60 via-[#030207]/40 to-[#030207]/80 pointer-events-none" />
+
       {/* Ambient radial glows */}
       <div className="absolute top-[10%] left-[5%] w-[45vw] h-[45vw] bg-[radial-gradient(circle_at_center,_rgba(99,102,241,0.08)_0%,_transparent_60%)] pointer-events-none rounded-full" />
       <div className="absolute bottom-[10%] right-[5%] w-[45vw] h-[45vw] bg-[radial-gradient(circle_at_center,_rgba(6,182,212,0.06)_0%,_transparent_60%)] pointer-events-none rounded-full" />
@@ -1149,8 +1156,8 @@ function ProfilePageContent({ params }) {
       <div className="relative rounded-3xl overflow-hidden border border-white/5 p-6 md:p-8 flex flex-col gap-6 md:gap-8 shadow-2xl bg-[#090715]/40 backdrop-blur-md z-10">
         {/* Stadium background overlay */}
         <div
-          className="absolute inset-0 z-0 bg-cover bg-center opacity-[0.35] pointer-events-none"
-          style={{ backgroundImage: `url('/bg_imge.png')` }}
+          className="absolute inset-0 z-0 bg-cover bg-center opacity-[0.30] pointer-events-none"
+          style={{ backgroundImage: `url('/bg_img.png')` }}
         />
         {/* Dark gradient overlay to fade at bottom */}
         <div className="absolute inset-0 bg-gradient-to-b from-transparent via-[#090715]/50 to-[#030207] z-0 pointer-events-none" />

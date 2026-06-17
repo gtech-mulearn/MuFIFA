@@ -138,22 +138,7 @@ export default function Dashboard() {
   const [generatingReferral, setGeneratingReferral] = useState(false);
   const [copied, setCopied] = useState(false);
   const [error, setError] = useState("");
-  const [referrals, setReferrals] = useState([]);
-  const [loadingReferrals, setLoadingReferrals] = useState(true);
 
-  async function fetchReferrals() {
-    try {
-      const res = await fetch("/api/v1/profile/referrals");
-      const data = await res.json();
-      if (res.ok && data.success) {
-        setReferrals(data.data);
-      }
-    } catch (err) {
-      console.error("Failed to fetch referrals:", err);
-    } finally {
-      setLoadingReferrals(false);
-    }
-  }
 
   useEffect(() => {
     async function checkAuth() {
@@ -162,7 +147,6 @@ export default function Dashboard() {
         const data = await res.json();
         if (res.ok && data.success) {
           setPlayer(data.data);
-          fetchReferrals();
         } else {
           router.push("/login");
         }
@@ -609,52 +593,22 @@ export default function Dashboard() {
                 </div>
               </div>
 
-              {/* Referred Users Area */}
-              <div className="flex flex-col gap-3 pt-4 border-t border-white/5">
-                <div className="flex justify-between items-center">
-                  <label className="text-[10px] font-black uppercase tracking-wider text-slate-400">
-                    Registrations Via Your Link ({referrals.length})
-                  </label>
-                </div>
-                {loadingReferrals ? (
-                  <div className="flex items-center justify-center py-4">
-                    <div className="w-4 h-4 rounded-full border-2 border-cyan-400 border-t-transparent animate-spin" />
+              {/* View Referrals Link */}
+              <div className="pt-4 border-t border-white/5">
+                <Link
+                  href="/points-history"
+                  className="flex items-center justify-between bg-black/20 border border-white/5 rounded-xl p-3 hover:border-white/10 hover:bg-black/30 transition-all group"
+                >
+                  <div className="flex items-center gap-2.5">
+                    <svg className="w-4 h-4 text-cyan-400" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    <span className="text-xs font-bold text-slate-300 group-hover:text-white transition-colors">View Referral & Points History</span>
                   </div>
-                ) : referrals.length === 0 ? (
-                  <p className="text-xs text-slate-500 italic py-1">
-                    No registrations via your link yet. Share it to earn
-                    μPoints!
-                  </p>
-                ) : (
-                  <div className="max-h-[140px] overflow-y-auto pr-1 flex flex-col gap-2 scrollbar-thin scrollbar-thumb-white/10 scrollbar-track-transparent">
-                    {referrals.map((ref) => (
-                      <div
-                        key={ref.id}
-                        className="flex justify-between items-center bg-black/20 border border-white/5 rounded-xl p-3 hover:border-white/10 hover:bg-black/30 transition-all"
-                      >
-                        <div className="flex flex-col min-w-0">
-                          <span className="text-xs font-bold text-slate-200 truncate">
-                            {ref.name}
-                          </span>
-                          <span className="text-[9px] text-cyan-400 font-semibold tracking-wider">
-                            @{ref.user_id}
-                          </span>
-                        </div>
-                        <span className="text-[10px] text-slate-500 shrink-0 font-medium">
-                          {new Date(ref.created_at).toLocaleDateString(
-                            "en-US",
-                            {
-                              month: "short",
-                              day: "numeric",
-                              hour: "2-digit",
-                              minute: "2-digit",
-                            },
-                          )}
-                        </span>
-                      </div>
-                    ))}
-                  </div>
-                )}
+                  <svg className="w-3.5 h-3.5 text-slate-500 group-hover:text-white transition-colors" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" />
+                  </svg>
+                </Link>
               </div>
             </div>
           </div>

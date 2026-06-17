@@ -79,17 +79,55 @@ export async function GET(request) {
       }
     });
 
-    const squadPointsMap = {};
-    squads.forEach((s) => {
-      squadPointsMap[s.name] = s.points || 0;
+    // Helper to calculate median
+    function calculateMedian(arr) {
+      if (!arr || arr.length === 0) return 0;
+      const sorted = [...arr].sort((a, b) => a - b);
+      const mid = Math.floor(sorted.length / 2);
+      if (sorted.length % 2 !== 0) {
+        return sorted[mid];
+      }
+      return (sorted[mid - 1] + sorted[mid]) / 2;
+    }
+
+    // Group mu_points by team from registrations
+    const registrationsByTeam = {};
+    registrations.forEach((r) => {
+      if (r.team) {
+        if (!registrationsByTeam[r.team]) {
+          registrationsByTeam[r.team] = [];
+        }
+        registrationsByTeam[r.team].push(Number(r.mu_points || 0));
+      }
     });
 
-    const teamStats = Object.entries(teamCounts)
-      .map(([name, count]) => ({
-        name,
-        count,
-        points: squadPointsMap[name] || 0,
-      }))
+    const squadPointsMap = {};
+    squads.forEach((s) => {
+      if (s.name) {
+        squadPointsMap[s.name] = 0;
+      }
+    });
+
+    Object.keys(registrationsByTeam).forEach((team) => {
+      const pointsArray = registrationsByTeam[team];
+      const registeredCount = pointsArray.length;
+      if (registeredCount === 0) {
+        squadPointsMap[team] = 0;
+        return;
+      }
+      const activeCount = pointsArray.filter((pts) => pts > 0).length;
+      const median = calculateMedian(pointsArray);
+      const score = median * (activeCount / registeredCount) * Math.log10(activeCount + 1) * 100;
+      squadPointsMap[team] = Math.round(score);
+    });
+
+    const teamStats = squads
+      .map((s) => {
+        const name = s.name;
+        const count = teamCounts[name] || 0;
+        const points = squadPointsMap[name] || 0;
+        return { name, count, points };
+      })
       .sort((a, b) => b.points - a.points);
 
     const domainStats = Object.entries(domainCounts)

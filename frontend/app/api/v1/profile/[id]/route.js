@@ -160,6 +160,43 @@ export async function GET(request, { params }) {
 
     responseData.predictions_count = predictionsCount;
 
+    // Fetch user completed tasks to sum domain XP values
+    let xp_creativity = 0;
+    let xp_branding = 0;
+    let xp_innovation = 0;
+    let xp_teamwork = 0;
+    let xp_execution = 0;
+    try {
+      const compQuery = `${supabaseUrl}/rest/v1/user_completed_tasks?user_id=eq.${encodeURIComponent(profile.user_id)}&select=*`;
+      const compRes = await fetch(compQuery, {
+        method: "GET",
+        headers: {
+          apikey: supabaseKey,
+          Authorization: `Bearer ${supabaseKey}`,
+        },
+      });
+      if (compRes.ok) {
+        const completions = await compRes.json();
+        completions.forEach((c) => {
+          xp_creativity += c.xp_creativity || 0;
+          xp_branding += c.xp_branding || 0;
+          xp_innovation += c.xp_innovation || 0;
+          xp_teamwork += c.xp_teamwork || 0;
+          xp_execution += c.xp_execution || 0;
+        });
+      }
+    } catch (err) {
+      console.error("Failed to fetch player completed tasks for stats:", err);
+    }
+
+    responseData.xp_breakdown = {
+      creativity: xp_creativity,
+      branding: xp_branding,
+      innovation: xp_innovation,
+      teamwork: xp_teamwork,
+      execution: xp_execution,
+    };
+
     if (!isOwner) {
       delete responseData.email;
       delete responseData.phone;

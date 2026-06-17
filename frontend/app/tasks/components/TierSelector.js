@@ -1,4 +1,4 @@
-export default function TierSelector({ activeTier, setActiveTier, level2Unlocked }) {
+export default function TierSelector({ activeTier, setActiveTier, level2Unlocked, level2Enabled }) {
   return (
     <div className="flex bg-[#121625]/60 border border-white/5 p-1.5 rounded-2xl w-full max-w-sm mx-auto shadow-md backdrop-blur-md">
       <button
@@ -13,10 +13,13 @@ export default function TierSelector({ activeTier, setActiveTier, level2Unlocked
       </button>
       <button
         onClick={() => setActiveTier(2)}
-        className={`flex-1 py-3 text-center text-xs font-black uppercase tracking-wider rounded-xl transition-all cursor-pointer relative ${
+        disabled={!level2Enabled}
+        className={`flex-1 py-3 text-center text-xs font-black uppercase tracking-wider rounded-xl transition-all relative ${
           activeTier === 2
             ? "bg-gradient-to-r from-violet-600 to-indigo-600 text-white shadow-lg shadow-indigo-600/20"
-            : "text-slate-400 hover:text-slate-200"
+            : !level2Enabled
+            ? "text-slate-600 opacity-40 cursor-not-allowed"
+            : "text-slate-400 hover:text-slate-200 cursor-pointer"
         }`}
       >
         Tier 2

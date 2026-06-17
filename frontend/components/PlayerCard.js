@@ -79,7 +79,18 @@ const ACHIEVEMENT_ICONS = {
  * Generate pseudo-random stats from a player's mu_points and name.
  * This creates consistent stats for the same player.
  */
-function generateStats(muPoints = 0, name = "") {
+function generateStats(muPoints = 0, name = "", xpBreakdown = null) {
+  if (xpBreakdown) {
+    const base = 50;
+    return {
+      creativity: Math.min(99, base + (xpBreakdown.creativity || 0)),
+      branding: Math.min(99, base + (xpBreakdown.branding || 0)),
+      innovation: Math.min(99, base + (xpBreakdown.innovation || 0)),
+      teamwork: Math.min(99, base + (xpBreakdown.teamwork || 0)),
+      execution: Math.min(99, base + (xpBreakdown.execution || 0)),
+    };
+  }
+
   const seed = name.split("").reduce((acc, c) => acc + c.charCodeAt(0), 0);
   const base = Math.min(Math.max(Math.floor(muPoints / 10 + 50), 40), 95);
 
@@ -132,7 +143,7 @@ export default function PlayerCard({
     college: player.institution || player.college || "",
   };
 
-  const stats = generateStats(data.mu_points, data.name);
+  const stats = generateStats(data.mu_points, data.name, player.xp_breakdown);
   const ovr = calculateOVR(stats);
 
   // Get referral count from player tasks

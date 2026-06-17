@@ -1,7 +1,7 @@
 @import "tailwindcss";
 
 :root {
-  --background: #090A0F;
+  --background: #090a0f;
   --foreground: #f8fafc;
   --font-sans: var(--font-outfit), var(--font-geist-sans), sans-serif;
   --font-mono: var(--font-geist-mono);
@@ -147,7 +147,7 @@ body {
 }
 
 .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-  background: #06B6D4;
+  background: #06b6d4;
 }
 
 @media print {
@@ -163,7 +163,7 @@ body {
   body,
   html,
   main {
-    background-color: #090A0F !important;
+    background-color: #090a0f !important;
     background-image: none !important;
     margin: 0 !important;
     padding: 0 !important;
@@ -182,8 +182,12 @@ body {
 
 /* Modal Entrance Animations */
 @keyframes fadeIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
 }
 
 @keyframes scaleUp {
@@ -203,4 +207,60 @@ body {
 
 .animate-scale-up {
   animation: scaleUp 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}
+
+/* Challenge Modal Responsive Wrapper */
+.challenge-modal-fixed-wrapper {
+  position: fixed;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 50;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+@media (min-width: 768px) {
+  /* When sidebar is expanded */
+  .md\:ml-64 .challenge-modal-fixed-wrapper {
+    left: 16rem; /* 256px */
+    width: calc(100vw - 16rem);
+  }
+  /* When sidebar is collapsed */
+  .md\:ml-0 .challenge-modal-fixed-wrapper {
+    left: 0;
+    width: 100vw;
+  }
+}
+
+/* Guidelines & Criteria HTML elements override styling */
+.guidelines-content,
+.guidelines-content ul,
+.guidelines-content ol,
+.guidelines-content p,
+.guidelines-content span,
+.guidelines-content li,
+.guidelines-content code {
+  font-size: 1rem !important; /* text-base (16px) */
+}
+
+.guidelines-content,
+.guidelines-content ul,
+.guidelines-content ol,
+.guidelines-content li,
+.guidelines-content p,
+.guidelines-content code {
+  color: #e2e8f0 !important; /* text-slate-200 */
+}
+
+@media (max-width: 768px) {
+  .guidelines-content,
+  .guidelines-content ul,
+  .guidelines-content ol,
+  .guidelines-content p,
+  .guidelines-content span,
+  .guidelines-content li,
+  .guidelines-content code {
+    font-size: 0.875rem !important; /* text-sm (14px) */
+  }
 }

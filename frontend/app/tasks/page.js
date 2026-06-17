@@ -9,24 +9,25 @@ import Header from "./components/Header/Header";
 import Stats from "./components/Stats/Stats";
 import Timeline from "./components/Timeline/Timeline";
 import ChallengeCard from "./components/ChallengeCard/ChallengeCard";
+import ChallengeModal from "./components/ChallengeModal";
 import Rewards from "./components/Rewards/Rewards";
 import ComingSoonCard from "./components/ComingSoonCard";
 import VideoOverlay from "./components/VideoOverlay";
-import TierSelector from "./components/TierSelector";
 
 export default function TasksPage() {
   const router = useRouter();
   const [player, setPlayer] = useState(null);
   const [loading, setLoading] = useState(true);
   const [referrals, setReferrals] = useState([]);
-  const [expandedTaskId, setExpandedTaskId] = useState(1); // Task 1 expanded by default
+  const [selectedTaskForModal, setSelectedTaskForModal] = useState(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
   const [verifyingTaskId, setVerifyingTaskId] = useState(null);
   const [verifyError, setVerifyError] = useState("");
   const [verifySuccess, setVerifySuccess] = useState("");
-  const [activeTier, setActiveTier] = useState(1);
   const [showVideo, setShowVideo] = useState(false);
   const [showCloseBtn, setShowCloseBtn] = useState(false);
   const unlockInProgressRef = useRef(false);
+  const carouselRef = useRef(null);
   const [dbTasksList, setDbTasksList] = useState([]);
 
   // Fetch referrals to double check task 1 status
@@ -61,9 +62,10 @@ export default function TasksPage() {
         const data = await res.json();
         if (res.ok && data.success) {
           setPlayer(data.data);
-          fetchReferrals();
-          fetchDbTasks();
-          
+
+          // Wait for referrals and database tasks to load
+          await Promise.all([fetchReferrals(), fetchDbTasks()]);
+
           // Auto-select Tier 2 if already unlocked
           const userTasks = (() => {
             const rawTasks = data.data.tasks;
@@ -75,9 +77,6 @@ export default function TasksPage() {
               return {};
             }
           })();
-          if (userTasks.level2_unlocked) {
-            setActiveTier(2);
-          }
         } else {
           router.push("/login");
         }
@@ -90,20 +89,6 @@ export default function TasksPage() {
     }
     checkAuth();
   }, [router]);
-
-  const handleLogout = async () => {
-    try {
-      const res = await fetch("/api/v1/auth/logout", { method: "POST" });
-      if (res.ok) {
-        setPlayer(null);
-        router.push("/login");
-      } else {
-        console.error("Logout failed.");
-      }
-    } catch (err) {
-      console.error("Logout request error:", err);
-    }
-  };
 
   // Helper to extract JSON tasks object
   const dbTasks = (() => {
@@ -148,11 +133,8 @@ export default function TasksPage() {
     }
   }
   const isTask3Completed = isDbTaskCompleted(3);
-  const isLevel1Completed = isTask1Completed && isTask2Completed && isTask3Completed;
-
-  // --- Tier 2 Completion Conditions ---
-  const isTask4Completed = (player?.predictions_count || 0) >= 3 || isDbTaskCompleted(4);
-  const isTask5Completed = (player?.mu_points || 0) >= 20 || isDbTaskCompleted(5);
+  const isLevel1Completed =
+    isTask1Completed && isTask2Completed && isTask3Completed;
 
   let discordUser = "";
   if (player && player.socials) {
@@ -165,13 +147,8 @@ export default function TasksPage() {
       } catch (e) {}
     }
   }
-  const isTask6Completed = (!!discordUser && discordUser.trim().length > 0) || isDbTaskCompleted(6);
 
-  const handleExpandTask = (taskId) => {
-    setVerifyError("");
-    setVerifySuccess("");
-    setExpandedTaskId(expandedTaskId === taskId ? null : taskId);
-  };
+  // Selected task detail view modal handler
 
   const handleVerifyTask = async (task) => {
     setVerifyError("");
@@ -182,7 +159,9 @@ export default function TasksPage() {
     if (task.id === 1) {
       const isEligible = referralCount > 0 || referrals.length > 0;
       if (!isEligible) {
-        setVerifyError("Referral not found. Please ensure at least 1 friend has registered using your unique link.");
+        setVerifyError(
+          "Referral not found. Please ensure at least 1 friend has registered using your unique link.",
+        );
         setVerifyingTaskId(null);
         return;
       }
@@ -195,32 +174,42 @@ export default function TasksPage() {
         player.avatar_url.trim().length > 0
       );
       if (!isProfileComplete) {
-        setVerifyError("Profile details incomplete. Please ensure bio, college/institution, and avatar image are updated on your profile.");
+        setVerifyError(
+          "Profile details incomplete. Please ensure bio, college/institution, and avatar image are updated on your profile.",
+        );
         setVerifyingTaskId(null);
         return;
       } else if (!hasPredictions) {
-        setVerifyError("Prediction not found. Please ensure you have made at least 1 prediction on any match.");
+        setVerifyError(
+          "Prediction not found. Please ensure you have made at least 1 prediction on any match.",
+        );
         setVerifyingTaskId(null);
         return;
       }
     } else if (task.id === 4) {
       const isEligible = (player?.predictions_count || 0) >= 3;
       if (!isEligible) {
-        setVerifyError("Predictions incomplete. Please make at least 3 predictions on any matches.");
+        setVerifyError(
+          "Predictions incomplete. Please make at least 3 predictions on any matches.",
+        );
         setVerifyingTaskId(null);
         return;
       }
     } else if (task.id === 5) {
       const isEligible = (player?.mu_points || 0) >= 20;
       if (!isEligible) {
-        setVerifyError("Insufficient points. Please accumulate a total of at least 20 μPoints.");
+        setVerifyError(
+          "Insufficient points. Please accumulate a total of at least 20 μPoints.",
+        );
         setVerifyingTaskId(null);
         return;
       }
     } else if (task.id === 6) {
       const isEligible = !!discordUser && discordUser.trim().length > 0;
       if (!isEligible) {
-        setVerifyError("Discord link not found. Please add your Discord username under socials in your profile settings.");
+        setVerifyError(
+          "Discord link not found. Please add your Discord username under socials in your profile settings.",
+        );
         setVerifyingTaskId(null);
         return;
       }
@@ -240,7 +229,11 @@ export default function TasksPage() {
           const currentTasks = (() => {
             if (!prev.tasks) return {};
             if (typeof prev.tasks === "object") return prev.tasks;
-            try { return JSON.parse(prev.tasks); } catch { return {}; }
+            try {
+              return JSON.parse(prev.tasks);
+            } catch {
+              return {};
+            }
           })();
           return {
             ...prev,
@@ -248,14 +241,16 @@ export default function TasksPage() {
             tasks: {
               ...currentTasks,
               [`task${task.id}`]: true,
-            }
+            },
           };
         });
 
         // Refetch database tasks list to sync the UI completion state immediately
         fetchDbTasks();
 
-        setVerifySuccess(data.message || `Task ${task.id} verified and updated!`);
+        setVerifySuccess(
+          data.message || `Task ${task.id} verified and updated!`,
+        );
         setTimeout(() => setVerifySuccess(""), 4000);
       } else {
         setVerifyError(data.error || "Failed to verify task.");
@@ -303,7 +298,6 @@ export default function TasksPage() {
         }));
         setShowVideo(false);
         setShowCloseBtn(false);
-        setActiveTier(2); // Auto-navigate to Level 2
       } else {
         alert("Failed to unlock Tier 2. Please try again.");
         unlockInProgressRef.current = false;
@@ -315,6 +309,18 @@ export default function TasksPage() {
     }
   };
 
+  const scrollLeft = () => {
+    if (carouselRef.current) {
+      carouselRef.current.scrollBy({ left: -374, behavior: "smooth" });
+    }
+  };
+
+  const scrollRight = () => {
+    if (carouselRef.current) {
+      carouselRef.current.scrollBy({ left: 374, behavior: "smooth" });
+    }
+  };
+
   if (loading) {
     return (
       <div className="w-full min-h-screen bg-[#05030a] flex items-center justify-center">
@@ -323,232 +329,25 @@ export default function TasksPage() {
     );
   }
 
-  // Define challenges arrays using database values when available, falling back to local structures
+  // Map database tasks list to the expected format
   const mergedTasks = (() => {
-    // Default fallback hardcoded tasks
-    const fallbackTasks = [
-      {
-        id: 1,
-        title: "Referral Program Challenge",
-        shortDesc: "Invite a minimum of 1 user to μFIFA and gain +5 points to level up your favorite team.",
-        longDesc: (
-          <ul className="flex flex-col gap-2.5 text-[10px] text-slate-300 leading-relaxed list-none pl-0">
-            <li className="flex items-start gap-2">
-              <span className="text-violet-400 font-bold shrink-0 mt-0.5">•</span>
-              <span>Generate your unique pass referral link from the dashboard.</span>
-            </li>
-            <li className="flex items-start gap-2">
-              <span className="text-violet-400 font-bold shrink-0 mt-0.5">•</span>
-              <span>Invite a minimum of 1 user to register for μFIFA'26 using your link.</span>
-            </li>
-            <li className="flex items-start gap-2">
-              <span className="text-violet-400 font-bold shrink-0 mt-0.5">•</span>
-              <span>Once they successfully register, you gain +5 μPoints and level up your favorite team.</span>
-            </li>
-          </ul>
-        ),
-        reward: "Earn +5 μPoints to level up your favorite team.",
-        completed: isTask1Completed,
-        actionLabel: "Go to Dashboard",
-        actionUrl: "/dashboard",
-        tier: 1,
-      },
-      {
-        id: 2,
-        title: "Profile Page Update",
-        shortDesc: "Customize your profile, add a bio, and make at least 1 prediction.",
-        longDesc: (
-          <ul className="flex flex-col gap-2.5 text-[10px] text-slate-300 leading-relaxed list-none pl-0">
-            <li className="flex items-start gap-2">
-              <span className="text-cyan-400 font-bold shrink-0 mt-0.5">•</span>
-              <span>Verify your credentials by personalizing your profile settings.</span>
-            </li>
-            <li className="flex items-start gap-2">
-              <span className="text-cyan-400 font-bold shrink-0 mt-0.5">•</span>
-              <span>Open your Player Profile tab and click on the \"Edit Details\" menu.</span>
-            </li>
-            <li className="flex items-start gap-2">
-              <span className="text-cyan-400 font-bold shrink-0 mt-0.5">•</span>
-              <span>Input your college/institution alongside a biography describing your specialization.</span>
-            </li>
-            <li className="flex items-start gap-2">
-              <span className="text-cyan-400 font-bold shrink-0 mt-0.5">•</span>
-              <span>Submit at least 1 prediction on the match dashboard (outcome doesn't matter).</span>
-            </li>
-          </ul>
-        ),
-        reward: "Unlock specialization details & verify your pass credentials.",
-        completed: isTask2Completed,
-        actionLabel: "Go to Profile",
-        actionUrl: `/profile/${player?.user_id}`,
-        tier: 1,
-      },
-      {
-        id: 3,
-        title: "GitHub Contribution",
-        shortDesc: "Fork the repository, create your player card in the /profile directory, and open a Pull Request.",
-        longDesc: (
-          <ul className="flex flex-col gap-2.5 text-[10px] text-slate-300 leading-relaxed list-none pl-0">
-            <li className="flex items-start gap-2">
-              <span className="text-fuchsia-400 font-bold shrink-0 mt-0.5">•</span>
-              <span>Fork the repository to your own GitHub profile.</span>
-            </li>
-            <li className="flex items-start gap-2">
-              <span className="text-fuchsia-400 font-bold shrink-0 mt-0.5">•</span>
-              <span>Create a new Markdown file inside the <code>/profile</code> directory, named using your MUID (e.g. <code>profile/yourname@mulearn.md</code>).</span>
-            </li>
-            <li className="flex items-start gap-2">
-              <span className="text-fuchsia-400 font-bold shrink-0 mt-0.5">•</span>
-              <span>Fill out your profile, link your Discord profile card embed, and open a Pull Request targeting the main branch.</span>
-            </li>
-          </ul>
-        ),
-        reward: "Earn community ranking, link your socials, and put your profile on the pitch.",
-        completed: isTask3Completed,
-        actionLabel: "Go to Repository",
-        actionUrl: "https://github.com/gtech-mulearn/mufifa-2026",
-        tier: 1,
-      },
-      {
-        id: 4,
-        title: "Match Day Tactician",
-        shortDesc: "Submit at least 3 match predictions to test your strategic intuition.",
-        longDesc: (
-          <ul className="flex flex-col gap-2.5 text-[10px] text-slate-300 leading-relaxed list-none pl-0">
-            <li className="flex items-start gap-2">
-              <span className="text-rose-400 font-bold shrink-0 mt-0.5">•</span>
-              <span>Navigate to the Match Fixtures page.</span>
-            </li>
-            <li className="flex items-start gap-2">
-              <span className="text-rose-400 font-bold shrink-0 mt-0.5">•</span>
-              <span>Submit a minimum of 3 separate match predictions.</span>
-            </li>
-            <li className="flex items-start gap-2">
-              <span className="text-rose-400 font-bold shrink-0 mt-0.5">•</span>
-              <span>Verify here once completed to log your progress.</span>
-            </li>
-          </ul>
-        ),
-        reward: "Unlock strategic badges on your scorecard.",
-        completed: isTask4Completed,
-        actionLabel: "Predict Matches",
-        actionUrl: "/match",
-        tier: 2,
-      },
-      {
-        id: 5,
-        title: "Squad Synergy Challenge",
-        shortDesc: "Accumulate a total of 20 μPoints on your profile scorecard.",
-        longDesc: (
-          <ul className="flex flex-col gap-2.5 text-[10px] text-slate-300 leading-relaxed list-none pl-0">
-            <li className="flex items-start gap-2">
-              <span className="text-amber-400 font-bold shrink-0 mt-0.5">•</span>
-              <span>Participate in referrals and predictions.</span>
-            </li>
-            <li className="flex items-start gap-2">
-              <span className="text-amber-400 font-bold shrink-0 mt-0.5">•</span>
-              <span>Earn a total of 20 μPoints on your scorecard.</span>
-            </li>
-            <li className="flex items-start gap-2">
-              <span className="text-amber-400 font-bold shrink-0 mt-0.5">•</span>
-              <span>Verify your total points below.</span>
-            </li>
-          </ul>
-        ),
-        reward: "Increase your community rank and level up your team.",
-        completed: isTask5Completed,
-        actionLabel: "View Leaderboard",
-        actionUrl: "/leaderboard",
-        tier: 2,
-      },
-      {
-        id: 6,
-        title: "Discord Integration",
-        shortDesc: "Add your Discord username/tag in your profile socials.",
-        longDesc: (
-          <ul className="flex flex-col gap-2.5 text-[10px] text-slate-300 leading-relaxed list-none pl-0">
-            <li className="flex items-start gap-2">
-              <span className="text-indigo-400 font-bold shrink-0 mt-0.5">•</span>
-              <span>Navigate to your profile page.</span>
-            </li>
-            <li className="flex items-start gap-2">
-              <span className="text-indigo-400 font-bold shrink-0 mt-0.5">•</span>
-              <span>Enter your Discord username under socials in the \"Edit Details\" panel.</span>
-            </li>
-            <li className="flex items-start gap-2">
-              <span className="text-indigo-400 font-bold shrink-0 mt-0.5">•</span>
-              <span>Click verify to register your Discord membership status.</span>
-            </li>
-          </ul>
-        ),
-        reward: "Unlock premium Discord roles and special access.",
-        completed: isTask6Completed,
-        actionLabel: "Link Socials",
-        actionUrl: `/profile/${player?.user_id}`,
-        tier: 2,
-      },
-    ];
+    return dbTasksList
+      .map((dbTask) => {
+        const completed = !!dbTask.completed;
 
-    // Create a lookup map for DB tasks
-    const dbTasksMap = {};
-    dbTasksList.forEach((t) => {
-      dbTasksMap[t.id] = t;
-    });
-
-    const mergedList = [];
-
-    // 1. Process all fallback tasks, overriding with DB values if available
-    fallbackTasks.forEach((fbTask) => {
-      const dbTask = dbTasksMap[fbTask.id];
-      if (dbTask) {
-        let completed = fbTask.completed || !!dbTask.completed;
-        
-        let longDesc = null;
-        if (dbTask.guidelines) {
-          longDesc = <div dangerouslySetInnerHTML={{ __html: dbTask.guidelines }} />;
-        } else {
-          longDesc = fbTask.longDesc;
-        }
-
-        let rewardText = `Earn +${dbTask.mupoint || 0} μPoints & custom XP breakdown.`;
-
-        // Handle profile URL mapping dynamically for user ID redirect
-        const actionUrl = (dbTask.action_url && dbTask.action_url.startsWith('/profile'))
-          ? `/profile/${player?.user_id}`
-          : (dbTask.action_url || fbTask.actionUrl);
-
-        mergedList.push({
-          id: fbTask.id,
-          title: dbTask.title || fbTask.title,
-          shortDesc: dbTask.short_desc || dbTask.description || fbTask.shortDesc,
-          longDesc,
-          reward: rewardText,
-          completed,
-          actionLabel: dbTask.action_label || fbTask.actionLabel,
-          actionUrl,
-          tier: dbTask.tier || fbTask.tier,
-        });
-      } else {
-        mergedList.push(fbTask);
-      }
-    });
-
-    // 2. Append any tasks from DB that are not in fallbacks (e.g. Task 7+)
-    dbTasksList.forEach((dbTask) => {
-      const alreadyMerged = fallbackTasks.some((f) => f.id === dbTask.id);
-      if (!alreadyMerged) {
-        let completed = !!dbTask.completed;
-        let longDesc = dbTask.guidelines ? (
+        const longDesc = dbTask.guidelines ? (
           <div dangerouslySetInnerHTML={{ __html: dbTask.guidelines }} />
         ) : (
           <p className="text-[10px] text-slate-300">{dbTask.description}</p>
         );
 
-        const actionUrl = (dbTask.action_url && dbTask.action_url.startsWith('/profile'))
-          ? `/profile/${player?.user_id}`
-          : (dbTask.action_url || "#");
+        // Handle profile URL mapping dynamically for user ID redirect
+        const actionUrl =
+          dbTask.action_url && dbTask.action_url.startsWith("/profile")
+            ? `/profile/${player?.user_id}`
+            : dbTask.action_url || "#";
 
-        mergedList.push({
+        return {
           id: dbTask.id,
           title: dbTask.title || `Challenge ${dbTask.id}`,
           shortDesc: dbTask.short_desc || dbTask.description || "",
@@ -558,14 +357,10 @@ export default function TasksPage() {
           actionLabel: dbTask.action_label || "View Details",
           actionUrl,
           tier: dbTask.tier || 1,
-        });
-      }
-    });
-
-    // Sort by task ID
-    mergedList.sort((a, b) => a.id - b.id);
-
-    return mergedList;
+          mupoint: dbTask.mupoint || 0,
+        };
+      })
+      .sort((a, b) => a.id - b.id);
   })();
 
   const level1Tasks = mergedTasks.filter((t) => t.tier === 1);
@@ -587,19 +382,39 @@ export default function TasksPage() {
       isLocked: !dbTasks.level2_unlocked || isLocked,
     };
   });
-
   const tier1CompletedCount = level1Tasks.filter((t) => t.completed).length;
   const tier1TotalCount = level1Tasks.length;
 
   const tier2CompletedCount = level2Tasks.filter((t) => t.completed).length;
   const tier2TotalCount = level2Tasks.length;
 
-  const activeTasks = activeTier === 1 ? processedLevel1Tasks : processedLevel2Tasks;
-  const activeCompletedCount = activeTier === 1 ? tier1CompletedCount : tier2CompletedCount;
-  const activeTotalCount = activeTier === 1 ? tier1TotalCount : tier2TotalCount;
+  const currentTier = dbTasks.level2_unlocked ? 2 : 1;
+  const currentCompletedCount =
+    currentTier === 1 ? tier1CompletedCount : tier2CompletedCount;
+  const currentTotalCount =
+    currentTier === 1 ? tier1TotalCount : tier2TotalCount;
+
+  const allTasks = (() => {
+    const list = [...processedLevel1Tasks];
+    if (!dbTasks.level2_unlocked) {
+      if (isLevel1Completed) {
+        list.push({ isUnlockCard: true, id: "unlock-tier-2", mupoint: 0 });
+      }
+    } else {
+      list.push(...processedLevel2Tasks);
+    }
+    return list;
+  })();
 
   return (
     <div className="w-full relative flex flex-col gap-6 md:gap-8 pb-10">
+      {/* Full-page stadium background */}
+      <div
+        className="fixed inset-0 z-0 bg-cover bg-center opacity-[0.28] pointer-events-none"
+        style={{ backgroundImage: `url('/stadium_bg_pruble.png')` }}
+      />
+      <div className="fixed inset-0 z-0 bg-gradient-to-b from-[#030207]/60 via-[#030207]/40 to-[#030207]/80 pointer-events-none" />
+
       {/* Ambient radial glows */}
       <div className="absolute top-[10%] left-[5%] w-[45vw] h-[45vw] bg-[radial-gradient(circle_at_center,_rgba(99,102,241,0.08)_0%,_transparent_60%)] pointer-events-none rounded-full" />
       <div className="absolute bottom-[10%] right-[5%] w-[45vw] h-[45vw] bg-[radial-gradient(circle_at_center,_rgba(6,182,212,0.06)_0%,_transparent_60%)] pointer-events-none rounded-full" />
@@ -608,8 +423,8 @@ export default function TasksPage() {
       <div className="relative rounded-3xl overflow-hidden border border-white/5 p-6 md:p-8 flex flex-col gap-6 md:gap-8 shadow-2xl bg-[#090715]/40 backdrop-blur-md z-10">
         {/* Stadium background overlay */}
         <div
-          className="absolute inset-0 z-0 bg-cover bg-center opacity-[0.35] pointer-events-none"
-          style={{ backgroundImage: `url('/bg_imge.png')` }}
+          className="absolute inset-0 z-0 bg-cover bg-center opacity-[0.30] pointer-events-none"
+          style={{ backgroundImage: `url('/bg_img.png')` }}
         />
         {/* Dark gradient overlay to fade at bottom */}
         <div className="absolute inset-0 bg-gradient-to-b from-transparent via-[#090715]/50 to-[#030207] z-0 pointer-events-none" />
@@ -622,132 +437,199 @@ export default function TasksPage() {
         {/* STATS ROW (Progression Shield & Achievements) */}
         <div className="relative z-10">
           <Stats
-            activeTier={activeTier}
-            completedCount={activeCompletedCount}
-            totalCount={activeTotalCount}
+            activeTier={currentTier}
+            completedCount={currentCompletedCount}
+            totalCount={currentTotalCount}
           />
         </div>
       </div>
 
       {/* TIMELINE */}
-      <div className="relative z-10">
-        <Timeline activeTier={activeTier} level2Unlocked={!!dbTasks.level2_unlocked} />
+      <div className="relative z-10 px-4 sm:px-6 md:px-8">
+        <Timeline
+          activeTier={currentTier}
+          level2Unlocked={!!dbTasks.level2_unlocked}
+        />
       </div>
 
-      {/* TIER SELECTOR & CHALLENGES LIST */}
-      <div className="flex flex-col gap-5 relative z-10">
+      {/* CHALLENGES LIST */}
+      <div className="flex flex-col gap-5 relative z-10 px-4 sm:px-6 md:px-8">
         <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
-          <h2 className="text-sm font-black uppercase tracking-[0.25em] text-white self-start">
-            CHALLENGES
-          </h2>
-          <TierSelector
-            activeTier={activeTier}
-            setActiveTier={setActiveTier}
-            level2Unlocked={!!dbTasks.level2_unlocked}
-          />
-        </div>
-
-        {/* Render Active Tier Challenges */}
-        {activeTier === 1 && (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            {activeTasks.map((task) => (
-              <ChallengeCard
-                key={task.id}
-                task={task}
-                isExpanded={expandedTaskId === task.id}
-                onExpandToggle={handleExpandTask}
-                onVerify={handleVerifyTask}
-                verifyingTaskId={verifyingTaskId}
-                verifyError={verifyError}
-                verifySuccess={verifySuccess}
-                expandedTaskId={expandedTaskId}
-                dbTasks={dbTasks}
-              />
-            ))}
-          </div>
-        )}
-
-        {activeTier === 2 && (
-          dbTasks.level2_unlocked ? (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-              {activeTasks.map((task) => (
-                <ChallengeCard
-                  key={task.id}
-                  task={task}
-                  isExpanded={expandedTaskId === task.id}
-                  onExpandToggle={handleExpandTask}
-                  onVerify={handleVerifyTask}
-                  verifyingTaskId={verifyingTaskId}
-                  verifyError={verifyError}
-                  verifySuccess={verifySuccess}
-                  expandedTaskId={expandedTaskId}
-                  dbTasks={dbTasks}
-                />
-              ))}
-            </div>
-          ) : isLevel1Completed ? (
-            /* Tier 2 Unlock Button Component */
-            <div className="flex flex-col items-center justify-center p-8 bg-[#110e24]/80 border border-violet-500/10 rounded-2xl backdrop-blur-md shadow-2xl max-w-sm mx-auto w-full text-center relative overflow-hidden animate-fade-in">
-              <span className="text-[9px] font-black uppercase tracking-[0.25em] text-slate-400 mb-2">
-                TIER 1 COMPLETED!
-              </span>
-              <h2 className="text-base font-black text-white uppercase tracking-wider mb-6">
-                READY FOR TIER 2
-              </h2>
-              
-              <div className="w-20 h-20 flex items-center justify-center bg-white/5 border border-white/10 rounded-full mb-6 shadow-[0_0_15px_rgba(255,255,255,0.02)]">
-                <svg className="w-8 h-8 text-slate-300" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 10.5V6.75a4.5 4.5 0 119 0v3.75M3.75 21.75h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H3.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z" />
-                </svg>
-              </div>
-              
-              <p className="text-[10px] text-slate-400 font-medium mb-6 leading-relaxed">
-                Watch the arena transition sequence to unlock and begin Tier 2 progression.
-              </p>
-
+          <div className="flex items-center gap-4 self-start">
+            <h2 className="text-sm font-black uppercase tracking-[0.25em] text-white">
+              CHALLENGES
+            </h2>
+            {/* Carousel Navigation Arrows */}
+            <div className="flex items-center gap-1.5 ml-2">
               <button
-                onClick={startUnlockProcess}
-                className="w-full py-3.5 bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-500 hover:to-indigo-500 text-white font-black text-[10px] tracking-widest uppercase rounded-full shadow-lg active:scale-95 transition-all cursor-pointer flex items-center justify-center gap-2"
+                onClick={scrollLeft}
+                className="w-7 h-7 rounded-lg border border-white/5 bg-[#110e20]/60 hover:bg-white/5 flex items-center justify-center text-slate-400 hover:text-white transition-all cursor-pointer"
+                title="Scroll Left"
               >
-                <span>Unlock Tier 2</span>
-                <svg className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 24 24">
-                  <path d="M8 5v14l11-7z" />
+                <svg
+                  className="w-3.5 h-3.5"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2.5"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    d="M15.75 19.5L8.25 12l7.5-7.5"
+                  />
+                </svg>
+              </button>
+              <button
+                onClick={scrollRight}
+                className="w-7 h-7 rounded-lg border border-white/5 bg-[#110e20]/60 hover:bg-white/5 flex items-center justify-center text-slate-400 hover:text-white transition-all cursor-pointer"
+                title="Scroll Right"
+              >
+                <svg
+                  className="w-3.5 h-3.5"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2.5"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    d="M8.25 4.5l7.5 7.5-7.5 7.5"
+                  />
                 </svg>
               </button>
             </div>
-          ) : (
-            /* Tier 2 Locked Component */
-            <div className="flex flex-col items-center justify-center p-8 bg-[#110e24]/30 border border-white/5 rounded-2xl backdrop-blur-md shadow-2xl max-w-sm mx-auto w-full text-center relative overflow-hidden opacity-50 select-none">
-              <span className="text-[9px] font-black uppercase tracking-[0.25em] text-slate-500 mb-2">
-                TIER 2 PROGRESSION
-              </span>
-              <h2 className="text-base font-black text-slate-500 uppercase tracking-wider mb-4">
-                TIER 2 LOCKED
-              </h2>
-              
-              <div className="w-20 h-20 flex items-center justify-center bg-slate-800/10 border border-slate-700/10 rounded-full mb-4">
-                <svg className="w-8 h-8 text-slate-600" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z" />
-                </svg>
+          </div>
+        </div>
+
+        {/* Unified challenges list inside Carousel */}
+        <div
+          ref={carouselRef}
+          className="flex gap-6 overflow-x-auto scroll-smooth pb-4 snap-x snap-mandatory no-scrollbar items-stretch max-w-[1098px] mx-auto w-full"
+          style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
+        >
+          {allTasks.map((task) => {
+            if (task.isUnlockCard) {
+              return (
+                <div
+                  key={task.id}
+                  className="snap-start shrink-0 w-full sm:w-[325px] md:w-[350px] flex"
+                >
+                  <div className="flex flex-col bg-gradient-to-b from-[#110e24]/80 to-[#070613]/80 border border-violet-500/35 hover:border-violet-500/50 rounded-2xl p-5 relative overflow-hidden transition-all duration-300 h-full justify-between shadow-[0_0_20px_rgba(139,92,246,0.05)]">
+                    <div className="flex gap-4 items-start">
+                      <div className="relative shrink-0 select-none">
+                        <div className="w-14 h-14 rounded-full bg-gradient-to-br from-amber-500 to-yellow-600 border border-amber-400/20 flex items-center justify-center text-white shadow-[0_0_15px_rgba(245,158,11,0.3)]">
+                          <svg
+                            className="w-6 h-6 text-white drop-shadow-[0_0_8px_rgba(255,255,255,0.4)]"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth="2.5"
+                            viewBox="0 0 24 24"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              d="M13.5 10.5V6.75a4.5 4.5 0 119 0v3.75M3.75 21.75h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H3.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z"
+                            />
+                          </svg>
+                        </div>
+                      </div>
+                      <div className="flex flex-col gap-1 text-left min-w-0">
+                        <h3 className="text-xs font-black tracking-wide uppercase leading-tight text-white">
+                          Unlock Tier 2
+                        </h3>
+                        <p className="text-[10px] text-slate-400 font-medium leading-relaxed mt-0.5 min-h-[48px] max-h-[48px] overflow-hidden">
+                          Tier 1 completed! Watch the transition video to unlock
+                          Tier 2.
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center justify-between gap-4 mt-5 border-t border-white/5 pt-4">
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-1.5 text-amber-400 select-none">
+                          <span className="text-[9px] font-black uppercase tracking-wider">
+                            READY TO UNLOCK
+                          </span>
+                        </div>
+                      </div>
+                      <div className="border border-amber-500/25 bg-amber-500/5 text-amber-400 px-3 py-1 rounded-xl flex flex-col items-center justify-center shrink-0 min-w-[68px] h-[48px] select-none">
+                        <span className="text-sm font-black tracking-tight leading-none">
+                          TIER 2
+                        </span>
+                        <span className="text-[7px] font-black uppercase tracking-widest mt-1">
+                          ACCESS
+                        </span>
+                      </div>
+                    </div>
+
+                    <div className="mt-4 pt-1">
+                      <button
+                        onClick={startUnlockProcess}
+                        className="w-full py-3.5 bg-gradient-to-r from-violet-600 to-indigo-600 border-transparent text-white shadow-md hover:from-violet-500 hover:to-indigo-500 text-[9px] font-black tracking-widest uppercase rounded-xl transition-all cursor-pointer flex items-center justify-center gap-1.5"
+                      >
+                        <span>Unlock Now</span>
+                        <svg
+                          className="w-3.5 h-3.5"
+                          fill="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path d="M8 5v14l11-7z" />
+                        </svg>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              );
+            }
+
+            return (
+              <div
+                key={task.id}
+                className="snap-start shrink-0 w-full sm:w-[325px] md:w-[350px] flex"
+              >
+                <ChallengeCard
+                  task={task}
+                  onViewDetails={(t) => {
+                    setSelectedTaskForModal(t);
+                    setIsModalOpen(true);
+                  }}
+                  dbTasks={dbTasks}
+                />
               </div>
-              
-              <p className="text-[10px] text-slate-500 font-medium">
-                Complete all Tier 1 challenges to unlock access to Tier 2 arena progression.
-              </p>
-            </div>
-          )
-        )}
+            );
+          })}
+        </div>
       </div>
 
       {/* TIER REWARDS ROW */}
-      <div className="relative z-10 border-t border-white/5 pt-8">
-        <Rewards activeTier={activeTier} />
+      <div className="relative z-10 border-t border-white/5 pt-8 px-4 sm:px-6 md:px-8">
+        <Rewards activeTier={currentTier} />
       </div>
 
       <VideoOverlay
         showVideo={showVideo}
         showCloseBtn={showCloseBtn}
         completeUnlock={completeUnlock}
+      />
+
+      <ChallengeModal
+        isOpen={isModalOpen}
+        onClose={() => {
+          setIsModalOpen(false);
+          setVerifyError("");
+          setVerifySuccess("");
+        }}
+        task={
+          selectedTaskForModal
+            ? allTasks.find((t) => t.id === selectedTaskForModal.id)
+            : null
+        }
+        onVerify={handleVerifyTask}
+        verifyingTaskId={verifyingTaskId}
+        verifyError={verifyError}
+        verifySuccess={verifySuccess}
       />
     </div>
   );
