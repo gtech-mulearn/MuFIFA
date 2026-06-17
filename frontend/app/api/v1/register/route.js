@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import crypto from "crypto";
 import { z } from "zod";
 import {
   createOtpSession,
@@ -155,7 +156,7 @@ export async function POST(request) {
       if (phoneRows && phoneRows.length > 0) {
         return jsonError(409, "CONFLICT_ERROR", "This phone number has already been registered.");
       }
-      const otp = Math.floor(100000 + Math.random() * 900000).toString();
+      const otp = crypto.randomInt(100000, 1000000).toString();
       const session = createOtpSession(email, { name, email, phone, domain, team, referralId }, otp);
 
       const mailSent = await sendRegistrationOtpEmail({ email, name, otp });
