@@ -43,9 +43,39 @@ export async function GET(request) {
       return NextResponse.json({ success: false, error: "User not found" }, { status: 404 });
     }
 
+    const player = rows[0];
+
+    // Fetch user predictions count from Supabase
+    let predictionsCount = 0;
+    try {
+      const predQuery = `${supabaseUrl}/rest/v1/match_predictions?user_id=eq.${encodeURIComponent(player.user_id)}&limit=1`;
+      const predRes = await fetch(predQuery, {
+        method: "GET",
+        headers: {
+          apikey: supabaseKey,
+          Authorization: `Bearer ${supabaseKey}`,
+          "Prefer": "count=exact",
+        },
+      });
+      if (predRes.ok) {
+        const contentRange = predRes.headers.get("content-range");
+        if (contentRange) {
+          const parts = contentRange.split("/");
+          if (parts.length === 2) {
+            predictionsCount = parseInt(parts[1], 10);
+          }
+        }
+      }
+    } catch (err) {
+      console.error("Failed to fetch player predictions count:", err);
+    }
+
     return NextResponse.json({
       success: true,
-      data: rows[0],
+      data: {
+        ...player,
+        predictions_count: predictionsCount,
+      },
     });
   } catch (error) {
     console.error("Player auth check error:", error);

@@ -47,6 +47,54 @@ export default function TasksPage() {
     }
     checkAuth();
   }, [router]);
+  // Helper to extract JSON tasks object
+  const dbTasks = (() => {
+    if (!player || !player.tasks) return {};
+    if (typeof player.tasks === "object") return player.tasks;
+    try {
+      return JSON.parse(player.tasks);
+    } catch {
+      return {};
+    }
+  })();
+
+  // Task 1 Completion Condition: Referral task count > 0 or has referred players list length > 0
+  let referralCount = 0;
+  if (player && player.tasks) {
+    if (typeof player.tasks === "object") {
+      referralCount = player.tasks.referal || 0;
+    } else if (typeof player.tasks === "string") {
+      try {
+        const parsed = JSON.parse(player.tasks);
+        referralCount = parsed.referal || 0;
+      } catch (e) {}
+    }
+  }
+  const isTask1Completed = referralCount > 0 || referrals.length > 0 || !!dbTasks.task1;
+
+  const hasPredictions = (player?.predictions_count || 0) > 0;
+
+  // Task 2 Completion Condition: Profile bio and institution/college is updated, and at least 1 prediction is made
+  const isTask2Completed = (!!(
+    player?.bio &&
+    player.bio.trim().length > 0 &&
+    (player?.institution || player?.college || "").trim().length > 0 &&
+    hasPredictions
+  )) || !!dbTasks.task2;
+
+  // Task 3 Completion Condition: GitHub link is set in socials and at least 1 prediction is made
+  let githubUser = "";
+  if (player && player.socials) {
+    if (typeof player.socials === "object") {
+      githubUser = player.socials.github || "";
+    } else if (typeof player.socials === "string") {
+      try {
+        const parsed = JSON.parse(player.socials);
+        githubUser = parsed.github || "";
+      } catch (e) {}
+    }
+  }
+  const isTask3Completed = (githubUser.trim().length > 0 && hasPredictions) || !!dbTasks.task3;
 
   const handleExpandTask = (taskId) => {
     setVerifyError("");
@@ -64,9 +112,22 @@ export default function TasksPage() {
       if (task.id === 1) {
         setVerifyError("Referral not found. Please ensure at least 1 friend has registered using your unique link.");
       } else if (task.id === 2) {
-        setVerifyError("Profile details incomplete. Please ensure both your bio and college/institution are updated on your profile.");
+        const isProfileComplete = !!(
+          player?.bio &&
+          player.bio.trim().length > 0 &&
+          (player?.institution || player?.college || "").trim().length > 0
+        );
+        if (!isProfileComplete) {
+          setVerifyError("Profile details incomplete. Please ensure both your bio and college/institution are updated on your profile.");
+        } else if (!hasPredictions) {
+          setVerifyError("Prediction not found. Please ensure you have made at least 1 prediction on any match.");
+        }
       } else if (task.id === 3) {
-        setVerifyError("GitHub link missing. Please ensure your GitHub profile is connected in your profile settings.");
+        if (githubUser.trim().length === 0) {
+          setVerifyError("GitHub link missing. Please ensure your GitHub profile is connected in your profile settings.");
+        } else if (!hasPredictions) {
+          setVerifyError("Prediction not found. Please ensure you have made at least 1 prediction on any match.");
+        }
       }
       setVerifyingTaskId(null);
       return;
@@ -115,52 +176,6 @@ export default function TasksPage() {
       </div>
     );
   }
-
-  // Helper to extract JSON tasks object
-  const dbTasks = (() => {
-    if (!player || !player.tasks) return {};
-    if (typeof player.tasks === "object") return player.tasks;
-    try {
-      return JSON.parse(player.tasks);
-    } catch {
-      return {};
-    }
-  })();
-
-  // Task 1 Completion Condition: Referral task count > 0 or has referred players list length > 0
-  let referralCount = 0;
-  if (player && player.tasks) {
-    if (typeof player.tasks === "object") {
-      referralCount = player.tasks.referal || 0;
-    } else if (typeof player.tasks === "string") {
-      try {
-        const parsed = JSON.parse(player.tasks);
-        referralCount = parsed.referal || 0;
-      } catch (e) {}
-    }
-  }
-  const isTask1Completed = referralCount > 0 || referrals.length > 0 || !!dbTasks.task1;
-
-  // Task 2 Completion Condition: Profile bio and institution/college is updated
-  const isTask2Completed = (!!(
-    player?.bio &&
-    player.bio.trim().length > 0 &&
-    (player?.institution || player?.college || "").trim().length > 0
-  )) || !!dbTasks.task2;
-
-  // Task 3 Completion Condition: GitHub link is set in socials
-  let githubUser = "";
-  if (player && player.socials) {
-    if (typeof player.socials === "object") {
-      githubUser = player.socials.github || "";
-    } else if (typeof player.socials === "string") {
-      try {
-        const parsed = JSON.parse(player.socials);
-        githubUser = parsed.github || "";
-      } catch (e) {}
-    }
-  }
-  const isTask3Completed = githubUser.trim().length > 0 || !!dbTasks.task3;
 
   // Setup Tasks Structure
   const tasks = [
@@ -233,7 +248,7 @@ export default function TasksPage() {
     {
       id: 2,
       title: "Profile Page Update",
-      shortDesc: "Customize your profile and add a bio.",
+      shortDesc: "Customize your profile, add a bio, and make at least 1 prediction.",
       longDesc: (
         <ul className="flex flex-col gap-2.5 text-[11px] text-slate-300 leading-relaxed list-none pl-0">
           <li className="flex items-start gap-2">
@@ -247,6 +262,10 @@ export default function TasksPage() {
           <li className="flex items-start gap-2">
             <span className="text-cyan-400 font-bold shrink-0 mt-0.5">•</span>
             <span>Input your college/institution alongside a biography describing your specialization.</span>
+          </li>
+          <li className="flex items-start gap-2">
+            <span className="text-cyan-400 font-bold shrink-0 mt-0.5">•</span>
+            <span>Submit at least 1 prediction on the match dashboard (outcome doesn't matter).</span>
           </li>
         </ul>
       ),
@@ -304,7 +323,7 @@ export default function TasksPage() {
     {
       id: 3,
       title: "GitHub Contribution",
-      shortDesc: "Fork the repository, create your player card in the /profile directory, and open a Pull Request.",
+      shortDesc: "Fork the repository, create your player card in the /profile directory, open a Pull Request, and make at least 1 prediction.",
       longDesc: (
         <ul className="flex flex-col gap-2.5 text-[11px] text-slate-300 leading-relaxed list-none pl-0">
           <li className="flex items-start gap-2">
@@ -319,6 +338,10 @@ export default function TasksPage() {
             <span className="text-purple-400 font-bold shrink-0 mt-0.5">•</span>
             <span>Fill out your profile, link your Discord profile card embed, and open a Pull Request targeting the main branch.</span>
           </li>
+          <li className="flex items-start gap-2">
+            <span className="text-purple-400 font-bold shrink-0 mt-0.5">•</span>
+            <span>Submit at least 1 prediction on the match dashboard (outcome doesn't matter).</span>
+          </li>
         </ul>
       ),
       reward: (
@@ -326,7 +349,7 @@ export default function TasksPage() {
           Earn community ranking, link your socials, and put your profile on the pitch.
         </span>
       ),
-      completed: false, // verification code will be done later
+      completed: isTask3Completed,
       actionLabel: "Go to Repository",
       actionUrl: "https://github.com/gtech-mulearn/mufifa-2026",
       icon: (
@@ -620,15 +643,13 @@ export default function TasksPage() {
 
                         <div className="flex flex-col sm:flex-row gap-3 w-full justify-end items-center mt-auto">
                           {/* Verify Button */}
-                          {task.id !== 3 && (
-                            <button
-                              onClick={() => handleVerifyTask(task)}
-                              disabled={verifyingTaskId === task.id || dbTasks[`task${task.id}`]}
-                              className="cursor-pointer w-full sm:w-auto px-6 py-3.5 border border-[#10b981]/40 hover:border-[#10b981] text-[#10b981] font-black text-[10px] tracking-widest uppercase rounded-full flex items-center justify-center transition-all bg-[#10b981]/5 hover:bg-[#10b981]/10 disabled:opacity-40 disabled:cursor-not-allowed"
-                            >
-                              {verifyingTaskId === task.id ? "Verifying..." : dbTasks[`task${task.id}`] ? "Verified" : "Verify Task"}
-                            </button>
-                          )}
+                          <button
+                            onClick={() => handleVerifyTask(task)}
+                            disabled={verifyingTaskId === task.id || dbTasks[`task${task.id}`]}
+                            className="cursor-pointer w-full sm:w-auto px-6 py-3.5 border border-[#10b981]/40 hover:border-[#10b981] text-[#10b981] font-black text-[10px] tracking-widest uppercase rounded-full flex items-center justify-center transition-all bg-[#10b981]/5 hover:bg-[#10b981]/10 disabled:opacity-40 disabled:cursor-not-allowed"
+                          >
+                            {verifyingTaskId === task.id ? "Verifying..." : dbTasks[`task${task.id}`] ? "Verified" : "Verify Task"}
+                          </button>
 
                           {/* Action Button */}
                           <Link

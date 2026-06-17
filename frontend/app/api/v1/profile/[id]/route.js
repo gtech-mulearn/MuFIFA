@@ -132,6 +132,34 @@ export async function GET(request, { params }) {
     }
 
     const responseData = { ...profile, rank };
+
+    // Fetch user predictions count
+    let predictionsCount = 0;
+    try {
+      const predQuery = `${supabaseUrl}/rest/v1/match_predictions?user_id=eq.${encodeURIComponent(profile.user_id)}&limit=1`;
+      const predRes = await fetch(predQuery, {
+        method: "GET",
+        headers: {
+          apikey: supabaseKey,
+          Authorization: `Bearer ${supabaseKey}`,
+          "Prefer": "count=exact",
+        },
+      });
+      if (predRes.ok) {
+        const contentRange = predRes.headers.get("content-range");
+        if (contentRange) {
+          const parts = contentRange.split("/");
+          if (parts.length === 2) {
+            predictionsCount = parseInt(parts[1], 10);
+          }
+        }
+      }
+    } catch (err) {
+      console.error("Failed to fetch player predictions count:", err);
+    }
+
+    responseData.predictions_count = predictionsCount;
+
     if (!isOwner) {
       delete responseData.email;
       delete responseData.phone;
