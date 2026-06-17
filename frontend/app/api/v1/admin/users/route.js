@@ -46,7 +46,9 @@ export async function GET(request) {
 
     let filterParts = [];
     if (search) {
-      filterParts.push(`or=(name.ilike.*${encodeURIComponent(search)}*,email.ilike.*${encodeURIComponent(search)}*,phone.ilike.*${encodeURIComponent(search)}*)`);
+      const cleanSearch = search.trim();
+      const orFilter = `(name.ilike.*${cleanSearch}*,email.ilike.*${cleanSearch}*,phone.ilike.*${cleanSearch}*,user_id.ilike.*${cleanSearch}*)`;
+      filterParts.push(`or=${encodeURIComponent(orFilter)}`);
     }
     if (team) {
       filterParts.push(`team=eq.${encodeURIComponent(team)}`);

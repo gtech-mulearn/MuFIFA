@@ -132,14 +132,8 @@ export default function PlayerCard({
     college: player.institution || player.college || "",
   };
 
-  const stats = {
-    creativity: 0,
-    branding: 0,
-    innovation: 0,
-    teamwork: 0,
-    execution: 0,
-  };
-  const ovr = 0;
+  const stats = generateStats(data.mu_points, data.name);
+  const ovr = calculateOVR(stats);
 
   // Get referral count from player tasks
   let referralCount = 0;

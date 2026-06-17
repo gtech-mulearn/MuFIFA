@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import MatchCard from "@/components/match/MatchCard";
 import CorrectPredictorsModal from "@/components/match/CorrectPredictorsModal";
+import Header from "../tasks/components/Header/Header";
 
 const EXCLUDED_STATUSES = new Set(["POSTPONED", "CANCELLED", "SUSPENDED"]);
 
@@ -139,61 +140,28 @@ export default function MatchPage() {
   ).length;
 
   return (
-    <div className="w-full min-h-screen bg-[#090A0F] text-white flex flex-col font-sans relative select-none pb-16 pt-8 md:pt-12 overflow-hidden">
-      {/* Stadium Background Image */}
-      <div className="absolute inset-0 z-0 bg-[url('/stadium_bg.png')] bg-cover bg-center opacity-20 pointer-events-none" />
-      {/* Left Wavy Glow Path */}
-      <svg
-        className="absolute left-0 top-[20%] w-[250px] h-[500px] pointer-events-none opacity-20 hidden md:block"
-        viewBox="0 0 100 500"
-      >
-        <path
-          d="M 0 450 Q 50 350 20 250 T 80 50"
-          fill="none"
-          stroke="#06B6D4"
-          strokeWidth="1.5"
-          opacity="0.6"
+    <div className="w-full relative flex flex-col gap-6 md:gap-8 pb-10 px-4 md:px-8 pt-6">
+      {/* Ambient radial glows */}
+      <div className="absolute top-[10%] left-[5%] w-[45vw] h-[45vw] bg-[radial-gradient(circle_at_center,_rgba(99,102,241,0.08)_0%,_transparent_60%)] pointer-events-none rounded-full" />
+      <div className="absolute bottom-[10%] right-[5%] w-[45vw] h-[45vw] bg-[radial-gradient(circle_at_center,_rgba(6,182,212,0.06)_0%,_transparent_60%)] pointer-events-none rounded-full" />
+
+      {/* TOP N ARENA BANNER (with stadium background) */}
+      <div className="relative rounded-3xl overflow-hidden border border-white/5 p-6 md:p-8 flex flex-col gap-6 md:gap-8 shadow-2xl bg-[#090715]/40 backdrop-blur-md z-10">
+        {/* Stadium background overlay */}
+        <div
+          className="absolute inset-0 z-0 bg-cover bg-center opacity-[0.35] pointer-events-none"
+          style={{ backgroundImage: `url('/bg_imge.png')` }}
         />
-        <path
-          d="M 0 430 Q 40 340 10 240 T 70 40"
-          fill="none"
-          stroke="#4F46E5"
-          strokeWidth="1"
-          opacity="0.4"
-        />
-      </svg>
-      {/* Right Wavy Glow Path */}
-      <svg
-        className="absolute right-0 top-[15%] w-[250px] h-[500px] pointer-events-none opacity-20 hidden md:block"
-        viewBox="0 0 100 500"
-      >
-        <path
-          d="M 100 50 Q 50 150 80 250 T 20 450"
-          fill="none"
-          stroke="#06B6D4"
-          strokeWidth="1.5"
-          opacity="0.6"
-        />
-        <path
-          d="M 100 70 Q 60 160 90 260 T 30 430"
-          fill="none"
-          stroke="#4F46E5"
-          strokeWidth="1"
-          opacity="0.4"
-        />
-      </svg>
-      <div className="max-w-7xl mx-auto px-4 w-full relative z-10 flex-1 flex flex-col gap-6">
-        {/* Header */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-white/5 pb-4">
-          <div className="flex flex-col gap-1">
-            <h1 className="text-xl font-bold tracking-wide text-white uppercase">
-              Match Predictions
-            </h1>
-            <p className="text-[10px] text-slate-400">
-              Predict match outcomes and track live odds
-            </p>
-          </div>
+        {/* Dark gradient overlay to fade at bottom */}
+        <div className="absolute inset-0 bg-gradient-to-b from-transparent via-[#090715]/50 to-[#030207] z-0 pointer-events-none" />
+
+        {/* HEADER */}
+        <div className="relative z-10">
+          <Header title="MATCH" highlightedTitle="PREDICTIONS" subtitle="Predict match outcomes, track live stats and climb the standings." />
         </div>
+      </div>
+
+      <div className="max-w-7xl mx-auto w-full relative z-10 flex-1 flex flex-col gap-6">
 
         {/* Main Content Area: Grid layout for desktop column and sidebar */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start w-full">

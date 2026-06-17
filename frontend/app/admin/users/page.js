@@ -25,17 +25,26 @@ export default function AdminUsersPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [search, setSearch] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
   const [teamFilter, setTeamFilter] = useState("");
   const [domainFilter, setDomainFilter] = useState("");
   const [deleteTarget, setDeleteTarget] = useState(null);
   const [deleting, setDeleting] = useState(false);
+
+  // Debounce search input to avoid parallel race condition requests
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearch(search);
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [search]);
 
   const fetchUsers = useCallback(async (page = 1) => {
     setLoading(true);
     setError("");
     try {
       const params = new URLSearchParams({ page: String(page), limit: "20" });
-      if (search) params.set("search", search);
+      if (debouncedSearch) params.set("search", debouncedSearch);
       if (teamFilter) params.set("team", teamFilter);
       if (domainFilter) params.set("domain", domainFilter);
 
@@ -53,7 +62,7 @@ export default function AdminUsersPage() {
     } finally {
       setLoading(false);
     }
-  }, [search, teamFilter, domainFilter]);
+  }, [debouncedSearch, teamFilter, domainFilter]);
 
   useEffect(() => {
     fetchUsers(1);

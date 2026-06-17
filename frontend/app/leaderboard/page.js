@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { getBackendUrl } from "@/utils/api";
+import Header from "../tasks/components/Header/Header";
 
 const FLAGS = {
   Brazil: "br",
@@ -177,122 +178,83 @@ export default function LeaderboardPage() {
   };
 
   return (
-    <div className="w-full min-h-screen bg-[#090A0F] text-white flex flex-col font-sans relative select-none pb-16 pt-8 md:pt-12 overflow-hidden">
-      {/* Decorative Gradients & Glows */}
-      <div className="absolute inset-0 z-0 bg-[radial-gradient(circle_at_center,rgba(79,70,229,0.06)_0%,#090A0F_80%)] pointer-events-none" />
-      <div className="absolute inset-0 z-0 bg-gradient-to-tr from-[#090A0F] via-transparent to-[rgba(6,182,212,0.06)] pointer-events-none" />
-      <div className="absolute top-[10%] right-[5%] w-[55vw] h-[55vw] bg-[#4f46e5]/8 pointer-events-none rounded-full blur-[130px]" />
-      <div className="absolute bottom-[10%] left-[-10%] w-[55vw] h-[55vw] bg-[#06b6d4]/8 pointer-events-none rounded-full blur-[130px]" />
+    <div className="w-full relative flex flex-col gap-6 md:gap-8 pb-10 px-4 md:px-8 pt-6">
+      {/* Ambient radial glows */}
+      <div className="absolute top-[10%] left-[5%] w-[45vw] h-[45vw] bg-[radial-gradient(circle_at_center,_rgba(99,102,241,0.08)_0%,_transparent_60%)] pointer-events-none rounded-full" />
+      <div className="absolute bottom-[10%] right-[5%] w-[45vw] h-[45vw] bg-[radial-gradient(circle_at_center,_rgba(6,182,212,0.06)_0%,_transparent_60%)] pointer-events-none rounded-full" />
 
-      {/* Left Wavy Glow Path */}
-      <svg
-        className="absolute left-0 top-[20%] w-[250px] h-[500px] pointer-events-none opacity-20 hidden md:block"
-        viewBox="0 0 100 500"
-      >
-        <path
-          d="M 0 450 Q 50 350 20 250 T 80 50"
-          fill="none"
-          stroke="#06B6D4"
-          strokeWidth="1.5"
-          opacity="0.6"
+      {/* TOP N ARENA BANNER (with stadium background) */}
+      <div className="relative rounded-3xl overflow-hidden border border-white/5 p-6 md:p-8 flex flex-col gap-6 md:gap-8 shadow-2xl bg-[#090715]/40 backdrop-blur-md z-10">
+        {/* Stadium background overlay */}
+        <div
+          className="absolute inset-0 z-0 bg-cover bg-center opacity-[0.35] pointer-events-none"
+          style={{ backgroundImage: `url('/bg_imge.png')` }}
         />
-        <path
-          d="M 0 430 Q 40 340 10 240 T 70 40"
-          fill="none"
-          stroke="#4F46E5"
-          strokeWidth="1"
-          opacity="0.4"
-        />
-      </svg>
+        {/* Dark gradient overlay to fade at bottom */}
+        <div className="absolute inset-0 bg-gradient-to-b from-transparent via-[#090715]/50 to-[#030207] z-0 pointer-events-none" />
 
-      {/* Right Wavy Glow Path */}
-      <svg
-        className="absolute right-0 top-[15%] w-[250px] h-[500px] pointer-events-none opacity-20 hidden md:block"
-        viewBox="0 0 100 500"
-      >
-        <path
-          d="M 100 50 Q 50 150 80 250 T 20 450"
-          fill="none"
-          stroke="#06B6D4"
-          strokeWidth="1.5"
-          opacity="0.6"
-        />
-        <path
-          d="M 100 70 Q 60 160 90 260 T 30 430"
-          fill="none"
-          stroke="#4F46E5"
-          strokeWidth="1"
-          opacity="0.4"
-        />
-      </svg>
-
-      <div className="max-w-2xl md:max-w-3xl mx-auto px-2 sm:px-4 w-full relative z-10 flex-1 flex flex-col gap-6">
-        {/* Header and Back Link */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-white/5 pb-4">
-          <div className="flex flex-col gap-1">
-            <div className="flex items-center gap-2">
-              <h1 className="text-xl font-bold tracking-wide text-white uppercase">
-                {activeTab === "squad"
-                  ? "Squad Standings"
-                  : "Individual Standings"}
-              </h1>
-              <span className="flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-white/5 border border-white/10">
-                <span
-                  className={`w-1.5 h-1.5 rounded-full ${
-                    dbStatus === "connected"
-                      ? "bg-[#00E676] animate-ping"
-                      : "bg-[#FF8A00] animate-pulse"
-                  }`}
-                />
-                <span className="text-[8px] font-bold tracking-wider text-slate-300">
-                  {dbStatus === "connected" ? "LIVE" : "SYNCING"}
-                </span>
-              </span>
-            </div>
-            <p className="text-[10px] text-slate-400">
-              {activeTab === "squad"
-                ? dbStatus === "connected"
-                  ? "Live squad points standings"
-                  : "Syncing squad standings"
-                : "Real-time player leaderboards"}
-            </p>
-          </div>
-          <Link
-            href="/"
-            className="cursor-pointer bg-glass border border-white/10 hover:border-white/25 px-4 py-1.5 rounded-lg text-xs text-slate-300 hover:text-white transition-colors text-center"
-          >
-            Back to lobby
-          </Link>
+        {/* HEADER */}
+        <div className="relative z-10">
+          <Header 
+            title={activeTab === "squad" ? "SQUAD" : "INDIVIDUAL"} 
+            highlightedTitle="STANDINGS" 
+            subtitle={activeTab === "squad" ? "Live squad points standings in the µFIFA World Cup 2026." : "Real-time player rankings and scorecards."} 
+          />
         </div>
+      </div>
 
-        {/* Tab Selection */}
-        <div className="flex bg-black/40 border border-white/5 p-1 rounded-xl w-full max-w-sm mx-auto no-print">
-          <button
-            onClick={() => {
-              setActiveTab("squad");
-              setSearchQuery("");
-            }}
-            className={`flex-1 text-center py-2 text-xs font-bold uppercase tracking-wider rounded-lg transition-all cursor-pointer ${
-              activeTab === "squad"
-                ? "bg-[#4F46E5] text-white shadow-md shadow-[#4F46E5]/20"
-                : "text-slate-400 hover:text-slate-200"
-            }`}
-          >
-            Squad Standings
-          </button>
-          <button
-            onClick={() => {
-              setActiveTab("individual");
-              setPlayersSearchQuery("");
-            }}
-            className={`flex-1 text-center py-2 text-xs font-bold uppercase tracking-wider rounded-lg transition-all cursor-pointer ${
-              activeTab === "individual"
-                ? "bg-[#4F46E5] text-white shadow-md shadow-[#4F46E5]/20"
-                : "text-slate-400 hover:text-slate-200"
-            }`}
-          >
-            Individual Standings
-          </button>
+      <div className="max-w-4xl mx-auto w-full relative z-10 flex-1 flex flex-col gap-6">
+        {/* Tab Selection Row */}
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-4 no-print mt-2">
+          <div className="flex bg-black/40 border border-white/5 p-1 rounded-xl w-full max-w-sm">
+            <button
+              onClick={() => {
+                setActiveTab("squad");
+                setSearchQuery("");
+              }}
+              className={`flex-1 text-center py-2 text-xs font-bold uppercase tracking-wider rounded-lg transition-all cursor-pointer ${
+                activeTab === "squad"
+                  ? "bg-[#4F46E5] text-white shadow-md shadow-[#4F46E5]/20"
+                  : "text-slate-400 hover:text-slate-200"
+              }`}
+            >
+              Squad Standings
+            </button>
+            <button
+              onClick={() => {
+                setActiveTab("individual");
+                setPlayersSearchQuery("");
+              }}
+              className={`flex-1 text-center py-2 text-xs font-bold uppercase tracking-wider rounded-lg transition-all cursor-pointer ${
+                activeTab === "individual"
+                  ? "bg-[#4F46E5] text-white shadow-md shadow-[#4F46E5]/20"
+                  : "text-slate-400 hover:text-slate-200"
+              }`}
+            >
+              Individual Standings
+            </button>
+          </div>
+
+          <div className="flex items-center gap-3 self-end sm:self-auto">
+            <span className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/5 border border-white/10">
+              <span
+                className={`w-1.5 h-1.5 rounded-full ${
+                  dbStatus === "connected"
+                    ? "bg-[#00E676] animate-ping"
+                    : "bg-[#FF8A00] animate-pulse"
+                }`}
+              />
+              <span className="text-[8px] font-bold tracking-wider text-slate-300 uppercase">
+                {dbStatus === "connected" ? "LIVE" : "SYNCING"}
+              </span>
+            </span>
+            <Link
+              href="/"
+              className="cursor-pointer bg-white/5 border border-white/10 hover:border-white/20 hover:bg-white/10 px-4 py-1.5 rounded-xl text-xs font-bold text-slate-300 hover:text-white transition-all text-center"
+            >
+              Back to lobby
+            </Link>
+          </div>
         </div>
 
         {/* Leaderboard Card */}

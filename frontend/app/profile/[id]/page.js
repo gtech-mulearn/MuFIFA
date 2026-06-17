@@ -1,10 +1,11 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, Suspense } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import PlayerCard from "@/components/PlayerCard";
 import { TEAM_FLAGS, TEAM_WHATSAPP_LINKS } from "@/utils/constants";
+import Header from "@/app/tasks/components/Header/Header";
 
 const DOMAIN_STYLES = {
   Coder: "bg-blue-500/10 border-blue-500/30 text-blue-400",
@@ -133,7 +134,7 @@ const DUMMY_BADGES = [
   },
 ];
 
-export default function ProfilePage({ params }) {
+function ProfilePageContent({ params }) {
   const router = useRouter();
   const unwrappedParams = React.use(params);
   const id = unwrappedParams.id;
@@ -144,8 +145,8 @@ export default function ProfilePage({ params }) {
   const [error, setError] = useState("");
   const [uploading, setUploading] = useState(false);
   const [uploadError, setUploadError] = useState("");
-  const [activeTab, setActiveTab] = useState("player");
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const searchParams = useSearchParams();
+  const activeTab = searchParams && searchParams.get("tab") === "badges" ? "badges" : "profile";
 
   // Edit details form state
   const [editForm, setEditForm] = useState({
@@ -1139,21 +1140,29 @@ export default function ProfilePage({ params }) {
   };
 
   return (
-    <div className="w-full min-h-screen bg-[#090A0F] text-white flex flex-col font-sans relative select-none overflow-hidden">
-      {/* Decorative Gradients & Glows */}
-      <div className="absolute inset-0 z-0 bg-[radial-gradient(circle_at_center,rgba(79,70,229,0.06)_0%,#090A0F_80%)] pointer-events-none" />
-      <div className="absolute inset-0 z-0 bg-gradient-to-tr from-[#090A0F] via-transparent to-[rgba(6,182,212,0.06)] pointer-events-none" />
-      <div className="absolute top-[10%] right-[5%] w-[55vw] h-[55vw] bg-[#4f46e5]/8 pointer-events-none rounded-full blur-[130px]" />
-      <div className="absolute bottom-[10%] left-[-10%] w-[55vw] h-[55vw] bg-[#06b6d4]/8 pointer-events-none rounded-full blur-[130px]" />
+    <div className="w-full relative flex flex-col gap-6 md:gap-8 pb-10 px-4 md:px-8 pt-6">
+      {/* Ambient radial glows */}
+      <div className="absolute top-[10%] left-[5%] w-[45vw] h-[45vw] bg-[radial-gradient(circle_at_center,_rgba(99,102,241,0.08)_0%,_transparent_60%)] pointer-events-none rounded-full" />
+      <div className="absolute bottom-[10%] right-[5%] w-[45vw] h-[45vw] bg-[radial-gradient(circle_at_center,_rgba(6,182,212,0.06)_0%,_transparent_60%)] pointer-events-none rounded-full" />
 
-      {/* Background Image Layer */}
-      <div
-        className="absolute inset-0 z-0 bg-cover bg-center opacity-[0.25] pointer-events-none"
-        style={{ backgroundImage: `url('/stadium_bg.png')` }}
-      />
+      {/* TOP N ARENA BANNER (with stadium background) */}
+      <div className="relative rounded-3xl overflow-hidden border border-white/5 p-6 md:p-8 flex flex-col gap-6 md:gap-8 shadow-2xl bg-[#090715]/40 backdrop-blur-md z-10">
+        {/* Stadium background overlay */}
+        <div
+          className="absolute inset-0 z-0 bg-cover bg-center opacity-[0.35] pointer-events-none"
+          style={{ backgroundImage: `url('/bg_imge.png')` }}
+        />
+        {/* Dark gradient overlay to fade at bottom */}
+        <div className="absolute inset-0 bg-gradient-to-b from-transparent via-[#090715]/50 to-[#030207] z-0 pointer-events-none" />
+
+        {/* HEADER */}
+        <div className="relative z-10">
+          <Header title="PLAYER" highlightedTitle="SCORECARD" subtitle="View player stats, verify social integrations and manage profile settings." />
+        </div>
+      </div>
 
       {/* Main Content — 3-Column Layout */}
-      <div className="relative z-10 flex-1 w-full max-w-[1680px] mx-auto px-4 sm:px-6 py-6 lg:py-10">
+      <div className="relative z-10 flex-1 w-full max-w-[1680px] mx-auto px-4 sm:px-6">
         {error || !player ? (
           /* ERROR / NOT FOUND */
           <div className="flex items-center justify-center min-h-[60vh]">
@@ -1228,61 +1237,25 @@ export default function ProfilePage({ params }) {
             {/* Conditional Layout based on Ownership */}
             {isOwner ? (
               <div className="flex flex-col xl:flex-row gap-6 items-start">
-                {/* COLUMN 1: Sidebar Tab Navigation */}
-                <div className="w-full xl:w-auto shrink-0 xl:sticky xl:top-6">
-                  {/* Mobile Tab Toggle */}
-                  <button
-                    onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-                    className="xl:hidden w-full flex items-center justify-between px-4 py-3 bg-[#131927]/90 border border-white/10 rounded-2xl backdrop-blur-md text-xs font-bold uppercase tracking-wider text-slate-300"
-                  >
-                    <span className="flex items-center gap-2">
-                      {TabIcons[activeTab]}
-                      {SIDEBAR_TABS.find((t) => t.id === activeTab)?.label}
-                    </span>
-                    <svg
-                      className={`w-4 h-4 transition-transform ${mobileMenuOpen ? "rotate-180" : ""}`}
-                      fill="none"
-                      viewBox="0 0 24 24"
-                      stroke="currentColor"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M19 9l-7 7-7-7"
-                      />
-                    </svg>
-                  </button>
+                {/* COLUMN 2: Forms / Badges Content Panel */}
+                <div className="w-full xl:w-[480px] 2xl:w-[520px] shrink-0 xl:sticky xl:top-6 flex flex-col gap-6">
+                  {activeTab === "badges" ? (
+                    <div className="bg-[#131927]/80 border border-white/8 rounded-2xl p-5 backdrop-blur-md shadow-lg min-h-[400px]">
+                      {renderBadgesTab()}
+                    </div>
+                  ) : (
+                    <>
+                      {/* Edit Details Card */}
+                      <div className="bg-[#131927]/80 border border-white/8 rounded-2xl p-5 backdrop-blur-md shadow-lg">
+                        {renderEditTab()}
+                      </div>
 
-                  {/* Desktop vertical tabs / Mobile dropdown */}
-                  <div
-                    className={`${mobileMenuOpen ? "flex" : "hidden"} xl:flex flex-col gap-1 bg-[#131927]/60 border border-white/8 rounded-2xl p-2 backdrop-blur-md mt-2 xl:mt-0 xl:w-[200px]`}
-                  >
-                    {SIDEBAR_TABS.map((tab) => (
-                      <button
-                        key={tab.id}
-                        onClick={() => {
-                          setActiveTab(tab.id);
-                          setMobileMenuOpen(false);
-                        }}
-                        className={`flex items-center gap-3 px-4 py-3 rounded-xl text-xs font-bold uppercase tracking-wider transition-all cursor-pointer whitespace-nowrap ${
-                          activeTab === tab.id
-                            ? "bg-[#4F46E5]/15 border border-[#4F46E5]/30 text-white shadow-[0_0_10px_rgba(79,70,229,0.15)]"
-                            : "border border-transparent text-slate-500 hover:text-slate-300 hover:bg-white/[0.03]"
-                        }`}
-                      >
-                        <span className="shrink-0">{TabIcons[tab.id]}</span>
-                        {tab.label}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
-                {/* COLUMN 2: Tab Content Panel */}
-                <div className="w-full xl:w-[480px] 2xl:w-[520px] shrink-0 xl:sticky xl:top-6">
-                  <div className="bg-[#131927]/80 border border-white/8 rounded-2xl p-5 backdrop-blur-md shadow-lg min-h-[400px]">
-                    {renderTabContent()}
-                  </div>
+                      {/* Reset Password Card */}
+                      <div className="bg-[#131927]/80 border border-white/8 rounded-2xl p-5 backdrop-blur-md shadow-lg">
+                        {renderPasswordTab()}
+                      </div>
+                    </>
+                  )}
                 </div>
 
                 {/* COLUMN 3: Player Card & Share Sidebar */}
@@ -1302,6 +1275,18 @@ export default function ProfilePage({ params }) {
         )}
       </div>
     </div>
+  );
+}
+
+export default function ProfilePage({ params }) {
+  return (
+    <Suspense fallback={
+      <div className="w-full min-h-screen bg-[#090A0F] flex items-center justify-center">
+        <div className="w-8 h-8 rounded-full border-2 border-violet-500 border-t-transparent animate-spin" />
+      </div>
+    }>
+      <ProfilePageContent params={params} />
+    </Suspense>
   );
 }
 

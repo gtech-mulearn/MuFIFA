@@ -10,9 +10,11 @@
     "test:ticket": "node ticket-test.mjs"
   },
   "dependencies": {
+    "@flags-sdk/vercel": "^1.4.2",
     "@napi-rs/canvas": "^1.0.0",
     "bcryptjs": "^3.0.3",
     "flag-icons": "^7.5.0",
+    "flags": "^4.2.0",
     "html2canvas": "^1.4.1",
     "jsdom": "^29.1.1",
     "jsonwebtoken": "^9.0.3",

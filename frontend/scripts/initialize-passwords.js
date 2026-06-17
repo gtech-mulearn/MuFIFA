@@ -47,7 +47,9 @@ function getTransporter() {
   const pass = process.env.SMTP_PASS;
 
   if (!host || !user || !pass) {
-    throw new Error("SMTP credentials are not fully configured in environment variables.");
+    throw new Error(
+      "SMTP credentials are not fully configured in environment variables.",
+    );
   }
 
   return nodemailer.createTransport({
@@ -63,7 +65,8 @@ function getTransporter() {
 
 // 3. Generate random 8-character password
 function generatePassword() {
-  const chars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+  const chars =
+    "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
   let password = "";
   for (let i = 0; i < 8; i++) {
     password += chars.charAt(Math.floor(Math.random() * chars.length));
@@ -73,12 +76,16 @@ function generatePassword() {
 
 // 4. Send email helper
 async function sendEmail(transporter, player, password) {
-  const smtpFrom = process.env.SMTP_FROM || `"noreply@mulearn.org" <noreply@mulearn.org>`;
-  const fromAddress = `"noreply@mulearn.org" <${
+  const smtpFrom =
+    process.env.SMTP_FROM ||
+    `"mailer@mufifa.mulearn.org" <mailer@mufifa.mulearn.orglearn.org>`;
+  const fromAddress = `"mailer@mufifa.mulearn.org" <${
     smtpFrom.includes("<") ? smtpFrom.split("<")[1].replace(">", "") : smtpFrom
   }>`;
 
-  const displayUserId = player.user_id.startsWith("@") ? player.user_id : `@${player.user_id}`;
+  const displayUserId = player.user_id.startsWith("@")
+    ? player.user_id
+    : `@${player.user_id}`;
   const subjectLine = `Your Arena Access Password | μFIFA`;
   const textContent = `Hello ${player.name},
 
@@ -247,14 +254,18 @@ async function main() {
     }
 
     const players = await res.json();
-    console.log(`Found ${players.length} players requiring password initialization.\n`);
+    console.log(
+      `Found ${players.length} players requiring password initialization.\n`,
+    );
 
     for (let i = 0; i < players.length; i++) {
       const player = players[i];
       const plainPassword = generatePassword();
       const hashedPassword = await bcrypt.hash(plainPassword, 10);
 
-      console.log(`[${i + 1}/${players.length}] Processing player: ${player.email} (${player.user_id})`);
+      console.log(
+        `[${i + 1}/${players.length}] Processing player: ${player.email} (${player.user_id})`,
+      );
 
       try {
         // A. Patch password_hash in Supabase
@@ -279,7 +290,10 @@ async function main() {
         await sendEmail(transporter, player, plainPassword);
         console.log(`   - Success: Saved password and sent email.`);
       } catch (playerErr) {
-        console.error(`   - Error processing player ${player.email}:`, playerErr.message);
+        console.error(
+          `   - Error processing player ${player.email}:`,
+          playerErr.message,
+        );
       }
     }
 
