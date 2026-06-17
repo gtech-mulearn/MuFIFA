@@ -36,7 +36,7 @@ export async function POST(request) {
     const taskIdInt = parseInt(task_id, 10);
 
     // 2. Fetch User & Task to verify they exist
-    const userRes = await fetch(`${supabaseUrl}/rest/v1/registrations?user_id=eq.${encodeURIComponent(userId)}&select=id,user_id,team,mu_points,tasks,bio,institution,socials,referal_id,avatar_url`, {
+    const userRes = await fetch(`${supabaseUrl}/rest/v1/registrations?user_id=eq.${encodeURIComponent(userId)}&select=id,user_id,team,mu_points,tasks,bio,institution,socials,referal_id,avatar_url,muid`, {
       headers: { apikey: supabaseKey, Authorization: `Bearer ${supabaseKey}` },
     });
     if (!userRes.ok) throw new Error(`Fetch user failed: ${await userRes.text()}`);
@@ -80,10 +80,11 @@ export async function POST(request) {
       const isProfileComplete = !!(
         player.bio && player.bio.trim().length > 0 &&
         player.institution && player.institution.trim().length > 0 &&
-        player.avatar_url && player.avatar_url.trim().length > 0
+        player.avatar_url && player.avatar_url.trim().length > 0 &&
+        player.muid && player.muid.trim().length > 0
       );
       if (!isProfileComplete) {
-        return NextResponse.json({ success: false, error: "Profile details incomplete. Please ensure both your bio, college/institution, and avatar image are updated on your profile." }, { status: 400 });
+        return NextResponse.json({ success: false, error: "Profile details incomplete. Please ensure bio, college/institution, avatar image, and µID (µLearn ID) are updated on your profile." }, { status: 400 });
       }
       
       // Check predictions

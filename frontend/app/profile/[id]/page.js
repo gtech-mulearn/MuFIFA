@@ -154,6 +154,7 @@ function ProfilePageContent({ params }) {
     college: "",
     bio: "",
     phone: "",
+    muid: "",
     socials: {
       website: "",
       reddit: "",
@@ -217,6 +218,7 @@ function ProfilePageContent({ params }) {
             profileData.data.institution || profileData.data.college || "",
           bio: profileData.data.bio || "",
           phone: profileData.data.phone || "",
+          muid: profileData.data.muid || "",
           socials: {
             website: socialsObj.website || "",
             reddit: socialsObj.reddit || "",
@@ -307,6 +309,7 @@ function ProfilePageContent({ params }) {
           institution: editForm.college,
           bio: editForm.bio,
           phone: editForm.phone,
+          muid: editForm.muid,
           socials: editForm.socials,
         }),
       });
@@ -536,6 +539,14 @@ function ProfilePageContent({ params }) {
           </div>
           <div className="flex flex-col gap-0.5">
             <span className="text-[8px] font-black uppercase tracking-wider text-slate-600">
+              μID
+            </span>
+            <span className="text-xs font-semibold text-[#06B6D4] font-bold">
+              {player.muid || "Not Linked"}
+            </span>
+          </div>
+          <div className="flex flex-col gap-0.5">
+            <span className="text-[8px] font-black uppercase tracking-wider text-slate-600">
               Joined
             </span>
             <span className="text-xs font-semibold text-slate-300">
@@ -715,6 +726,21 @@ function ProfilePageContent({ params }) {
             }
             className="w-full bg-[#0f1a2e] border border-white/10 rounded-xl px-3 py-2.5 text-xs text-slate-200 font-semibold focus:outline-none focus:border-[#4F46E5]/50 transition-colors placeholder:text-slate-600"
             placeholder="Enter your college"
+          />
+        </div>
+
+        <div className="flex flex-col gap-1.5">
+          <label className="text-[9px] font-black uppercase tracking-wider text-slate-500">
+            μID (µLearn ID)
+          </label>
+          <input
+            type="text"
+            value={editForm.muid}
+            onChange={(e) =>
+              setEditForm((prev) => ({ ...prev, muid: e.target.value }))
+            }
+            className="w-full bg-[#0f1a2e] border border-white/10 rounded-xl px-3 py-2.5 text-xs text-slate-200 font-semibold focus:outline-none focus:border-[#4F46E5]/50 transition-colors placeholder:text-slate-600"
+            placeholder="e.g. username@mulearn"
           />
         </div>
 

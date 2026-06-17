@@ -36,7 +36,7 @@ export async function GET(request, { params }) {
       );
     }
 
-    const selectFields = "id,name,user_id,team,domain,mu_points,avatar_url,created_at,email,phone,referal_id,tasks,ticket_url,referred_by,institution,bio,socials";
+    const selectFields = "id,name,user_id,team,domain,mu_points,avatar_url,created_at,email,phone,referal_id,tasks,ticket_url,referred_by,institution,bio,socials,muid";
 
     // 1. Try to find the user by user_id (username)
     let query = `${supabaseUrl}/rest/v1/registrations?user_id=eq.${encodeURIComponent(cleanId)}&select=${selectFields}&limit=1`;
@@ -314,7 +314,7 @@ export async function PATCH(request, { params }) {
 
     // 4. Parse request body
     const body = await request.json();
-    const { name, institution, bio, phone, socials, tasks } = body;
+    const { name, institution, bio, phone, socials, tasks, muid } = body;
 
     // Build update object
     const updateData = {};
@@ -324,6 +324,7 @@ export async function PATCH(request, { params }) {
     if (phone !== undefined) updateData.phone = phone.trim();
     if (socials !== undefined) updateData.socials = socials;
     if (tasks !== undefined) updateData.tasks = tasks;
+    if (muid !== undefined) updateData.muid = muid.trim();
 
     if (Object.keys(updateData).length === 0) {
       return NextResponse.json(

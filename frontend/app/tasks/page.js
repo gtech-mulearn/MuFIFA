@@ -171,11 +171,13 @@ export default function TasksPage() {
         player.bio.trim().length > 0 &&
         (player?.institution || player?.college || "").trim().length > 0 &&
         player?.avatar_url &&
-        player.avatar_url.trim().length > 0
+        player.avatar_url.trim().length > 0 &&
+        player?.muid &&
+        player.muid.trim().length > 0
       );
       if (!isProfileComplete) {
         setVerifyError(
-          "Profile details incomplete. Please ensure bio, college/institution, and avatar image are updated on your profile.",
+          "Profile details incomplete. Please ensure bio, college/institution, avatar image, and µID (µLearn ID) are updated on your profile.",
         );
         setVerifyingTaskId(null);
         return;

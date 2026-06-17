@@ -2,7 +2,7 @@ export default function VideoOverlay({ showVideo, showCloseBtn, completeUnlock }
   if (!showVideo) return null;
 
   return (
-    <div className="fixed inset-0 z-[9999] bg-black flex items-center justify-center">
+    <div className="challenge-modal-fixed-wrapper z-[9999] bg-black flex items-center justify-center">
       <video
         src="/tier2_unlock_video.mp4"
         autoPlay
