@@ -81,7 +81,7 @@ function Select({
       {isOpen && (
         <div
           role="listbox"
-          className="absolute z-50 mt-1.5 w-full bg-[#131927] border border-white/10 rounded-xl shadow-2xl max-h-60 overflow-y-auto py-1 backdrop-blur-xl animate-in fade-in slide-in-from-top-1 duration-100"
+          className="absolute z-50 mt-1.5 w-full bg-[#131927] border border-white/10 rounded-xl shadow-2xl max-h-60 overflow-y-auto custom-scrollbar py-1 backdrop-blur-xl animate-in fade-in slide-in-from-top-1 duration-100"
         >
           {options?.map((option) => {
             const isSelected = optionRenderer

@@ -11,20 +11,20 @@ export async function GET(request) {
     if (!supabaseUrl || !supabaseKey) {
       return NextResponse.json(
         { success: false, error: "Database not configured." },
-        { status: 503 }
+        { status: 503 },
       );
     }
 
     // Authenticate player via player_token cookie
     const cookieHeader = request.headers.get("cookie") || "";
     const cookieMatch = cookieHeader.match(
-      new RegExp(`(?:^|;\\s*)${PLAYER_COOKIE}=([^;]*)`)
+      new RegExp(`(?:^|;\\s*)${PLAYER_COOKIE}=([^;]*)`),
     );
 
     if (!cookieMatch) {
       return NextResponse.json(
         { success: false, error: "Authentication required." },
-        { status: 401 }
+        { status: 401 },
       );
     }
 
@@ -34,11 +34,38 @@ export async function GET(request) {
     if (!decoded || decoded.role !== "player") {
       return NextResponse.json(
         { success: false, error: "Authentication required." },
-        { status: 401 }
+        { status: 401 },
       );
     }
 
     const userId = decoded.user_id;
+
+    // Fetch user details first to get the correct numeric database id and latest mu_points
+    const userRes = await fetch(
+      `${supabaseUrl}/rest/v1/registrations?user_id=eq.${encodeURIComponent(userId)}&select=id,mu_points&limit=1`,
+      {
+        headers: {
+          apikey: supabaseKey,
+          Authorization: `Bearer ${supabaseKey}`,
+        },
+        next: { revalidate: 0 },
+      },
+    );
+
+    if (!userRes.ok) {
+      throw new Error(`Failed to query user profile: ${await userRes.text()}`);
+    }
+
+    const users = await userRes.json();
+    if (!users || users.length === 0) {
+      return NextResponse.json(
+        { success: false, error: "User profile not found." },
+        { status: 404 },
+      );
+    }
+
+    const userDbId = users[0].id;
+    const totalPoints = Number(users[0].mu_points ?? 0);
 
     // 1. Fetch completed tasks with task details
     const completedTasksRes = await fetch(
@@ -49,7 +76,7 @@ export async function GET(request) {
           Authorization: `Bearer ${supabaseKey}`,
         },
         next: { revalidate: 0 },
-      }
+      },
     );
 
     let taskEntries = [];
@@ -71,48 +98,128 @@ export async function GET(request) {
       }));
     }
 
-    // 2. Fetch scored predictions (those with points_earned set)
+    // 2. Fetch all predictions of the user
     const predictionsRes = await fetch(
-      `${supabaseUrl}/rest/v1/match_predictions?user_id=eq.${encodeURIComponent(userId)}&select=id,match_id,predicted_outcome,predicted_home_goals,predicted_away_goals,points_earned,scored_at,updated_at&order=updated_at.desc`,
+      `${supabaseUrl}/rest/v1/match_predictions?user_id=eq.${encodeURIComponent(userId)}&select=id,match_id,predicted_outcome,predicted_home_goals,predicted_away_goals,scored_at,updated_at&order=updated_at.desc`,
       {
         headers: {
           apikey: supabaseKey,
           Authorization: `Bearer ${supabaseKey}`,
         },
         next: { revalidate: 0 },
-      }
+      },
     );
 
+    // Fetch rewarded matches list from match_cache
+    let rewardedMatchIds = [];
+    const cacheRewardedRes = await fetch(
+      `${supabaseUrl}/rest/v1/match_cache?match_id=eq.rewarded_matches&select=match_data`,
+      {
+        headers: {
+          apikey: supabaseKey,
+          Authorization: `Bearer ${supabaseKey}`,
+        },
+        next: { revalidate: 0 },
+      },
+    );
+    if (cacheRewardedRes.ok) {
+      const rows = await cacheRewardedRes.json();
+      if (rows.length > 0) {
+        rewardedMatchIds = rows[0].match_data?.match_ids || [];
+      }
+    }
+
+    // Fetch WC season match details to check actual scores
+    let matchesList = [];
+    const wcRes = await fetch(
+      `${supabaseUrl}/rest/v1/match_cache?match_id=eq.WC_season&select=match_data`,
+      {
+        headers: {
+          apikey: supabaseKey,
+          Authorization: `Bearer ${supabaseKey}`,
+        },
+        next: { revalidate: 0 },
+      },
+    );
+    if (wcRes.ok) {
+      const rows = await wcRes.json();
+      if (rows.length > 0) {
+        matchesList = rows[0].match_data?.matches || [];
+      }
+    }
+
+    const matchesMap = {};
+    matchesList.forEach((m) => {
+      matchesMap[String(m.id)] = m;
+    });
+
+    const rewardedSet = new Set(rewardedMatchIds.map(String));
     let predictionEntries = [];
     if (predictionsRes.ok) {
       const predictions = await predictionsRes.json();
-      predictionEntries = predictions
-        .filter((p) => p.points_earned !== null && p.points_earned !== undefined)
-        .map((p) => ({
+      predictionEntries = predictions.map((p) => {
+        const match = matchesMap[String(p.match_id)];
+        let points = 0;
+        const isRewarded = rewardedSet.has(String(p.match_id));
+        if (isRewarded && match) {
+          const actualHome = match.score?.fullTime?.home;
+          const actualAway = match.score?.fullTime?.away;
+          if (
+            actualHome !== null &&
+            actualHome !== undefined &&
+            actualAway !== null &&
+            actualAway !== undefined
+          ) {
+            let actualOutcome = "draw";
+            if (actualHome > actualAway) actualOutcome = "home_win";
+            else if (actualAway > actualHome) actualOutcome = "away_win";
+
+            const predHome = Number(p.predicted_home_goals);
+            const predAway = Number(p.predicted_away_goals);
+            const predOutcome = p.predicted_outcome;
+
+            const isExactScore =
+              predHome === actualHome && predAway === actualAway;
+            const isCorrectOutcome = predOutcome === actualOutcome;
+
+            if (isExactScore) {
+              points = 25;
+            } else if (isCorrectOutcome) {
+              points = 2;
+            } else {
+              points = -1;
+            }
+          }
+        }
+        return {
           id: `pred-${p.id}`,
           type: "prediction",
-          title: `Match Prediction #${p.match_id}`,
-          points: p.points_earned || 0,
+          title: match
+            ? `Prediction: ${match.homeTeam?.name || "Home"} vs ${match.awayTeam?.name || "Away"}`
+            : `Match Prediction #${p.match_id}`,
+          points: points,
           date: p.scored_at || p.updated_at,
           details: {
             predicted_outcome: p.predicted_outcome,
             predicted_home_goals: p.predicted_home_goals,
             predicted_away_goals: p.predicted_away_goals,
+            is_rewarded: isRewarded,
           },
-        }));
+        };
+      });
     }
 
     // 3. Fetch referral bonuses (each referral = +5 points)
-    // The registrations table uses `referred_by` with the numeric `id` from the JWT
+    // The registrations table uses `referred_by` with the numeric `id`
     const referralsRes = await fetch(
-      `${supabaseUrl}/rest/v1/registrations?referred_by=eq.${decoded.id}&select=id,name,user_id,created_at&order=created_at.desc`,
+      `${supabaseUrl}/rest/v1/registrations?referred_by=eq.${encodeURIComponent(userDbId)}&select=id,name,user_id,created_at&order=created_at.desc`,
       {
         headers: {
           apikey: supabaseKey,
           Authorization: `Bearer ${supabaseKey}`,
         },
         next: { revalidate: 0 },
-      }
+      },
     );
 
     let referralEntries = [];
@@ -131,25 +238,12 @@ export async function GET(request) {
       }));
     }
 
-    // 4. Fetch current total mu_points
-    const userRes = await fetch(
-      `${supabaseUrl}/rest/v1/registrations?user_id=eq.${encodeURIComponent(userId)}&select=mu_points&limit=1`,
-      {
-        headers: {
-          apikey: supabaseKey,
-          Authorization: `Bearer ${supabaseKey}`,
-        },
-      }
-    );
-
-    let totalPoints = 0;
-    if (userRes.ok) {
-      const users = await userRes.json();
-      totalPoints = Number(users?.[0]?.mu_points ?? 0);
-    }
-
-    // 5. Combine, sort by date (most recent first)
-    const allEntries = [...taskEntries, ...predictionEntries, ...referralEntries];
+    // 4. Combine, sort by date (most recent first)
+    const allEntries = [
+      ...taskEntries,
+      ...predictionEntries,
+      ...referralEntries,
+    ];
     allEntries.sort((a, b) => new Date(b.date) - new Date(a.date));
 
     return NextResponse.json({
@@ -159,11 +253,17 @@ export async function GET(request) {
         history: allEntries,
         summary: {
           tasks_completed: taskEntries.length,
-          predictions_scored: predictionEntries.length,
+          predictions_scored: predictionEntries.filter((e) => e.details?.is_rewarded).length,
           referrals_made: referralEntries.length,
           task_points: taskEntries.reduce((sum, e) => sum + e.points, 0),
-          prediction_points: predictionEntries.reduce((sum, e) => sum + e.points, 0),
-          referral_points: referralEntries.reduce((sum, e) => sum + e.points, 0),
+          prediction_points: predictionEntries.reduce(
+            (sum, e) => sum + e.points,
+            0,
+          ),
+          referral_points: referralEntries.reduce(
+            (sum, e) => sum + e.points,
+            0,
+          ),
         },
       },
     });
@@ -171,7 +271,7 @@ export async function GET(request) {
     console.error("Points history error:", error);
     return NextResponse.json(
       { success: false, error: "Internal server error" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

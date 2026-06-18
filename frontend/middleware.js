@@ -30,6 +30,26 @@ export async function middleware(request) {
     console.error("Failed to check UnderMaintainence flag in middleware:", err);
   }
 
+  // Redirect to dashboard if logged in and accessing /
+  if (pathname === "/") {
+    const playerToken = request.cookies.get("player_token")?.value;
+    if (playerToken) {
+      try {
+        const parts = playerToken.split(".");
+        if (parts.length === 3) {
+          const base64Url = parts[1];
+          const base64 = base64Url.replace(/-/g, "+").replace(/_/g, "/");
+          const payload = JSON.parse(atob(base64));
+          if (payload && payload.exp && payload.exp * 1000 > Date.now()) {
+            return NextResponse.redirect(new URL("/dashboard", request.url));
+          }
+        }
+      } catch (err) {
+        console.error("Failed to parse player_token in middleware:", err);
+      }
+    }
+  }
+
   return NextResponse.next();
 }
 

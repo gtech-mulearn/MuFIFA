@@ -699,6 +699,82 @@ function ProfilePageContent({ params }) {
       </div>
 
       <form onSubmit={handleEditSubmit} className="flex flex-col gap-4">
+        {/* Avatar Upload Field */}
+        <div className="flex flex-col gap-2.5 pb-3 border-b border-white/5">
+          <label className="text-[9px] font-black uppercase tracking-wider text-slate-500">
+            Profile Avatar
+          </label>
+          <div className="flex items-center gap-4">
+            <div className="relative w-16 h-16 rounded-full bg-gradient-to-tr from-[#4F46E5] to-[#06B6D4] p-[2.5px] shadow-[0_0_15px_rgba(6,182,212,0.25)] overflow-hidden shrink-0">
+              {player.avatar_url ? (
+                <img
+                  src={player.avatar_url}
+                  alt={player.name}
+                  className="w-full h-full rounded-full object-cover"
+                />
+              ) : (
+                <div className="w-full h-full rounded-full bg-[#131927] flex items-center justify-center font-extrabold text-lg text-slate-100 uppercase tracking-wider">
+                  {getInitials(player.name)}
+                </div>
+              )}
+              {uploading && (
+                <div className="absolute inset-0 bg-black/60 flex items-center justify-center rounded-full">
+                  <span className="w-4 h-4 rounded-full border-2 border-white border-t-transparent animate-spin" />
+                </div>
+              )}
+            </div>
+
+            <div className="flex flex-col gap-1.5 flex-1">
+              <label
+                htmlFor="avatar-upload-edit"
+                className="w-fit px-3 py-1.5 rounded-lg bg-[#4F46E5]/10 border border-[#4F46E5]/30 hover:bg-[#4F46E5]/25 hover:border-[#4F46E5]/50 text-[10px] text-indigo-400 font-bold transition-all cursor-pointer flex items-center gap-1.5"
+              >
+                <svg
+                  className="w-3.5 h-3.5"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2.5"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5"
+                  />
+                </svg>
+                {player.avatar_url ? "Change Avatar" : "Upload Avatar"}
+              </label>
+              <input
+                id="avatar-upload-edit"
+                type="file"
+                accept="image/*"
+                onChange={handleAvatarChange}
+                className="hidden"
+                disabled={uploading}
+              />
+              <span className="text-[8px] text-slate-500 font-semibold leading-normal">
+                Supports JPEG, PNG, WEBP, or GIF. Max 3MB. Saved instantly.
+              </span>
+            </div>
+          </div>
+          {uploadError && (
+            <div className="bg-red-500/10 border border-red-500/30 text-red-400 text-[9px] py-1.5 px-3 rounded-lg font-semibold flex items-center gap-1.5 mt-1">
+              <svg
+                className="w-3.5 h-3.5 text-red-400 shrink-0"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+              >
+                <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
+                <line x1="12" y1="9" x2="12" y2="13" />
+                <line x1="12" y1="17" x2="12.01" y2="17" />
+              </svg>
+              {uploadError}
+            </div>
+          )}
+        </div>
+
         <div className="flex flex-col gap-1.5">
           <label className="text-[9px] font-black uppercase tracking-wider text-slate-500">
             Full Name

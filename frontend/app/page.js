@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+import { useRouter } from "next/navigation";
 import BackgroundVideo from "@/components/BackgroundVideo";
 import HeroSection from "@/components/HeroSection";
 import MetagameSection from "@/components/MetagameSection";
@@ -8,6 +9,22 @@ import MetagameSection from "@/components/MetagameSection";
 import Leaderboard from "@/components/Leaderboard";
 
 export default function Home() {
+  const router = useRouter();
+
+  React.useEffect(() => {
+    async function checkAuth() {
+      try {
+        const res = await fetch("/api/v1/auth/me");
+        const data = await res.json();
+        if (res.ok && data.success) {
+          router.replace("/dashboard");
+        }
+      } catch (err) {
+        console.error("Auth check failed on client:", err);
+      }
+    }
+    checkAuth();
+  }, [router]);
   return (
     <div className="w-full bg-[#090A0F] text-white flex flex-col font-sans relative select-none">
       <BackgroundVideo />

@@ -66,8 +66,8 @@ export default function LoginPage() {
         return;
       }
 
-      // Redirect directly to profile on success
-      router.push(`/profile/${data.data.user_id}`);
+      // Redirect to dashboard on success
+      router.push(`/dashboard`);
     } catch (err) {
       console.error("Login request error:", err);
       setError("A connection error occurred. Please try again.");
