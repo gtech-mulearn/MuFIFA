@@ -1,5 +1,7 @@
-import { TEAM_WHATSAPP_LINKS, TEAM_FLAGS } from "../../utils/constants";
+import { TEAM_WHATSAPP_LINKS, TEAM_FLAGS } from "../constants";
+import { COMPANY_ADDRESS, COPYRIGHT_TEXT } from "./constants";
 
+// Generates the HTML layout for a new registered user's access pass.
 function getNewUserEmailHtml(player, assets = {}) {
   const { name, user_id, team, plainPassword } = player;
   const teamLabel = TEAM_FLAGS[team] || team || "Assigned Team";
@@ -152,13 +154,11 @@ function getNewUserEmailHtml(player, assets = {}) {
       <body>
         <div class="wrapper">
           <div class="container">
-            <!-- Header -->
             <div class="header">
               <h1 class="logo-text">μFIFA'26</h1>
               <p class="logo-subtext">Arena Access Pass</p>
             </div>
 
-            <!-- Greetings & Message -->
             <div class="greeting">Hello ${name},</div>
             <div class="message">
               Welcome to <strong>μFIFA'26</strong>! We are absolutely thrilled to have you onboard for the ultimate celebration of innovation, sportsmanship, and peer achievement. Your registration is officially confirmed!
@@ -168,7 +168,6 @@ function getNewUserEmailHtml(player, assets = {}) {
               Below is your digital arena access pass. You have also been credited with <strong>10 μPoints</strong> in your account as a registration milestone reward. Keep practicing and get ready for the kickoff!
             </div>
 
-            <!-- Highlight Details -->
             <div class="highlight-box">
               <div class="highlight-item">
                 <span class="highlight-label">Player ID:</span> ${displayId}
@@ -180,12 +179,10 @@ function getNewUserEmailHtml(player, assets = {}) {
               ` : ""}
             </div>
 
-            <!-- Access Pass Image -->
             <div class="ticket-wrap">
               <img src="${assets?.ticketUrl || "cid:ticket_image"}" class="ticket-img" alt="μFIFA '26 Arena Access Pass" width="500">
             </div>
 
-            <!-- Squad Call to Action -->
             <div class="message" style="text-align: center; margin-bottom: 12px;">
               Ready to connect with your team? Join your official squad channel on WhatsApp:
             </div>
@@ -195,14 +192,14 @@ function getNewUserEmailHtml(player, assets = {}) {
               </a>
             </div>
 
-            <!-- Footer -->
             <div class="footer">
               <div class="footer-title">μLearn Foundation</div>
               <div class="footer-desc">
                 Empowering next-generation professionals through peer learning, building in public, and micro-networking. Discover more opportunities at <a href="https://mulearn.org" target="_blank" rel="noopener noreferrer">mulearn.org</a>.
               </div>
               <p class="footer-copyright">
-                &copy; 2026 μLearn Foundation. All rights reserved.<br>
+                ${COPYRIGHT_TEXT}<br>
+                ${COMPANY_ADDRESS}<br>
                 This is an automated confirmation email. Please do not reply directly.
               </p>
             </div>

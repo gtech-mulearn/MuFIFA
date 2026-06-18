@@ -84,9 +84,10 @@ const COUNTRY_CODES = {
 function getCountryCode(teamName) {
   if (!teamName) return null;
   if (COUNTRY_CODES[teamName]) return COUNTRY_CODES[teamName];
-  const key = Object.keys(COUNTRY_CODES).find((k) =>
-    teamName.toLowerCase().includes(k.toLowerCase()) ||
-    k.toLowerCase().includes(teamName.toLowerCase())
+  const key = Object.keys(COUNTRY_CODES).find(
+    (k) =>
+      teamName.toLowerCase().includes(k.toLowerCase()) ||
+      k.toLowerCase().includes(teamName.toLowerCase()),
   );
   return key ? COUNTRY_CODES[key] : null;
 }
@@ -108,8 +109,17 @@ function getPredictionStatus(pred, match) {
   const actualHome = match?.score?.fullTime?.home;
   const actualAway = match?.score?.fullTime?.away;
 
-  if (actualHome === null || actualHome === undefined || actualAway === null || actualAway === undefined) {
-    return { status: "PENDING", label: "Pending", bg: "bg-slate-100 text-slate-600 border-slate-200" };
+  if (
+    actualHome === null ||
+    actualHome === undefined ||
+    actualAway === null ||
+    actualAway === undefined
+  ) {
+    return {
+      status: "PENDING",
+      label: "Pending",
+      bg: "bg-slate-100 text-slate-600 border-slate-200",
+    };
   }
 
   let actualOutcome = "draw";
@@ -120,15 +130,27 @@ function getPredictionStatus(pred, match) {
   const predAway = Number(pred.predicted_away_goals);
   const predOutcome = pred.predicted_outcome;
 
-  const isExactScore = (predHome === actualHome && predAway === actualAway);
-  const isCorrectOutcome = (predOutcome === actualOutcome);
+  const isExactScore = predHome === actualHome && predAway === actualAway;
+  const isCorrectOutcome = predOutcome === actualOutcome;
 
   if (isExactScore) {
-    return { status: "EXACT_SCORE", label: "Exact Score", bg: "bg-emerald-50 text-emerald-700 border-emerald-200" };
+    return {
+      status: "EXACT_SCORE",
+      label: "Exact Score",
+      bg: "bg-emerald-50 text-emerald-700 border-emerald-200",
+    };
   } else if (isCorrectOutcome) {
-    return { status: "CORRECT_OUTCOME", label: "Correct Outcome", bg: "bg-sky-50 text-sky-700 border-sky-200" };
+    return {
+      status: "CORRECT_OUTCOME",
+      label: "Correct Outcome",
+      bg: "bg-sky-50 text-sky-700 border-sky-200",
+    };
   } else {
-    return { status: "INCORRECT", label: "Incorrect", bg: "bg-rose-50 text-rose-700 border-rose-200" };
+    return {
+      status: "INCORRECT",
+      label: "Incorrect",
+      bg: "bg-rose-50 text-rose-700 border-rose-200",
+    };
   }
 }
 
@@ -143,12 +165,9 @@ export default function AdminPredictionsPage() {
   const [awardingAll, setAwardingAll] = useState(false);
   const [updatingOutcomes, setUpdatingOutcomes] = useState(false);
 
-
   // Search & Filter
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("ALL");
-
-
 
   // Client Side Pagination
   const [currentPage, setCurrentPage] = useState(1);
@@ -163,10 +182,10 @@ export default function AdminPredictionsPage() {
       const data = await res.json();
       if (data.success && data.data?.matches) {
         const sorted = data.data.matches.sort(
-          (a, b) => new Date(a.utcDate) - new Date(b.utcDate)
+          (a, b) => new Date(a.utcDate) - new Date(b.utcDate),
         );
         setMatches(sorted);
- 
+
         // Preselect the last live/completed match, or the first match as fallback
         if (sorted.length > 0) {
           setSelectedMatchId((prev) => {
@@ -174,7 +193,10 @@ export default function AdminPredictionsPage() {
               return prev;
             }
             const happened = sorted.filter(
-              (m) => m.status === "FINISHED" || m.status === "IN_PLAY" || m.status === "PAUSED"
+              (m) =>
+                m.status === "FINISHED" ||
+                m.status === "IN_PLAY" ||
+                m.status === "PAUSED",
             );
             return happened.length > 0
               ? String(happened[happened.length - 1].id)
@@ -208,7 +230,7 @@ export default function AdminPredictionsPage() {
     setError("");
     try {
       const res = await fetch(
-        `/api/v1/admin/predictions?match_id=${selectedMatchId}&limit=1000`
+        `/api/v1/admin/predictions?match_id=${selectedMatchId}&limit=1000`,
       );
       const data = await res.json();
       if (data.success) {
@@ -228,9 +250,9 @@ export default function AdminPredictionsPage() {
 
   const handleAwardPointsToAll = async () => {
     if (!selectedMatchId || !selectedMatch) return;
-    
+
     const confirmAward = window.confirm(
-      `Are you sure you want to award points to all players for this match? This action cannot be undone.`
+      `Are you sure you want to award points to all players for this match? This action cannot be undone.`,
     );
     if (!confirmAward) return;
 
@@ -263,9 +285,9 @@ export default function AdminPredictionsPage() {
 
   const handleUpdateOutcomesOnly = async () => {
     if (!selectedMatchId || !selectedMatch) return;
-    
+
     const confirmUpdate = window.confirm(
-      `Are you sure you want to update prediction outcomes for this match? This will recalculate and rewrite outcomes based on the current score without awarding points again.`
+      `Are you sure you want to update prediction outcomes for this match? This will recalculate and rewrite outcomes based on the current score without awarding points again.`,
     );
     if (!confirmUpdate) return;
 
@@ -275,7 +297,10 @@ export default function AdminPredictionsPage() {
       const res = await fetch("/api/v1/admin/predictions", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ matchId: selectedMatchId, updateOutcomesOnly: true }),
+        body: JSON.stringify({
+          matchId: selectedMatchId,
+          updateOutcomesOnly: true,
+        }),
       });
 
       const data = await res.json();
@@ -283,7 +308,9 @@ export default function AdminPredictionsPage() {
         alert(data.message || "Prediction outcomes updated successfully!");
         await fetchPredictionsList();
       } else {
-        setError(data.error?.message || "Failed to update prediction outcomes.");
+        setError(
+          data.error?.message || "Failed to update prediction outcomes.",
+        );
         alert(data.error?.message || "Failed to update prediction outcomes.");
       }
     } catch (err) {
@@ -306,7 +333,9 @@ export default function AdminPredictionsPage() {
 
     matches.forEach((m) => {
       const isLiveOrCompleted =
-        m.status === "FINISHED" || m.status === "IN_PLAY" || m.status === "PAUSED";
+        m.status === "FINISHED" ||
+        m.status === "IN_PLAY" ||
+        m.status === "PAUSED";
       if (isLiveOrCompleted) {
         liveOrCompleted.push(m);
       } else {
@@ -334,7 +363,8 @@ export default function AdminPredictionsPage() {
     });
 
     const activeCount = total - pending;
-    const accuracy = activeCount > 0 ? Math.round(((exact + correct) / activeCount) * 100) : 0;
+    const accuracy =
+      activeCount > 0 ? Math.round(((exact + correct) / activeCount) * 100) : 0;
 
     return {
       total,
@@ -393,7 +423,8 @@ export default function AdminPredictionsPage() {
             Predictions Panel
           </h1>
           <p className="text-xs text-slate-500 mt-1">
-            Analyze prediction data, track user accuracy metrics, and review correct outcomes.
+            Analyze prediction data, track user accuracy metrics, and review
+            correct outcomes.
           </p>
         </div>
         <div>
@@ -405,13 +436,17 @@ export default function AdminPredictionsPage() {
             className="cursor-pointer bg-white border border-slate-300 hover:border-slate-400 text-slate-700 hover:text-slate-900 font-semibold px-4 py-2 rounded-xl text-xs transition-colors flex items-center gap-2"
           >
             <svg
-              className={`w-3.5 h-3.5 ${(loadingMatches || loadingPredictions) ? "animate-spin" : ""}`}
+              className={`w-3.5 h-3.5 ${loadingMatches || loadingPredictions ? "animate-spin" : ""}`}
               fill="none"
               stroke="currentColor"
               strokeWidth="2"
               viewBox="0 0 24 24"
             >
-              <path strokeLinecap="round" strokeLinejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182m0-4.991v4.99" />
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182m0-4.991v4.99"
+              />
             </svg>
             Refresh
           </button>
@@ -427,7 +462,9 @@ export default function AdminPredictionsPage() {
       {/* Main Grid Selector & Stats */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Match Selector Card */}
-        <div className={`${THEME.panel} rounded-2xl p-5 flex flex-col gap-4 lg:col-span-1`}>
+        <div
+          className={`${THEME.panel} rounded-2xl p-5 flex flex-col gap-4 lg:col-span-1`}
+        >
           <div>
             <label className="text-[10px] font-bold uppercase tracking-wider text-slate-500">
               Select Match
@@ -435,7 +472,9 @@ export default function AdminPredictionsPage() {
             <div className="relative mt-1.5">
               <select
                 value={selectedMatchId}
-                onChange={(e) => setSelectedMatchId(e.target.value)}
+                onChange={(e) => {
+                  setSelectedMatchId(e.target.value);
+                }}
                 className={`w-full rounded-xl px-3 py-2.5 text-xs transition-colors cursor-pointer appearance-none focus:outline-none ${THEME.input}`}
                 disabled={loadingMatches}
               >
@@ -449,7 +488,8 @@ export default function AdminPredictionsPage() {
                           <option key={m.id} value={m.id}>
                             {m.homeTeam.shortName || m.homeTeam.name} vs{" "}
                             {m.awayTeam.shortName || m.awayTeam.name} (
-                            {m.score?.fullTime?.home ?? 0} - {m.score?.fullTime?.away ?? 0})
+                            {m.score?.fullTime?.home ?? 0} -{" "}
+                            {m.score?.fullTime?.away ?? 0})
                           </option>
                         ))}
                       </optgroup>
@@ -468,8 +508,12 @@ export default function AdminPredictionsPage() {
                 )}
               </select>
               <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-slate-500">
-                <svg className="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
-                  <path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z"/>
+                <svg
+                  className="fill-current h-4 w-4"
+                  xmlns="http://www.w3.org/2000/svg"
+                  viewBox="0 0 20 20"
+                >
+                  <path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z" />
                 </svg>
               </div>
             </div>
@@ -479,13 +523,16 @@ export default function AdminPredictionsPage() {
             <div className="border-t border-slate-100 pt-4 flex flex-col gap-3">
               <div className="flex justify-between items-center text-[10px] uppercase font-bold tracking-wider text-slate-400">
                 <span>Match Info</span>
-                <span className={`px-2 py-0.5 rounded text-[9px] ${
-                  selectedMatch.status === "FINISHED"
-                    ? "bg-slate-100 text-slate-600 border border-slate-200"
-                    : selectedMatch.status === "IN_PLAY" || selectedMatch.status === "PAUSED"
-                    ? "bg-emerald-50 text-emerald-700 border border-emerald-200 animate-pulse"
-                    : "bg-cyan-50 text-cyan-700 border border-cyan-200"
-                }`}>
+                <span
+                  className={`px-2 py-0.5 rounded text-[9px] ${
+                    selectedMatch.status === "FINISHED"
+                      ? "bg-slate-100 text-slate-600 border border-slate-200"
+                      : selectedMatch.status === "IN_PLAY" ||
+                          selectedMatch.status === "PAUSED"
+                        ? "bg-emerald-50 text-emerald-700 border border-emerald-200 animate-pulse"
+                        : "bg-cyan-50 text-cyan-700 border border-cyan-200"
+                  }`}
+                >
                   {selectedMatch.status}
                 </span>
               </div>
@@ -497,15 +544,19 @@ export default function AdminPredictionsPage() {
                   <div className="flex-1 flex flex-col items-center text-center gap-1.5 min-w-0">
                     <CountryFlag teamName={selectedMatch.homeTeam.name} />
                     <span className="font-semibold text-slate-800 truncate w-full">
-                      {selectedMatch.homeTeam.shortName || selectedMatch.homeTeam.name}
+                      {selectedMatch.homeTeam.shortName ||
+                        selectedMatch.homeTeam.name}
                     </span>
                   </div>
 
                   {/* Score */}
                   <div className="flex flex-col items-center px-2">
                     <span className="text-base font-black tracking-wider text-slate-900 font-mono">
-                      {selectedMatch.status === "SCHEDULED" || selectedMatch.status === "TIMED" ? (
-                        <span className="text-slate-400 font-normal text-xs uppercase">VS</span>
+                      {selectedMatch.status === "SCHEDULED" ||
+                      selectedMatch.status === "TIMED" ? (
+                        <span className="text-slate-400 font-normal text-xs uppercase">
+                          VS
+                        </span>
                       ) : (
                         `${selectedMatch.score?.fullTime?.home ?? 0} - ${selectedMatch.score?.fullTime?.away ?? 0}`
                       )}
@@ -516,7 +567,8 @@ export default function AdminPredictionsPage() {
                   <div className="flex-1 flex flex-col items-center text-center gap-1.5 min-w-0">
                     <CountryFlag teamName={selectedMatch.awayTeam.name} />
                     <span className="font-semibold text-slate-800 truncate w-full">
-                      {selectedMatch.awayTeam.shortName || selectedMatch.awayTeam.name}
+                      {selectedMatch.awayTeam.shortName ||
+                        selectedMatch.awayTeam.name}
                     </span>
                   </div>
                 </div>
@@ -536,14 +588,28 @@ export default function AdminPredictionsPage() {
                 {(() => {
                   const actualHome = selectedMatch?.score?.fullTime?.home;
                   const actualAway = selectedMatch?.score?.fullTime?.away;
-                  const isMatchFinished = actualHome !== null && actualHome !== undefined && actualAway !== null && actualAway !== undefined;
+                  const isMatchFinished =
+                    actualHome !== null &&
+                    actualHome !== undefined &&
+                    actualAway !== null &&
+                    actualAway !== undefined;
 
                   if (isRewarded) {
                     return (
                       <div className="flex flex-col gap-3 w-full">
                         <div className="flex items-center justify-center gap-2 bg-emerald-50 border border-emerald-200 text-emerald-700 font-bold px-4 py-3 rounded-xl text-xs w-full text-center">
-                          <svg className="w-4 h-4 shrink-0" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                          <svg
+                            className="w-4 h-4 shrink-0"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth="2.5"
+                            viewBox="0 0 24 24"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+                            />
                           </svg>
                           Points Awarded to All
                         </div>
@@ -559,8 +625,18 @@ export default function AdminPredictionsPage() {
                             </>
                           ) : (
                             <>
-                              <svg className="w-4 h-4 animate-[spin_10s_linear_infinite]" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182m0-4.991v4.99" />
+                              <svg
+                                className="w-4 h-4 animate-[spin_10s_linear_infinite]"
+                                fill="none"
+                                stroke="currentColor"
+                                strokeWidth="2"
+                                viewBox="0 0 24 24"
+                              >
+                                <path
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                  d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182m0-4.991v4.99"
+                                />
                               </svg>
                               Update Outcomes Only
                             </>
@@ -599,8 +675,18 @@ export default function AdminPredictionsPage() {
                         </>
                       ) : (
                         <>
-                          <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" d="M12 6.042A8.967 8.967 0 006 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 016 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 016-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0018 18a8.967 8.967 0 00-6 2.292m0-14.25v14.25" />
+                          <svg
+                            className="w-4 h-4"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth="2"
+                            viewBox="0 0 24 24"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              d="M12 6.042A8.967 8.967 0 006 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 016 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 016-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0018 18a8.967 8.967 0 00-6 2.292m0-14.25v14.25"
+                            />
                           </svg>
                           Award Points to All
                         </>
@@ -616,7 +702,9 @@ export default function AdminPredictionsPage() {
         {/* Metrics Grid */}
         <div className="lg:col-span-2 grid grid-cols-2 gap-4">
           {/* Card: Total Predictions */}
-          <div className={`${THEME.panel} rounded-2xl p-5 flex flex-col justify-between`}>
+          <div
+            className={`${THEME.panel} rounded-2xl p-5 flex flex-col justify-between`}
+          >
             <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
               Total Predictions
             </span>
@@ -624,15 +712,22 @@ export default function AdminPredictionsPage() {
               <span className="text-2xl font-black text-slate-800 font-mono">
                 {metrics.total}
               </span>
-              <span className="text-xs text-slate-400">predictions submitted</span>
+              <span className="text-xs text-slate-400">
+                predictions submitted
+              </span>
             </div>
             <div className="text-[10px] text-slate-400 border-t border-slate-100 pt-2.5 mt-3">
-              Pending review: <span className="font-bold text-slate-700">{metrics.pending}</span>
+              Pending review:{" "}
+              <span className="font-bold text-slate-700">
+                {metrics.pending}
+              </span>
             </div>
           </div>
 
           {/* Card: Accuracy */}
-          <div className={`${THEME.panel} rounded-2xl p-5 flex flex-col justify-between`}>
+          <div
+            className={`${THEME.panel} rounded-2xl p-5 flex flex-col justify-between`}
+          >
             <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
               Accuracy Rate
             </span>
@@ -648,7 +743,9 @@ export default function AdminPredictionsPage() {
           </div>
 
           {/* Card: Exact Scores */}
-          <div className={`${THEME.panel} rounded-2xl p-5 flex flex-col justify-between`}>
+          <div
+            className={`${THEME.panel} rounded-2xl p-5 flex flex-col justify-between`}
+          >
             <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
               Exact Score Matches
             </span>
@@ -664,7 +761,9 @@ export default function AdminPredictionsPage() {
           </div>
 
           {/* Card: Correct Outcomes */}
-          <div className={`${THEME.panel} rounded-2xl p-5 flex flex-col justify-between`}>
+          <div
+            className={`${THEME.panel} rounded-2xl p-5 flex flex-col justify-between`}
+          >
             <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
               Correct Outcomes
             </span>
@@ -672,7 +771,9 @@ export default function AdminPredictionsPage() {
               <span className="text-2xl font-black text-sky-600 font-mono">
                 {metrics.correct}
               </span>
-              <span className="text-xs text-slate-400">outcome only matches</span>
+              <span className="text-xs text-slate-400">
+                outcome only matches
+              </span>
             </div>
             <div className="text-[10px] text-slate-400 border-t border-slate-100 pt-2.5 mt-3">
               Excludes exact scores
@@ -714,44 +815,75 @@ export default function AdminPredictionsPage() {
             </div>
           ) : filteredPredictions.length === 0 ? (
             <div className="flex flex-col items-center justify-center h-48 text-slate-400 gap-2">
-              <svg className="w-8 h-8 opacity-40 text-slate-400" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" />
+              <svg
+                className="w-8 h-8 opacity-40 text-slate-400"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="1.5"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z"
+                />
               </svg>
-              <span className="text-xs font-semibold">No predictions matches your filters.</span>
+              <span className="text-xs font-semibold">
+                No predictions matches your filters.
+              </span>
             </div>
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full text-xs">
                 <thead>
                   <tr className="border-b border-slate-200/90 text-slate-500 bg-slate-50/50">
-                    <th className="text-left px-4 py-3 font-bold uppercase tracking-wider">Player</th>
-                    <th className="text-left px-4 py-3 font-bold uppercase tracking-wider">Squad Team</th>
-                    <th className="text-right px-4 py-3 font-bold uppercase tracking-wider">Current Points</th>
-                    <th className="text-center px-4 py-3 font-bold uppercase tracking-wider">Predicted Score</th>
-                    <th className="text-center px-4 py-3 font-bold uppercase tracking-wider">Predicted Outcome</th>
-                    <th className="text-center px-4 py-3 font-bold uppercase tracking-wider">Correctness</th>
-                    <th className="text-right px-4 py-3 font-bold uppercase tracking-wider">Submitted</th>
+                    <th className="text-left px-4 py-3 font-bold uppercase tracking-wider">
+                      Player
+                    </th>
+                    <th className="text-left px-4 py-3 font-bold uppercase tracking-wider">
+                      Squad Team
+                    </th>
+                    <th className="text-right px-4 py-3 font-bold uppercase tracking-wider">
+                      Current Points
+                    </th>
+                    <th className="text-center px-4 py-3 font-bold uppercase tracking-wider">
+                      Predicted Score
+                    </th>
+                    <th className="text-center px-4 py-3 font-bold uppercase tracking-wider">
+                      Predicted Outcome
+                    </th>
+                    <th className="text-center px-4 py-3 font-bold uppercase tracking-wider">
+                      Correctness
+                    </th>
+                    <th className="text-right px-4 py-3 font-bold uppercase tracking-wider">
+                      Submitted
+                    </th>
                   </tr>
                 </thead>
                 <tbody>
                   {paginatedPredictions.map((pred, idx) => {
                     const statusObj = getPredictionStatus(pred, selectedMatch);
-                    
+
                     let buttonLabel = "N/A";
-                    let buttonStyle = "bg-slate-50 text-slate-400 border-slate-200 cursor-not-allowed";
-                    
+                    let buttonStyle =
+                      "bg-slate-50 text-slate-400 border-slate-200 cursor-not-allowed";
+
                     if (isRewarded) {
                       buttonLabel = "Rewarded";
-                      buttonStyle = "bg-slate-50 text-slate-400 border-slate-200 cursor-not-allowed";
+                      buttonStyle =
+                        "bg-slate-50 text-slate-400 border-slate-200 cursor-not-allowed";
                     } else if (statusObj.status === "EXACT_SCORE") {
                       buttonLabel = "+25 Points";
-                      buttonStyle = "bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border-emerald-200 cursor-pointer";
+                      buttonStyle =
+                        "bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border-emerald-200 cursor-pointer";
                     } else if (statusObj.status === "CORRECT_OUTCOME") {
                       buttonLabel = "+2 Points";
-                      buttonStyle = "bg-sky-50 hover:bg-sky-100 text-sky-700 border-sky-200 cursor-pointer";
+                      buttonStyle =
+                        "bg-sky-50 hover:bg-sky-100 text-sky-700 border-sky-200 cursor-pointer";
                     } else if (statusObj.status === "INCORRECT") {
                       buttonLabel = "-1 Point";
-                      buttonStyle = "bg-rose-50 hover:bg-rose-100 text-rose-700 border-rose-200 cursor-pointer";
+                      buttonStyle =
+                        "bg-rose-50 hover:bg-rose-100 text-rose-700 border-rose-200 cursor-pointer";
                     }
 
                     return (
@@ -776,7 +908,8 @@ export default function AdminPredictionsPage() {
                           {pred.user?.mu_points ?? 0}
                         </td>
                         <td className="px-4 py-3 text-center whitespace-nowrap font-mono font-bold text-slate-800">
-                          {pred.predicted_home_goals} - {pred.predicted_away_goals}
+                          {pred.predicted_home_goals} -{" "}
+                          {pred.predicted_away_goals}
                         </td>
                         <td className="px-4 py-3 text-center whitespace-nowrap">
                           <span className="px-2 py-0.5 rounded-full text-[10px] font-medium border bg-slate-50 text-slate-600 border-slate-200">
@@ -784,7 +917,9 @@ export default function AdminPredictionsPage() {
                           </span>
                         </td>
                         <td className="px-4 py-3 text-center whitespace-nowrap">
-                          <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold border ${statusObj.bg}`}>
+                          <span
+                            className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold border ${statusObj.bg}`}
+                          >
                             {statusObj.label}
                           </span>
                         </td>

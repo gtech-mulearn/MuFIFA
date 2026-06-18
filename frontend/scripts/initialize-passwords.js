@@ -76,12 +76,9 @@ function generatePassword() {
 
 // 4. Send email helper
 async function sendEmail(transporter, player, password) {
-  const smtpFrom =
-    process.env.SMTP_FROM ||
-    `"mailer@mufifa.mulearn.org" <mailer@mufifa.mulearn.orglearn.org>`;
-  const fromAddress = `"mailer@mufifa.mulearn.org" <${
-    smtpFrom.includes("<") ? smtpFrom.split("<")[1].replace(">", "") : smtpFrom
-  }>`;
+  const smtpFrom = process.env.SMTP_FROM || "mailer@mufifa.mulearn.org";
+  const fromAddress = smtpFrom.includes("<") ? smtpFrom : `"μFIFA'26" <${smtpFrom}>`;
+  const emailAddress = smtpFrom.includes("<") ? smtpFrom.split("<")[1].replace(">", "").trim() : smtpFrom.trim();
 
   const displayUserId = player.user_id.startsWith("@")
     ? player.user_id
@@ -211,7 +208,8 @@ Best regards,
             <div class="footer">
               <div class="footer-title">μLearn Foundation</div>
               <p class="footer-copyright">
-                &copy; 2026 μLearn Foundation. All rights reserved.
+                μLearn Foundation | Copyright &copy; 2025 All rights reserved.<br>
+                Technopark Phase 1, Thiruvananthapuram, Kerala - 695581.
               </p>
             </div>
           </div>
@@ -226,6 +224,9 @@ Best regards,
     subject: subjectLine,
     text: textContent,
     html: htmlContent,
+    headers: {
+      "List-Unsubscribe": `<mailto:${emailAddress}?subject=unsubscribe>`,
+    },
   });
 }
 

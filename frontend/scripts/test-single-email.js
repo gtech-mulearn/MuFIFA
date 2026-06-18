@@ -47,7 +47,9 @@ function getTransporter() {
   const pass = process.env.SMTP_PASS;
 
   if (!host || !user || !pass) {
-    throw new Error("SMTP credentials are not fully configured in environment variables.");
+    throw new Error(
+      "SMTP credentials are not fully configured in environment variables.",
+    );
   }
 
   return nodemailer.createTransport({
@@ -63,7 +65,8 @@ function getTransporter() {
 
 // 3. Generate random 8-character password
 function generatePassword() {
-  const chars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+  const chars =
+    "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
   let password = "";
   for (let i = 0; i < 8; i++) {
     password += chars.charAt(Math.floor(Math.random() * chars.length));
@@ -73,12 +76,17 @@ function generatePassword() {
 
 // 4. Send email helper
 async function sendEmail(transporter, player, password) {
-  const smtpFrom = process.env.SMTP_FROM || `"noreply@mulearn.org" <noreply@mulearn.org>`;
-  const fromAddress = `"noreply@mulearn.org" <${
-    smtpFrom.includes("<") ? smtpFrom.split("<")[1].replace(">", "") : smtpFrom
-  }>`;
+  const smtpFrom = process.env.SMTP_FROM || "noreply@mulearn.org";
+  const fromAddress = smtpFrom.includes("<")
+    ? smtpFrom
+    : `"μFIFA'26" <${smtpFrom}>`;
+  const emailAddress = smtpFrom.includes("<")
+    ? smtpFrom.split("<")[1].replace(">", "").trim()
+    : smtpFrom.trim();
 
-  const displayUserId = player.user_id.startsWith("@") ? player.user_id : `@${player.user_id}`;
+  const displayUserId = player.user_id.startsWith("@")
+    ? player.user_id
+    : `@${player.user_id}`;
   const subjectLine = `Your Arena Access Password (Test Mode) | μFIFA`;
   const textContent = `Hello ${player.name},
 
@@ -204,7 +212,8 @@ Best regards,
             <div class="footer">
               <div class="footer-title">μLearn Foundation</div>
               <p class="footer-copyright">
-                &copy; 2026 μLearn Foundation. All rights reserved.
+                μLearn Foundation | Copyright &copy; 2025 All rights reserved.<br>
+                Technopark Phase 1, Thiruvananthapuram, Kerala - 695581.
               </p>
             </div>
           </div>
@@ -219,12 +228,15 @@ Best regards,
     subject: subjectLine,
     text: textContent,
     html: htmlContent,
+    headers: {
+      "List-Unsubscribe": `<mailto:${emailAddress}?subject=unsubscribe>`,
+    },
   });
 }
 
 // 5. Main execution routine
 async function main() {
-  const targetEmail = "phantomxgaming86@gmail.com";
+  const targetEmail = "test-agcri5g8l@srv1.mail-tester.com";
   console.log(`Starting test process for email: ${targetEmail}`);
 
   let transporter;
@@ -236,60 +248,18 @@ async function main() {
   }
 
   try {
-    // A. Query Supabase for player by email
-    const fetchUrl = `${supabaseUrl}/rest/v1/registrations?email=eq.${encodeURIComponent(targetEmail)}&select=*`;
-    const res = await fetch(fetchUrl, {
-      headers: {
-        apikey: supabaseKey,
-        Authorization: `Bearer ${supabaseKey}`,
-      },
-    });
-
-    if (!res.ok) {
-      throw new Error(`Failed to check player in DB: ${await res.text()}`);
-    }
-
-    const rows = await res.json();
-    let player;
+    console.log(`Using mock player details (no DB lookup/patches)...`);
+    const player = {
+      name: "Adhwaith",
+      email: targetEmail,
+      user_id: "test_player",
+    };
     const plainPassword = generatePassword();
-    const hashedPassword = await bcrypt.hash(plainPassword, 10);
-
-    if (rows && rows.length > 0) {
-      player = rows[0];
-      console.log(`Found registered user in database: ${player.name} (${player.user_id})`);
-
-      // Patch the password in the database
-      const patchUrl = `${supabaseUrl}/rest/v1/registrations?id=eq.${player.id}`;
-      const patchRes = await fetch(patchUrl, {
-        method: "PATCH",
-        headers: {
-          apikey: supabaseKey,
-          Authorization: `Bearer ${supabaseKey}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          password_hash: hashedPassword,
-        }),
-      });
-
-      if (!patchRes.ok) {
-        throw new Error(`Failed to update password_hash in DB: ${await patchRes.text()}`);
-      }
-      console.log(`Successfully updated database record for player.`);
-    } else {
-      console.log(`Email ${targetEmail} is not registered in database. Using mock player details for testing.`);
-      player = {
-        name: "Test Player",
-        email: targetEmail,
-        user_id: "test_player",
-      };
-    }
 
     // B. Send email
     console.log(`Sending email to ${targetEmail}...`);
     await sendEmail(transporter, player, plainPassword);
     console.log(`Success! Sent email. Generated password is: ${plainPassword}`);
-
   } catch (err) {
     console.error("Execution Error:", err.message);
   }

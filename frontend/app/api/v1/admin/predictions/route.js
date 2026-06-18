@@ -377,9 +377,43 @@ export async function POST(request) {
       });
     }
 
+    // Fetch registration details if we are actually awarding points (not updateOutcomesOnly)
+    const usersMap = {};
+    const squadPointsMap = {};
+
+    if (!updateOutcomesOnly) {
+      const userIds = [
+        ...new Set(predictions.map((p) => p.user_id).filter(Boolean)),
+      ];
+      if (userIds.length > 0) {
+        const formattedIds = userIds
+          .map((id) => `"${id.replace(/"/g, '\\"')}"`)
+          .join(",");
+        const userRes = await fetch(
+          `${supabaseUrl}/rest/v1/registrations?user_id=in.(${encodeURIComponent(formattedIds)})&select=id,user_id,name,email,team,mu_points`,
+          {
+            headers: supabaseHeaders,
+            next: { revalidate: 0 },
+          },
+        );
+
+        if (userRes.ok) {
+          const users = await userRes.json();
+          users.forEach((u) => {
+            usersMap[u.user_id] = u;
+          });
+        } else {
+          console.error(
+            "Failed to fetch registrations for points awarding:",
+            await userRes.text(),
+          );
+        }
+      }
+    }
+
     let awardedCount = 0;
 
-    // 4. Update match prediction outcome column
+    // 4. Update match prediction outcome column and award points if appropriate
     for (const pred of predictions) {
       const predHome = Number(pred.predicted_home_goals);
       const predAway = Number(pred.predicted_away_goals);
@@ -389,12 +423,17 @@ export async function POST(request) {
       const isCorrectOutcome = predOutcome === actualOutcome;
 
       let outcome = "incorrect";
+      let pointsDelta = -1;
+
       if (isExactScore) {
         outcome = "exact";
+        pointsDelta = 25;
       } else if (isCorrectOutcome) {
         outcome = "correct_outcome";
+        pointsDelta = 2;
       }
 
+      // Update prediction outcome
       const updatePredRes = await fetch(
         `${supabaseUrl}/rest/v1/match_predictions?match_id=eq.${matchId}&user_id=eq.${encodeURIComponent(pred.user_id)}`,
         {
@@ -415,7 +454,62 @@ export async function POST(request) {
         );
       }
 
+      // Award points to user and accumulate for squad
+      if (!updateOutcomesOnly) {
+        const userReg = usersMap[pred.user_id];
+        if (userReg) {
+          const currentPoints = Number(userReg.mu_points ?? 0);
+          const newPoints = currentPoints + pointsDelta;
+
+          const updateRegRes = await fetch(
+            `${supabaseUrl}/rest/v1/registrations?user_id=eq.${encodeURIComponent(pred.user_id)}`,
+            {
+              method: "PATCH",
+              headers: {
+                apikey: supabaseKey,
+                Authorization: `Bearer ${supabaseKey}`,
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify({ mu_points: newPoints }),
+            },
+          );
+
+          if (!updateRegRes.ok) {
+            console.error(
+              `Failed to update registrations mu_points for user ${pred.user_id}:`,
+              await updateRegRes.text(),
+            );
+          }
+
+          if (userReg.team) {
+            squadPointsMap[userReg.team] =
+              (squadPointsMap[userReg.team] || 0) + pointsDelta;
+          }
+        } else {
+          console.warn(`Registration not found for user_id ${pred.user_id}. Skipping points award.`);
+        }
+      }
+
       awardedCount++;
+    }
+
+    // 4.5 Update squad points in bulk/aggregated form
+    if (!updateOutcomesOnly) {
+      for (const [team, delta] of Object.entries(squadPointsMap)) {
+        if (delta !== 0) {
+          const success = await adjustSquadPoints(
+            supabaseUrl,
+            supabaseKey,
+            team,
+            delta,
+          );
+          if (!success) {
+            console.error(
+              `Failed to adjust squad points for team ${team} by ${delta}`,
+            );
+          }
+        }
+      }
     }
 
     // 5. Add to rewarded matches cache list if not already present
