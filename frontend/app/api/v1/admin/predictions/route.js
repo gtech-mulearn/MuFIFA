@@ -206,7 +206,7 @@ export async function POST(request) {
       );
     }
 
-    const { matchId } = body;
+    const { matchId, updateOutcomesOnly } = body;
     if (!matchId) {
       return NextResponse.json(
         {
@@ -245,7 +245,7 @@ export async function POST(request) {
       }
     }
 
-    if (rewardedList.includes(String(matchId))) {
+    if (!updateOutcomesOnly && rewardedList.includes(String(matchId))) {
       return NextResponse.json(
         {
           success: false,
@@ -418,8 +418,10 @@ export async function POST(request) {
       awardedCount++;
     }
 
-    // 5. Add to rewarded matches cache list
-    rewardedList.push(String(matchId));
+    // 5. Add to rewarded matches cache list if not already present
+    if (!rewardedList.includes(String(matchId))) {
+      rewardedList.push(String(matchId));
+    }
     const finalCacheRes = await fetch(`${supabaseUrl}/rest/v1/match_cache`, {
       method: "POST",
       headers: {

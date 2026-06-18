@@ -141,6 +141,7 @@ export default function AdminPredictionsPage() {
   const [error, setError] = useState("");
   const [isRewarded, setIsRewarded] = useState(false);
   const [awardingAll, setAwardingAll] = useState(false);
+  const [updatingOutcomes, setUpdatingOutcomes] = useState(false);
 
 
   // Search & Filter
@@ -257,6 +258,40 @@ export default function AdminPredictionsPage() {
       alert("Failed to award points to all due to a network error.");
     } finally {
       setAwardingAll(false);
+    }
+  };
+
+  const handleUpdateOutcomesOnly = async () => {
+    if (!selectedMatchId || !selectedMatch) return;
+    
+    const confirmUpdate = window.confirm(
+      `Are you sure you want to update prediction outcomes for this match? This will recalculate and rewrite outcomes based on the current score without awarding points again.`
+    );
+    if (!confirmUpdate) return;
+
+    setUpdatingOutcomes(true);
+    setError("");
+    try {
+      const res = await fetch("/api/v1/admin/predictions", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ matchId: selectedMatchId, updateOutcomesOnly: true }),
+      });
+
+      const data = await res.json();
+      if (res.ok && data.success) {
+        alert(data.message || "Prediction outcomes updated successfully!");
+        await fetchPredictionsList();
+      } else {
+        setError(data.error?.message || "Failed to update prediction outcomes.");
+        alert(data.error?.message || "Failed to update prediction outcomes.");
+      }
+    } catch (err) {
+      console.error("Update outcomes error:", err);
+      setError("Failed to update prediction outcomes due to a network error.");
+      alert("Failed to update prediction outcomes due to a network error.");
+    } finally {
+      setUpdatingOutcomes(false);
     }
   };
 
@@ -505,11 +540,32 @@ export default function AdminPredictionsPage() {
 
                   if (isRewarded) {
                     return (
-                      <div className="flex items-center justify-center gap-2 bg-emerald-50 border border-emerald-200 text-emerald-700 font-bold px-4 py-3 rounded-xl text-xs w-full text-center">
-                        <svg className="w-4 h-4 shrink-0" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                        </svg>
-                        Points Awarded to All
+                      <div className="flex flex-col gap-3 w-full">
+                        <div className="flex items-center justify-center gap-2 bg-emerald-50 border border-emerald-200 text-emerald-700 font-bold px-4 py-3 rounded-xl text-xs w-full text-center">
+                          <svg className="w-4 h-4 shrink-0" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                          </svg>
+                          Points Awarded to All
+                        </div>
+                        <button
+                          onClick={handleUpdateOutcomesOnly}
+                          disabled={updatingOutcomes}
+                          className="cursor-pointer w-full bg-slate-800 hover:bg-slate-900 text-white font-bold px-4 py-2.5 rounded-xl text-xs transition-all duration-300 hover:scale-[1.02] active:scale-[0.98] shadow-md flex items-center justify-center gap-2"
+                        >
+                          {updatingOutcomes ? (
+                            <>
+                              <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                              Updating Outcomes...
+                            </>
+                          ) : (
+                            <>
+                              <svg className="w-4 h-4 animate-[spin_10s_linear_infinite]" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182m0-4.991v4.99" />
+                              </svg>
+                              Update Outcomes Only
+                            </>
+                          )}
+                        </button>
                       </div>
                     );
                   }
