@@ -139,7 +139,6 @@ export default function AdminPredictionsPage() {
   const [loadingMatches, setLoadingMatches] = useState(true);
   const [loadingPredictions, setLoadingPredictions] = useState(false);
   const [error, setError] = useState("");
-  const [awardingId, setAwardingId] = useState(null);
   const [isRewarded, setIsRewarded] = useState(false);
   const [awardingAll, setAwardingAll] = useState(false);
 
@@ -148,62 +147,7 @@ export default function AdminPredictionsPage() {
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("ALL");
 
-  // Award points based on correctness: Exact Score (+25), Correct Outcome (+2), Incorrect (-1)
-  const handleAwardPoints = async (pred) => {
-    const userId = pred.user?.id;
-    if (!userId) {
-      alert("This player does not have a valid registration.");
-      return;
-    }
 
-    setAwardingId(pred.user_id);
-    try {
-      const statusObj = getPredictionStatus(pred, selectedMatch);
-      let pointsDelta = 0;
-      if (statusObj.status === "EXACT_SCORE") {
-        pointsDelta = 25;
-      } else if (statusObj.status === "CORRECT_OUTCOME") {
-        pointsDelta = 2;
-      } else if (statusObj.status === "INCORRECT") {
-        pointsDelta = -1;
-      }
-
-      const currentPoints = Number(pred.user?.mu_points || 0);
-      // Points cannot go below 0 according to schema validation constraints
-      const newPoints = Math.max(0, currentPoints + pointsDelta);
-
-      const res = await fetch(`/api/v1/admin/users/${userId}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ mu_points: newPoints }),
-      });
-
-      const data = await res.json();
-      if (res.ok && data.success) {
-        setPredictions((prev) =>
-          prev.map((p) => {
-            if (p.user_id === pred.user_id) {
-              return {
-                ...p,
-                user: {
-                  ...p.user,
-                  mu_points: newPoints,
-                },
-              };
-            }
-            return p;
-          })
-        );
-      } else {
-        alert(data.error?.message || "Failed to award points.");
-      }
-    } catch (err) {
-      console.error("Award points error:", err);
-      alert("Network error. Failed to award points.");
-    } finally {
-      setAwardingId(null);
-    }
-  };
 
   // Client Side Pagination
   const [currentPage, setCurrentPage] = useState(1);
@@ -730,7 +674,6 @@ export default function AdminPredictionsPage() {
                     <th className="text-center px-4 py-3 font-bold uppercase tracking-wider">Predicted Score</th>
                     <th className="text-center px-4 py-3 font-bold uppercase tracking-wider">Predicted Outcome</th>
                     <th className="text-center px-4 py-3 font-bold uppercase tracking-wider">Correctness</th>
-                    <th className="text-center px-4 py-3 font-bold uppercase tracking-wider">Actions</th>
                     <th className="text-right px-4 py-3 font-bold uppercase tracking-wider">Submitted</th>
                   </tr>
                 </thead>
@@ -788,19 +731,6 @@ export default function AdminPredictionsPage() {
                           <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold border ${statusObj.bg}`}>
                             {statusObj.label}
                           </span>
-                        </td>
-                        <td className="px-4 py-3 text-center whitespace-nowrap">
-                          {pred.user?.id ? (
-                            <button
-                              onClick={() => handleAwardPoints(pred)}
-                              disabled={isRewarded || awardingId === pred.user_id || statusObj.status === "PENDING"}
-                              className={`disabled:opacity-50 text-[10px] font-bold uppercase tracking-wider px-2 py-1 rounded-lg border transition-all font-sans ${buttonStyle}`}
-                            >
-                              {awardingId === pred.user_id ? "Awarding..." : buttonLabel}
-                            </button>
-                          ) : (
-                            <span className="text-[10px] text-slate-400">N/A</span>
-                          )}
                         </td>
                         <td className="px-4 py-3 text-right text-slate-400 font-mono whitespace-nowrap">
                           {new Date(pred.created_at).toLocaleString([], {

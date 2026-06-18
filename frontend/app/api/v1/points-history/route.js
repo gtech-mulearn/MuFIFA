@@ -42,7 +42,7 @@ export async function GET(request) {
 
     // Fetch user details first to get the correct numeric database id and latest mu_points
     const userRes = await fetch(
-      `${supabaseUrl}/rest/v1/registrations?user_id=eq.${encodeURIComponent(userId)}&select=id,mu_points&limit=1`,
+      `${supabaseUrl}/rest/v1/registrations?user_id=eq.${encodeURIComponent(userId)}&select=id,mu_points,referal_id&limit=1`,
       {
         headers: {
           apikey: supabaseKey,
@@ -65,6 +65,7 @@ export async function GET(request) {
     }
 
     const userDbId = users[0].id;
+
     const totalPoints = Number(users[0].mu_points ?? 0);
 
     // 1. Fetch completed tasks with task details
@@ -100,7 +101,7 @@ export async function GET(request) {
 
     // 2. Fetch all predictions of the user
     const predictionsRes = await fetch(
-      `${supabaseUrl}/rest/v1/match_predictions?user_id=eq.${encodeURIComponent(userId)}&select=id,match_id,predicted_outcome,predicted_home_goals,predicted_away_goals,scored_at,updated_at&order=updated_at.desc`,
+      `${supabaseUrl}/rest/v1/match_predictions?user_id=eq.${encodeURIComponent(userId)}&select=id,match_id,predicted_outcome,predicted_home_goals,predicted_away_goals,updated_at,outcome&order=updated_at.desc`,
       {
         headers: {
           apikey: supabaseKey,
@@ -160,37 +161,16 @@ export async function GET(request) {
       predictionEntries = predictions.map((p) => {
         const match = matchesMap[String(p.match_id)];
         let points = 0;
-        const isRewarded = rewardedSet.has(String(p.match_id));
-        if (isRewarded && match) {
-          const actualHome = match.score?.fullTime?.home;
-          const actualAway = match.score?.fullTime?.away;
-          if (
-            actualHome !== null &&
-            actualHome !== undefined &&
-            actualAway !== null &&
-            actualAway !== undefined
-          ) {
-            let actualOutcome = "draw";
-            if (actualHome > actualAway) actualOutcome = "home_win";
-            else if (actualAway > actualHome) actualOutcome = "away_win";
-
-            const predHome = Number(p.predicted_home_goals);
-            const predAway = Number(p.predicted_away_goals);
-            const predOutcome = p.predicted_outcome;
-
-            const isExactScore =
-              predHome === actualHome && predAway === actualAway;
-            const isCorrectOutcome = predOutcome === actualOutcome;
-
-            if (isExactScore) {
-              points = 25;
-            } else if (isCorrectOutcome) {
-              points = 2;
-            } else {
-              points = -1;
-            }
-          }
+        if (p.outcome === "exact") {
+          points = 25;
+        } else if (p.outcome === "correct_outcome") {
+          points = 2;
+        } else if (p.outcome === "incorrect") {
+          points = -1;
         }
+
+        const isRewarded = p.outcome !== null && p.outcome !== undefined;
+
         return {
           id: `pred-${p.id}`,
           type: "prediction",
@@ -198,7 +178,7 @@ export async function GET(request) {
             ? `Prediction: ${match.homeTeam?.name || "Home"} vs ${match.awayTeam?.name || "Away"}`
             : `Match Prediction #${p.match_id}`,
           points: points,
-          date: p.scored_at || p.updated_at,
+          date: p.updated_at,
           details: {
             predicted_outcome: p.predicted_outcome,
             predicted_home_goals: p.predicted_home_goals,
@@ -212,7 +192,7 @@ export async function GET(request) {
     // 3. Fetch referral bonuses (each referral = +5 points)
     // The registrations table uses `referred_by` with the numeric `id`
     const referralsRes = await fetch(
-      `${supabaseUrl}/rest/v1/registrations?referred_by=eq.${encodeURIComponent(userDbId)}&select=id,name,user_id,created_at&order=created_at.desc`,
+      `${supabaseUrl}/rest/v1/registrations?referred_by=eq.${encodeURIComponent(users[0].referal_id)}&select=id,name,user_id,created_at&order=created_at.desc`,
       {
         headers: {
           apikey: supabaseKey,
@@ -253,7 +233,9 @@ export async function GET(request) {
         history: allEntries,
         summary: {
           tasks_completed: taskEntries.length,
-          predictions_scored: predictionEntries.filter((e) => e.details?.is_rewarded).length,
+          predictions_scored: predictionEntries.filter(
+            (e) => e.details?.is_rewarded,
+          ).length,
           referrals_made: referralEntries.length,
           task_points: taskEntries.reduce((sum, e) => sum + e.points, 0),
           prediction_points: predictionEntries.reduce(

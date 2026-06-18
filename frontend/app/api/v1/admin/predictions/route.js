@@ -2,7 +2,6 @@ import { NextResponse } from "next/server";
 import { requireRole } from "@/utils/auth";
 import { adjustSquadPoints } from "@/utils/squad";
 
-
 export async function GET(request) {
   try {
     const auth = requireRole(request, "superadmin", "admin", "viewer");
@@ -16,7 +15,7 @@ export async function GET(request) {
             details: null,
           },
         },
-        { status: auth.status }
+        { status: auth.status },
       );
     }
 
@@ -33,7 +32,7 @@ export async function GET(request) {
             details: null,
           },
         },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -57,7 +56,7 @@ export async function GET(request) {
       {
         headers: supabaseHeaders,
         next: { revalidate: 0 },
-      }
+      },
     );
 
     if (!dataRes.ok) {
@@ -75,7 +74,7 @@ export async function GET(request) {
           Prefer: "count=exact",
         },
         next: { revalidate: 0 },
-      }
+      },
     );
 
     // Parse Content-Range: "0-19/47" → total = 47
@@ -87,15 +86,19 @@ export async function GET(request) {
 
     // In-memory join: Fetch user profile info (name, email, team) from registrations
     let enrichedPredictions = predictions;
-    const userIds = [...new Set(predictions.map((p) => p.user_id).filter(Boolean))];
+    const userIds = [
+      ...new Set(predictions.map((p) => p.user_id).filter(Boolean)),
+    ];
     if (userIds.length > 0) {
-      const formattedIds = userIds.map(id => `"${id.replace(/"/g, '\\"')}"`).join(",");
+      const formattedIds = userIds
+        .map((id) => `"${id.replace(/"/g, '\\"')}"`)
+        .join(",");
       const userRes = await fetch(
         `${supabaseUrl}/rest/v1/registrations?user_id=in.(${encodeURIComponent(formattedIds)})&select=id,user_id,name,email,team,mu_points`,
         {
           headers: supabaseHeaders,
           next: { revalidate: 0 },
-        }
+        },
       );
 
       if (userRes.ok) {
@@ -117,7 +120,10 @@ export async function GET(request) {
           },
         }));
       } else {
-        console.error("Failed to fetch registrations for predictions:", await userRes.text());
+        console.error(
+          "Failed to fetch registrations for predictions:",
+          await userRes.text(),
+        );
       }
     }
 
@@ -128,7 +134,7 @@ export async function GET(request) {
       {
         headers: supabaseHeaders,
         next: { revalidate: 0 },
-      }
+      },
     );
 
     if (cacheRewardedRes.ok) {
@@ -161,7 +167,7 @@ export async function GET(request) {
           details: null,
         },
       },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
@@ -179,7 +185,7 @@ export async function POST(request) {
             details: null,
           },
         },
-        { status: auth.status }
+        { status: auth.status },
       );
     }
 
@@ -196,7 +202,7 @@ export async function POST(request) {
             details: null,
           },
         },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -211,7 +217,7 @@ export async function POST(request) {
             details: null,
           },
         },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -229,7 +235,7 @@ export async function POST(request) {
       {
         headers: supabaseHeaders,
         next: { revalidate: 0 },
-      }
+      },
     );
 
     if (cacheRewardedRes.ok) {
@@ -249,7 +255,7 @@ export async function POST(request) {
             details: null,
           },
         },
-        { status: 409 }
+        { status: 409 },
       );
     }
 
@@ -259,11 +265,13 @@ export async function POST(request) {
       {
         headers: supabaseHeaders,
         next: { revalidate: 0 },
-      }
+      },
     );
 
     if (!wcRes.ok) {
-      throw new Error(`Failed to fetch WC matches cache: ${await wcRes.text()}`);
+      throw new Error(
+        `Failed to fetch WC matches cache: ${await wcRes.text()}`,
+      );
     }
 
     const wcRows = await wcRes.json();
@@ -277,13 +285,13 @@ export async function POST(request) {
             details: null,
           },
         },
-        { status: 404 }
+        { status: 404 },
       );
     }
 
     const matchData = wcRows[0].match_data;
     const match = matchData?.matches?.find(
-      (m) => String(m.id) === String(matchId)
+      (m) => String(m.id) === String(matchId),
     );
 
     if (!match) {
@@ -296,24 +304,30 @@ export async function POST(request) {
             details: null,
           },
         },
-        { status: 404 }
+        { status: 404 },
       );
     }
 
     const actualHome = match.score?.fullTime?.home;
     const actualAway = match.score?.fullTime?.away;
 
-    if (actualHome === null || actualHome === undefined || actualAway === null || actualAway === undefined) {
+    if (
+      actualHome === null ||
+      actualHome === undefined ||
+      actualAway === null ||
+      actualAway === undefined
+    ) {
       return NextResponse.json(
         {
           success: false,
           error: {
             code: "BAD_REQUEST",
-            message: "Match scores are not fully available yet. Cannot award points.",
+            message:
+              "Match scores are not fully available yet. Cannot award points.",
             details: null,
           },
         },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -327,7 +341,7 @@ export async function POST(request) {
       {
         headers: supabaseHeaders,
         next: { revalidate: 0 },
-      }
+      },
     );
 
     if (!predsRes.ok) {
@@ -363,54 +377,26 @@ export async function POST(request) {
       });
     }
 
-    // 4. Fetch user registration data to get current points and team
-    const userIds = [...new Set(predictions.map((p) => p.user_id).filter(Boolean))];
-    const formattedIds = userIds.map(id => `"${id.replace(/"/g, '\\"')}"`).join(",");
-    const usersRes = await fetch(
-      `${supabaseUrl}/rest/v1/registrations?user_id=in.(${encodeURIComponent(formattedIds)})&select=id,user_id,name,team,mu_points`,
-      {
-        headers: supabaseHeaders,
-        next: { revalidate: 0 },
-      }
-    );
-
-    if (!usersRes.ok) {
-      throw new Error(`Failed to fetch user registrations: ${await usersRes.text()}`);
-    }
-
-    const users = await usersRes.json();
-    const usersMap = {};
-    users.forEach((u) => {
-      usersMap[u.user_id] = u;
-    });
-
     let awardedCount = 0;
 
-    // 5. Update user points & squad points
+    // 4. Update match prediction outcome column
     for (const pred of predictions) {
-      const user = usersMap[pred.user_id];
-      if (!user) continue;
-
       const predHome = Number(pred.predicted_home_goals);
       const predAway = Number(pred.predicted_away_goals);
       const predOutcome = pred.predicted_outcome;
 
-      const isExactScore = (predHome === actualHome && predAway === actualAway);
-      const isCorrectOutcome = (predOutcome === actualOutcome);
+      const isExactScore = predHome === actualHome && predAway === actualAway;
+      const isCorrectOutcome = predOutcome === actualOutcome;
 
-      let pointsDelta = -1;
+      let outcome = "incorrect";
       if (isExactScore) {
-        pointsDelta = 25;
+        outcome = "exact";
       } else if (isCorrectOutcome) {
-        pointsDelta = 2;
+        outcome = "correct_outcome";
       }
 
-      const currentPoints = Number(user.mu_points || 0);
-      const newPoints = Math.max(0, currentPoints + pointsDelta);
-
-      // A. Update registration points
-      const updateRes = await fetch(
-        `${supabaseUrl}/rest/v1/registrations?id=eq.${user.id}`,
+      const updatePredRes = await fetch(
+        `${supabaseUrl}/rest/v1/match_predictions?match_id=eq.${matchId}&user_id=eq.${encodeURIComponent(pred.user_id)}`,
         {
           method: "PATCH",
           headers: {
@@ -418,25 +404,21 @@ export async function POST(request) {
             Authorization: `Bearer ${supabaseKey}`,
             "Content-Type": "application/json",
           },
-          body: JSON.stringify({ mu_points: newPoints }),
-        }
+          body: JSON.stringify({ outcome }),
+        },
       );
 
-      if (!updateRes.ok) {
-        console.error(`Failed to update points for user ${user.user_id}:`, await updateRes.text());
-        continue;
-      }
-
-      // B. Update squad points
-      const pointsDiff = newPoints - currentPoints;
-      if (user.team && pointsDiff !== 0) {
-        await adjustSquadPoints(supabaseUrl, supabaseKey, user.team, pointsDiff);
+      if (!updatePredRes.ok) {
+        console.error(
+          `Failed to update prediction outcome for user ${pred.user_id}:`,
+          await updatePredRes.text(),
+        );
       }
 
       awardedCount++;
     }
 
-    // 6. Add to rewarded matches cache list
+    // 5. Add to rewarded matches cache list
     rewardedList.push(String(matchId));
     const finalCacheRes = await fetch(`${supabaseUrl}/rest/v1/match_cache`, {
       method: "POST",
@@ -456,12 +438,14 @@ export async function POST(request) {
     });
 
     if (!finalCacheRes.ok) {
-      throw new Error(`Failed to save rewarded matches list: ${await finalCacheRes.text()}`);
+      throw new Error(
+        `Failed to save rewarded matches list: ${await finalCacheRes.text()}`,
+      );
     }
 
     return NextResponse.json({
       success: true,
-      message: `Points awarded successfully for ${awardedCount} players.`,
+      message: `Prediction outcomes updated successfully for ${awardedCount} players.`,
       awardedCount,
     });
   } catch (error) {
@@ -475,8 +459,7 @@ export async function POST(request) {
           details: error.message,
         },
       },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
-

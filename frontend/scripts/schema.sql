@@ -190,3 +190,6 @@ ALTER TABLE otp FORCE ROW LEVEL SECURITY;
 DROP POLICY IF EXISTS "Allow service role full access on otp" ON otp;
 CREATE POLICY "Allow service role full access on otp" ON otp FOR ALL USING (true);
 
+-- 5. Alter match_predictions to add outcome column for evaluation details
+ALTER TABLE match_predictions ADD COLUMN IF NOT EXISTS outcome VARCHAR(50);
+
