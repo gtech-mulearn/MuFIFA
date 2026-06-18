@@ -12,61 +12,6 @@ const DOMAIN_STYLES = {
   Maker: "bg-indigo-500/10 border-indigo-500/35 text-indigo-400",
 };
 
-// Gold Greek letter μ component with motion lines
-function GreekMuMotion() {
-  return (
-    <svg
-      viewBox="0 0 100 100"
-      className="w-14 h-14 md:w-16 md:h-16 text-yellow-500 shrink-0 select-none"
-    >
-      <defs>
-        <linearGradient id="gold-grad" x1="0%" y1="0%" x2="100%" y2="100%">
-          <stop offset="0%" stopColor="#FFE082" />
-          <stop offset="50%" stopColor="#FFB300" />
-          <stop offset="100%" stopColor="#FF6F00" />
-        </linearGradient>
-        <filter id="gold-glow" x="-20%" y="-20%" width="140%" height="140%">
-          <feGaussianBlur stdDeviation="2.5" result="blur" />
-          <feComposite in="SourceGraphic" in2="blur" operator="over" />
-        </filter>
-      </defs>
-
-      {/* Motion lines trailing to the right */}
-      <path
-        d="M 55 35 L 75 35 Q 85 35 90 35"
-        stroke="url(#gold-grad)"
-        strokeWidth="2.5"
-        strokeLinecap="round"
-        opacity="0.9"
-      />
-      <path
-        d="M 60 50 L 80 50"
-        stroke="url(#gold-grad)"
-        strokeWidth="3.5"
-        strokeLinecap="round"
-        opacity="0.7"
-      />
-      <path
-        d="M 52 65 L 70 65"
-        stroke="url(#gold-grad)"
-        strokeWidth="2.5"
-        strokeLinecap="round"
-        opacity="0.4"
-      />
-
-      {/* Greek letter μ */}
-      <path
-        d="M 22 40 L 22 80 M 22 50 C 22 75, 45 75, 45 50 L 45 75 Q 45 80 50 80"
-        fill="none"
-        stroke="url(#gold-grad)"
-        strokeWidth="9"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        filter="url(#gold-glow)"
-      />
-    </svg>
-  );
-}
 
 // Animated "ACTIVE REWARD" badge
 function ActiveRewardSeal() {
@@ -138,7 +83,6 @@ export default function Dashboard() {
   const [generatingReferral, setGeneratingReferral] = useState(false);
   const [copied, setCopied] = useState(false);
   const [error, setError] = useState("");
-
 
   useEffect(() => {
     async function checkAuth() {
@@ -457,8 +401,12 @@ export default function Dashboard() {
               </div>
             </div>
 
-            {/* Greek letter μ with motion lines */}
-            <GreekMuMotion />
+            {/* Greek letter μ with motion lines replaced with coin logo */}
+            <img
+              src="/mupoints.png"
+              alt="μPoints Logo"
+              className="w-14 h-14 md:w-16 md:h-16 object-contain shrink-0 select-none"
+            />
           </div>
         </div>
 
@@ -600,13 +548,35 @@ export default function Dashboard() {
                   className="flex items-center justify-between bg-black/20 border border-white/5 rounded-xl p-3 hover:border-white/10 hover:bg-black/30 transition-all group"
                 >
                   <div className="flex items-center gap-2.5">
-                    <svg className="w-4 h-4 text-cyan-400" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    <svg
+                      className="w-4 h-4 text-cyan-400"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z"
+                      />
                     </svg>
-                    <span className="text-xs font-bold text-slate-300 group-hover:text-white transition-colors">View Referral & Points History</span>
+                    <span className="text-xs font-bold text-slate-300 group-hover:text-white transition-colors">
+                      View Referral & Points History
+                    </span>
                   </div>
-                  <svg className="w-3.5 h-3.5 text-slate-500 group-hover:text-white transition-colors" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" />
+                  <svg
+                    className="w-3.5 h-3.5 text-slate-500 group-hover:text-white transition-colors"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2.5"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3"
+                    />
                   </svg>
                 </Link>
               </div>

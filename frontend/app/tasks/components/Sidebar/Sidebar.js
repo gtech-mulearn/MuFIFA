@@ -185,17 +185,18 @@ export default function Sidebar({ player, handleLogout }) {
       </div>
 
       <div className="flex flex-col gap-6">
-        {/* UPOINTS BALANCE WIDGET */}
         <div className="bg-[#110e20]/80 border border-white/5 rounded-2xl p-4 backdrop-blur-md relative overflow-hidden group">
           <div className="absolute -right-4 -bottom-4 w-16 h-16 bg-violet-600/10 rounded-full blur-xl pointer-events-none" />
-          <span className="text-[9px] font-black uppercase tracking-wider text-slate-500">
+          <span className="text-[9px] font-black tracking-wider text-slate-500">
             μPoints Balance
           </span>
           <div className="flex items-center gap-2 mt-2">
             <span className="text-2xl font-black text-white">{points}</span>
-            <div className="w-5 h-5 rounded-full bg-gradient-to-r from-yellow-400 to-amber-500 flex items-center justify-center shadow-[0_0_8px_rgba(251,191,36,0.4)]">
-              <span className="text-[9px] font-black text-slate-950">u</span>
-            </div>
+            <img
+              src="/mupoints.png"
+              alt="μPoints"
+              className="w-8.5 h-8.5 object-contain"
+            />
           </div>
           <Link
             href="/points-history"
