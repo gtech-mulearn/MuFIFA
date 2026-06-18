@@ -188,7 +188,7 @@ export async function sendRegistrationOtpEmail({ email, name, otp }) {
 
     await transporter.sendMail({
       from: fromAddress,
-      to: "sreeju@sreeju.net",
+      to: email,
       subject: subjectLine,
       text: textContent,
       html: htmlContent,
