@@ -61,6 +61,24 @@ export async function GET(request) {
       squads = await squadsRes.json();
     }
 
+    const tasksRes = await fetch(
+      `${supabaseUrl}/rest/v1/tasks?select=id,title`,
+      { method: "GET", headers, next: { revalidate: 0 } }
+    );
+    let tasksList = [];
+    if (tasksRes.ok) {
+      tasksList = await tasksRes.json();
+    }
+
+    const compRes = await fetch(
+      `${supabaseUrl}/rest/v1/user_completed_tasks?select=task_id`,
+      { method: "GET", headers, next: { revalidate: 0 } }
+    );
+    let completionsList = [];
+    if (compRes.ok) {
+      completionsList = await compRes.json();
+    }
+
     const totalUsers = registrations.length;
     const teamCounts = {};
     const domainCounts = {};
@@ -143,12 +161,115 @@ export async function GET(request) {
       dailyTrend.push({ date: key, count: dailyRegistrations[key] || 0 });
     }
 
+    // Compute Hourly trend (last 24 hours) using robust millisecond timestamp windows
+    const hourlyTrend = [];
+    const oneHourMs = 60 * 60 * 1000;
+    const nowMs = today.getTime();
+
+    for (let i = 47; i >= 0; i--) {
+      const hourStart = nowMs - (i + 1) * oneHourMs;
+      const hourEnd = nowMs - i * oneHourMs;
+      
+      let count = 0;
+      registrations.forEach((r) => {
+        if (r.created_at) {
+          const regTime = new Date(r.created_at).getTime();
+          if (regTime > hourStart && regTime <= hourEnd) {
+            count++;
+          }
+        }
+      });
+
+      const targetTime = new Date(hourEnd);
+      const year = targetTime.getFullYear();
+      const month = String(targetTime.getMonth() + 1).padStart(2, '0');
+      const dateVal = String(targetTime.getDate()).padStart(2, '0');
+      const hours = String(targetTime.getHours()).padStart(2, '0');
+      
+      hourlyTrend.push({
+        date: `${year}-${month}-${dateVal} ${hours}:00`,
+        label: `${hours}:00`,
+        count: count
+      });
+    }
+
+    // Compute Weekly trend (last 7 days - daily counts)
+    const weeklyTrend = [];
+    for (let i = 6; i >= 0; i--) {
+      const d = new Date(today);
+      d.setDate(d.getDate() - i);
+      const key = d.toISOString().slice(0, 10);
+      weeklyTrend.push({
+        date: key,
+        label: key.slice(5), // MM-DD
+        count: dailyRegistrations[key] || 0
+      });
+    }
+
+    // Compute Monthly trend (last 30 days - daily counts)
+    const monthlyTrend = [];
+    for (let i = 29; i >= 0; i--) {
+      const d = new Date(today);
+      d.setDate(d.getDate() - i);
+      const key = d.toISOString().slice(0, 10);
+      monthlyTrend.push({
+        date: key,
+        label: key.slice(8), // DD
+        count: dailyRegistrations[key] || 0
+      });
+    }
+
+    let hourlyCount = 0;
+    let weeklyCount = 0;
+    let monthlyCount = 0;
+
+    registrations.forEach((r) => {
+      if (r.created_at) {
+        const regTime = new Date(r.created_at).getTime();
+        const diffMs = nowMs - regTime;
+        if (diffMs <= 24 * 60 * 60 * 1000) {
+          hourlyCount++;
+        }
+        if (diffMs <= 7 * 24 * 60 * 60 * 1000) {
+          weeklyCount++;
+        }
+        if (diffMs <= 30 * 24 * 60 * 60 * 1000) {
+          monthlyCount++;
+        }
+      }
+    });
+
+    // Aggregate completions count by task_id
+    const completionCounts = {};
+    completionsList.forEach((c) => {
+      if (c.task_id) {
+        completionCounts[c.task_id] = (completionCounts[c.task_id] || 0) + 1;
+      }
+    });
+
+    const taskCompletionStats = tasksList.map((t) => ({
+      id: t.id,
+      title: t.title,
+      count: completionCounts[t.id] || 0,
+    })).sort((a, b) => b.count - a.count);
+
     const statsPayload = {
       totalUsers,
       totalTeams: squads.length,
       teamStats,
       domainStats,
       dailyTrend,
+      timeframeStats: {
+        hourly: hourlyCount,
+        weekly: weeklyCount,
+        monthly: monthlyCount,
+      },
+      trends: {
+        hourly: hourlyTrend,
+        weekly: weeklyTrend,
+        monthly: monthlyTrend,
+      },
+      taskStats: taskCompletionStats,
     };
 
     return NextResponse.json({

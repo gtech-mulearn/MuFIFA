@@ -16,13 +16,27 @@ export async function GET(request) {
       return NextResponse.json({ success: false, error: "Database not configured." }, { status: 503 });
     }
 
+    const { searchParams } = new URL(request.url);
+    const limitParam = searchParams.get("limit");
+    const pageParam = searchParams.get("page") || "1";
+
     // 2. Fetch completions joined with registrations details (name, team)
-    const completionsUrl = `${supabaseUrl}/rest/v1/user_completed_tasks?select=*,registrations(name,team)&order=completed_at.desc`;
+    let completionsUrl = `${supabaseUrl}/rest/v1/user_completed_tasks?select=*,registrations(name,team)&order=completed_at.desc`;
+    const headers = {
+      apikey: supabaseKey,
+      Authorization: `Bearer ${supabaseKey}`,
+    };
+
+    if (limitParam) {
+      const limit = parseInt(limitParam, 10);
+      const page = parseInt(pageParam, 10);
+      const offset = (page - 1) * limit;
+      completionsUrl += `&offset=${offset}&limit=${limit}`;
+      headers["Prefer"] = "count=exact";
+    }
+
     const res = await fetch(completionsUrl, {
-      headers: {
-        apikey: supabaseKey,
-        Authorization: `Bearer ${supabaseKey}`,
-      },
+      headers,
       next: { revalidate: 0 },
     });
 
@@ -31,6 +45,9 @@ export async function GET(request) {
     }
 
     const completions = await res.json();
+    const totalCount = limitParam
+      ? parseInt(res.headers.get("content-range")?.split("/")[1] || "0", 10)
+      : completions.length;
 
     // Map nested PostgREST response to flat objects
     const formatted = completions.map((c) => ({
@@ -50,7 +67,17 @@ export async function GET(request) {
       team: c.registrations ? c.registrations.team : "None",
     }));
 
-    return NextResponse.json({ success: true, data: formatted });
+    const responseData = { success: true, data: formatted };
+    if (limitParam) {
+      responseData.pagination = {
+        page: parseInt(pageParam, 10),
+        limit: parseInt(limitParam, 10),
+        total: totalCount,
+        totalPages: Math.ceil(totalCount / parseInt(limitParam, 10)),
+      };
+    }
+
+    return NextResponse.json(responseData);
   } catch (error) {
     console.error("GET completions error:", error);
     return NextResponse.json({ success: false, error: "Internal server error" }, { status: 500 });

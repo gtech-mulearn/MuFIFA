@@ -427,3 +427,141 @@ Best regards,
     return false;
   }
 }
+
+export async function sendCustomAdminEmail({ email, name, subject, title, body }) {
+  const transporter = getTransporter();
+  if (!transporter) return false;
+
+  const smtpFrom = process.env.SMTP_FROM || "mailer@mufifa.mulearn.org";
+  const fromAddress = smtpFrom.includes("<") ? smtpFrom : `"μFIFA'26" <${smtpFrom}>`;
+  const emailAddress = smtpFrom.includes("<") ? smtpFrom.split("<")[1].replace(">", "").trim() : smtpFrom.trim();
+
+  const textContent = `Hello ${name},
+
+${title}
+
+${body}
+
+Best regards,
+μFIFA Arena Team`;
+
+  const htmlContent = `
+    <!DOCTYPE html>
+    <html>
+      <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>${subject}</title>
+        <style>
+          body {
+            margin: 0;
+            padding: 0;
+            background-color: #090a0f;
+            color: #f1f5f9;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+          }
+          .wrapper {
+            width: 100%;
+            box-sizing: border-box;
+            padding: 40px 20px;
+            background: 
+              radial-gradient(circle at top right, rgba(79, 70, 229, 0.12), transparent 40%),
+              radial-gradient(circle at bottom left, rgba(6, 182, 212, 0.12), transparent 40%),
+              #090a0f;
+          }
+          .container {
+            max-width: 500px;
+            margin: 0 auto;
+            background: rgba(19, 25, 39, 0.6);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 24px;
+            padding: 40px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5);
+          }
+          .logo-text {
+            font-size: 24px;
+            font-weight: 800;
+            letter-spacing: 0.15em;
+            color: #ffffff;
+            margin: 0 0 28px 0;
+            text-align: center;
+          }
+          .greeting {
+            font-size: 16px;
+            font-weight: 700;
+            color: #ffffff;
+            margin: 0 0 16px 0;
+            text-align: left;
+          }
+          .title-text {
+            font-size: 18px;
+            font-weight: 800;
+            color: #ffffff;
+            margin: 0 0 16px 0;
+            text-align: left;
+          }
+          .message {
+            font-size: 14px;
+            line-height: 1.6;
+            color: #94a3b8;
+            margin: 0 0 24px 0;
+            text-align: left;
+            white-space: pre-line;
+          }
+          .footer {
+            margin-top: 32px;
+            border-top: 1px solid rgba(255, 255, 255, 0.06);
+            padding-top: 24px;
+            text-align: center;
+          }
+          .footer-title {
+            font-size: 12px;
+            font-weight: 700;
+            color: #94a3b8;
+            margin: 0 0 6px 0;
+          }
+          .footer-copyright {
+            font-size: 9px;
+            color: #475569;
+            margin: 0;
+          }
+        </style>
+      </head>
+      <body>
+        <div class="wrapper">
+          <div class="container">
+            <h1 class="logo-text">μFIFA'26</h1>
+            <div class="greeting">Hello ${name},</div>
+            <div class="title-text">${title}</div>
+            <div class="message">${body}</div>
+            <div class="footer">
+              <div class="footer-title">μLearn Foundation</div>
+              <p class="footer-copyright">
+                μLearn Foundation | Copyright &copy; 2025 All rights reserved.<br>
+                Technopark Phase 1, Thiruvananthapuram, Kerala - 695581.
+              </p>
+            </div>
+          </div>
+        </div>
+      </body>
+    </html>
+  `;
+
+  try {
+    await transporter.sendMail({
+      from: fromAddress,
+      to: email,
+      subject: subject,
+      text: textContent,
+      html: htmlContent,
+      headers: {
+        "List-Unsubscribe": `<mailto:${emailAddress}?subject=unsubscribe>`,
+      },
+    });
+    console.log(`[SMTP] Custom admin email sent successfully to: ${email}`);
+    return true;
+  } catch (error) {
+    console.error("[SMTP] Custom admin email send failed:", error);
+    return false;
+  }
+}

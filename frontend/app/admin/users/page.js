@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
-import { useAdmin, TEAM_FLAGS, THEME } from "../layout";
+import { TEAM_FLAGS, THEME } from "../layout";
 
 const DOMAINS = ["Maker", "Creative", "Coder", "Strategist"];
 const TEAMS = Object.keys(TEAM_FLAGS);
@@ -19,7 +19,6 @@ function TeamBadge({ team }) {
 }
 
 export default function AdminUsersPage() {
-  const admin = useAdmin();
   const [users, setUsers] = useState([]);
   const [pagination, setPagination] = useState({ page: 1, limit: 20, total: 0, totalPages: 0 });
   const [loading, setLoading] = useState(true);
@@ -28,8 +27,6 @@ export default function AdminUsersPage() {
   const [debouncedSearch, setDebouncedSearch] = useState("");
   const [teamFilter, setTeamFilter] = useState("");
   const [domainFilter, setDomainFilter] = useState("");
-  const [deleteTarget, setDeleteTarget] = useState(null);
-  const [deleting, setDeleting] = useState(false);
 
   // Debounce search input to avoid parallel race condition requests
   useEffect(() => {
@@ -67,25 +64,6 @@ export default function AdminUsersPage() {
   useEffect(() => {
     fetchUsers(1);
   }, [fetchUsers]);
-
-  const handleDelete = async () => {
-    if (!deleteTarget) return;
-    setDeleting(true);
-    try {
-      const res = await fetch(`/api/v1/admin/users/${deleteTarget.id}`, { method: "DELETE" });
-      const data = await res.json();
-      if (data.success) {
-        setDeleteTarget(null);
-        fetchUsers(pagination.page);
-      } else {
-        alert(data.error?.message || data.error || "Delete failed.");
-      }
-    } catch {
-      alert("Network error.");
-    } finally {
-      setDeleting(false);
-    }
-  };
 
   return (
     <div className="flex flex-col gap-6">
@@ -182,16 +160,8 @@ export default function AdminUsersPage() {
                           href={`/admin/users/${user.id}`}
                           className="text-slate-700 hover:text-slate-900 text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-lg border border-slate-300 hover:border-slate-400 hover:bg-slate-100 transition-all"
                         >
-                          Edit
+                          View
                         </Link>
-                        {admin?.role === "superadmin" && (
-                          <button
-                            onClick={() => setDeleteTarget(user)}
-                            className="text-rose-600 hover:text-rose-700 text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-lg border border-rose-200 hover:border-rose-300 hover:bg-rose-50 transition-all cursor-pointer"
-                          >
-                            Delete
-                          </button>
-                        )}
                       </div>
                     </td>
                   </tr>
@@ -221,34 +191,6 @@ export default function AdminUsersPage() {
           >
             Next
           </button>
-        </div>
-      )}
-
-      {deleteTarget && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/25 backdrop-blur-md">
-          <div className={`${THEME.panelSoft} rounded-2xl p-6 max-w-sm w-full flex flex-col gap-4 shadow-2xl`}>
-            <h3 className="text-sm font-bold uppercase tracking-[0.16em] text-slate-900">
-              Confirm Deletion
-            </h3>
-            <p className="text-xs text-slate-400">
-              Are you sure you want to delete <strong className="text-slate-900">{deleteTarget.name}</strong> ({deleteTarget.email})? This action cannot be undone.
-            </p>
-            <div className="flex gap-3">
-              <button
-                onClick={() => setDeleteTarget(null)}
-                className="flex-1 cursor-pointer bg-slate-100 hover:bg-slate-200 border border-slate-300 text-slate-700 font-bold py-2.5 rounded-xl text-xs tracking-wider uppercase transition-colors"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleDelete}
-                disabled={deleting}
-                className="flex-1 cursor-pointer bg-rose-500/15 hover:bg-rose-500/20 border border-rose-500/35 text-rose-300 font-bold py-2.5 rounded-xl text-xs tracking-wider uppercase transition-colors disabled:opacity-50"
-              >
-                {deleting ? "Deleting" : "Delete"}
-              </button>
-            </div>
-          </div>
         </div>
       )}
     </div>

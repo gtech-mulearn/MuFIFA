@@ -50,6 +50,7 @@ export async function GET(request, { params }) {
     const supabaseUrl = process.env.SUPABASE_URL;
     const supabaseKey = process.env.SUPABASE_KEY;
 
+    // 1. Fetch user registration details
     const res = await fetch(
       `${supabaseUrl}/rest/v1/registrations?id=eq.${id}&select=*`,
       {
@@ -80,15 +81,109 @@ export async function GET(request, { params }) {
       );
     }
 
-    return NextResponse.json({ success: true, user: rows[0], data: rows[0] });
+    const user = rows[0];
+
+    // 2. Fetch referrals
+    let referrals = [];
+    const referralsRes = await fetch(
+      `${supabaseUrl}/rest/v1/registrations?referred_by=eq.${user.id}&select=id,name,user_id,email,phone,created_at&order=created_at.desc`,
+      {
+        headers: {
+          apikey: supabaseKey,
+          Authorization: `Bearer ${supabaseKey}`,
+        },
+      }
+    );
+    if (referralsRes.ok) {
+      referrals = await referralsRes.json();
+    }
+
+    // 3. Fetch predictions
+    let predictions = [];
+    if (user.user_id) {
+      const predictionsRes = await fetch(
+        `${supabaseUrl}/rest/v1/match_predictions?user_id=eq.${encodeURIComponent(user.user_id)}&select=id,match_id,predicted_outcome,predicted_home_goals,predicted_away_goals,updated_at,outcome&order=updated_at.desc`,
+        {
+          headers: {
+            apikey: supabaseKey,
+            Authorization: `Bearer ${supabaseKey}`,
+          },
+        }
+      );
+      if (predictionsRes.ok) {
+        predictions = await predictionsRes.json();
+      }
+    }
+
+    // 4. Fetch WC season match data to map match details
+    let matchesList = [];
+    const wcRes = await fetch(
+      `${supabaseUrl}/rest/v1/match_cache?match_id=eq.WC_season&select=match_data`,
+      {
+        headers: {
+          apikey: supabaseKey,
+          Authorization: `Bearer ${supabaseKey}`,
+        },
+      }
+    );
+    if (wcRes.ok) {
+      const rows = await wcRes.json();
+      if (rows.length > 0) {
+        matchesList = rows[0].match_data?.matches || [];
+      }
+    }
+
+    const matchesMap = {};
+    matchesList.forEach((m) => {
+      matchesMap[String(m.id)] = m;
+    });
+
+    const enrichedPredictions = predictions.map((p) => {
+      const match = matchesMap[String(p.match_id)];
+      return {
+        ...p,
+        match_title: match
+          ? `${match.homeTeam?.name || "Home"} vs ${match.awayTeam?.name || "Away"}`
+          : `Match #${p.match_id}`,
+        match_home_goals: match ? match.homeTeamScore : null,
+        match_away_goals: match ? match.awayTeamScore : null,
+        status: match ? match.status : null,
+      };
+    });
+
+    // 5. Fetch completed tasks
+    let completedTasks = [];
+    if (user.user_id) {
+      const completedTasksRes = await fetch(
+        `${supabaseUrl}/rest/v1/user_completed_tasks?user_id=eq.${encodeURIComponent(user.user_id)}&select=id,task_id,completed_at,points_awarded,xp_creativity,xp_branding,xp_innovation,xp_teamwork,xp_execution,tasks(title)&order=completed_at.desc`,
+        {
+          headers: {
+            apikey: supabaseKey,
+            Authorization: `Bearer ${supabaseKey}`,
+          },
+        }
+      );
+      if (completedTasksRes.ok) {
+        completedTasks = await completedTasksRes.json();
+      }
+    }
+
+    return NextResponse.json({
+      success: true,
+      user,
+      data: user,
+      referrals,
+      predictions: enrichedPredictions,
+      completedTasks,
+    });
   } catch (error) {
-    console.error("Admin get user error:", error);
+    console.error("Admin get user details error:", error);
     return NextResponse.json(
       {
         success: false,
         error: {
           code: "INTERNAL_SERVER_ERROR",
-          message: "Failed to fetch user.",
+          message: "Failed to fetch user details.",
           details: null,
         },
       },

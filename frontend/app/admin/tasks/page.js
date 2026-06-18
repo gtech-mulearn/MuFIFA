@@ -11,10 +11,17 @@ export default function AdminTasksPage() {
   // State for Tasks list
   const [tasks, setTasks] = useState([]);
   const [loadingTasks, setLoadingTasks] = useState(true);
+  const [tasksPage, setTasksPage] = useState(1);
+  const [tasksPagination, setTasksPagination] = useState({ page: 1, totalPages: 1 });
 
   // State for Completions list
   const [completions, setCompletions] = useState([]);
   const [loadingCompletions, setLoadingCompletions] = useState(true);
+  const [completionsPage, setCompletionsPage] = useState(1);
+  const [completionsPagination, setCompletionsPagination] = useState({ page: 1, totalPages: 1 });
+
+  // Full tasks for dropdown list
+  const [allTasks, setAllTasks] = useState([]);
 
   // General messages
   const [creditError, setCreditError] = useState("");
@@ -36,14 +43,15 @@ export default function AdminTasksPage() {
   });
   const [creditingTask, setCreditingTask] = useState(false);
 
-  // Fetch all tasks from DB
-  const fetchTasks = useCallback(async () => {
+  // Fetch paginated tasks for the table
+  const fetchTasks = useCallback(async (page = 1) => {
     setLoadingTasks(true);
     try {
-      const res = await fetch("/api/v1/tasks");
+      const res = await fetch(`/api/v1/tasks?limit=5&page=${page}`);
       const data = await res.json();
       if (data.success) {
         setTasks(data.data || []);
+        setTasksPagination(data.pagination || { page: 1, totalPages: 1 });
       }
     } catch {
       console.error("Failed to fetch tasks.");
@@ -52,14 +60,28 @@ export default function AdminTasksPage() {
     }
   }, []);
 
-  // Fetch completions
-  const fetchCompletions = useCallback(async () => {
+  // Fetch all tasks for Credit Form dropdown (no limit param)
+  const fetchAllTasks = useCallback(async () => {
+    try {
+      const res = await fetch("/api/v1/tasks");
+      const data = await res.json();
+      if (data.success) {
+        setAllTasks(data.data || []);
+      }
+    } catch {
+      console.error("Failed to fetch all tasks for dropdown.");
+    }
+  }, []);
+
+  // Fetch completions (paginated)
+  const fetchCompletions = useCallback(async (page = 1) => {
     setLoadingCompletions(true);
     try {
-      const res = await fetch("/api/v1/admin/tasks/completions");
+      const res = await fetch(`/api/v1/admin/tasks/completions?limit=5&page=${page}`);
       const data = await res.json();
       if (data.success) {
         setCompletions(data.data || []);
+        setCompletionsPagination(data.pagination || { page: 1, totalPages: 1 });
       }
     } catch (err) {
       console.error("Completions error:", err);
@@ -69,9 +91,10 @@ export default function AdminTasksPage() {
   }, []);
 
   useEffect(() => {
-    fetchTasks();
-    fetchCompletions();
-  }, [fetchTasks, fetchCompletions]);
+    fetchTasks(1);
+    fetchAllTasks();
+    fetchCompletions(1);
+  }, [fetchTasks, fetchAllTasks, fetchCompletions]);
 
   // Search players as admin types
   useEffect(() => {
@@ -104,7 +127,7 @@ export default function AdminTasksPage() {
     setSelectedTaskId(taskId);
     if (!taskId) return;
 
-    const matchedTask = tasks.find((t) => t.id === parseInt(taskId, 10));
+    const matchedTask = allTasks.find((t) => t.id === parseInt(taskId, 10));
     if (matchedTask) {
       setCreditForm({
         points_awarded: matchedTask.mupoint || 0,
@@ -157,7 +180,7 @@ export default function AdminTasksPage() {
           xp_teamwork: 0,
           xp_execution: 0,
         });
-        fetchCompletions();
+        fetchCompletions(completionsPage);
       } else {
         setCreditError(data.error || "Failed to credit task points.");
       }
@@ -167,6 +190,22 @@ export default function AdminTasksPage() {
       setCreditingTask(false);
     }
   };
+
+  const handleTasksPageChange = (newPage) => {
+    setTasksPage(newPage);
+    fetchTasks(newPage);
+  };
+
+  const handleCompletionsPageChange = (newPage) => {
+    setCompletionsPage(newPage);
+    fetchCompletions(newPage);
+  };
+
+  const totalTasksPages = tasksPagination.totalPages;
+  const displayedTasks = tasks;
+
+  const totalCompletionsPages = completionsPagination.totalPages;
+  const displayedCompletions = completions;
 
   return (
     <div className="flex flex-col gap-8">
@@ -250,7 +289,7 @@ export default function AdminTasksPage() {
                   className={`rounded-xl px-3 py-2.5 cursor-pointer focus:outline-none ${THEME.input}`}
                 >
                   <option value="">-- Choose Task --</option>
-                  {tasks.map((t) => (
+                  {allTasks.map((t) => (
                     <option key={t.id} value={t.id}>
                       Task {t.id}: {t.title} (Tier {t.tier})
                     </option>
@@ -327,14 +366,17 @@ export default function AdminTasksPage() {
                 <button
                   type="submit"
                   disabled={creditingTask || isViewer}
-                  className="w-full bg-sky-500 hover:bg-sky-400 text-slate-950 font-bold py-2.5 px-4 rounded-xl text-xs tracking-wider uppercase transition-all disabled:opacity-50 cursor-pointer"
+                  className="w-full bg-sky-500 hover:bg-sky-400 text-white font-bold py-2.5 px-4 rounded-xl text-xs tracking-wider uppercase transition-all disabled:opacity-50 cursor-pointer"
                 >
                   {creditingTask ? "Crediting Points..." : "Credit Task & Award Points"}
                 </button>
               </div>
             </form>
           </div>
+        </div>
 
+        {/* RIGHT COLUMN: TABLES */}
+        <div className="flex flex-col gap-6">
           {/* Section: Existing Tasks (Read-only quick lookup) */}
           <div className={`${THEME.panel} rounded-2xl overflow-hidden`}>
             <div className="p-6 border-b border-slate-100 flex items-center justify-between">
@@ -343,7 +385,7 @@ export default function AdminTasksPage() {
               </h2>
               <Link
                 href="/admin/tasks/create"
-                className="bg-sky-500 hover:bg-sky-400 text-slate-950 font-bold py-1 px-3 rounded-lg text-[10px] uppercase tracking-wider transition-all"
+                className="bg-sky-500 hover:bg-sky-400 text-white font-bold py-1 px-3 rounded-lg text-[10px] uppercase tracking-wider transition-all"
               >
                 Manage Tasks
               </Link>
@@ -367,7 +409,7 @@ export default function AdminTasksPage() {
                     </tr>
                   </thead>
                   <tbody>
-                    {tasks.map((task) => (
+                    {displayedTasks.map((task) => (
                       <tr key={task.id} className="border-b border-slate-200/50 hover:bg-slate-50 transition-colors">
                         <td className="px-4 py-3 font-mono font-bold text-slate-900">{task.id}</td>
                         <td className="px-4 py-3 whitespace-nowrap">
@@ -383,6 +425,29 @@ export default function AdminTasksPage() {
                     ))}
                   </tbody>
                 </table>
+                {totalTasksPages > 1 && (
+                  <div className="flex items-center justify-center gap-2 py-3 border-t border-slate-200/50 bg-white">
+                    <button
+                      type="button"
+                      onClick={() => handleTasksPageChange(tasksPage - 1)}
+                      disabled={tasksPage <= 1}
+                      className="px-2.5 py-1 text-[11px] text-slate-500 border border-slate-300 rounded-lg hover:text-slate-900 hover:border-slate-400 disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer transition-colors"
+                    >
+                      Previous
+                    </button>
+                    <span className="text-[11px] text-slate-500 select-none">
+                      Page {tasksPage} of {totalTasksPages}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => handleTasksPageChange(tasksPage + 1)}
+                      disabled={tasksPage >= totalTasksPages}
+                      className="px-2.5 py-1 text-[11px] text-slate-500 border border-slate-300 rounded-lg hover:text-slate-900 hover:border-slate-400 disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer transition-colors"
+                    >
+                      Next
+                    </button>
+                  </div>
+                )}
               </div>
             )}
           </div>
@@ -412,7 +477,7 @@ export default function AdminTasksPage() {
                     </tr>
                   </thead>
                   <tbody>
-                    {completions.map((comp) => (
+                    {displayedCompletions.map((comp) => (
                       <tr key={comp.id} className="border-b border-slate-200/50 hover:bg-slate-50 transition-colors">
                         <td className="px-4 py-3 whitespace-nowrap">
                           <div className="font-semibold text-slate-800">{comp.name}</div>
@@ -432,6 +497,29 @@ export default function AdminTasksPage() {
                     ))}
                   </tbody>
                 </table>
+                {totalCompletionsPages > 1 && (
+                  <div className="flex items-center justify-center gap-2 py-3 border-t border-slate-200/50 bg-white">
+                    <button
+                      type="button"
+                      onClick={() => handleCompletionsPageChange(completionsPage - 1)}
+                      disabled={completionsPage <= 1}
+                      className="px-2.5 py-1 text-[11px] text-slate-500 border border-slate-300 rounded-lg hover:text-slate-900 hover:border-slate-400 disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer transition-colors"
+                    >
+                      Previous
+                    </button>
+                    <span className="text-[11px] text-slate-500 select-none">
+                      Page {completionsPage} of {totalCompletionsPages}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => handleCompletionsPageChange(completionsPage + 1)}
+                      disabled={completionsPage >= totalCompletionsPages}
+                      className="px-2.5 py-1 text-[11px] text-slate-500 border border-slate-300 rounded-lg hover:text-slate-900 hover:border-slate-400 disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer transition-colors"
+                    >
+                      Next
+                    </button>
+                  </div>
+                )}
               </div>
             )}
           </div>

@@ -384,7 +384,7 @@ export default function AdminCreateTaskPage() {
                 <button
                   type="submit"
                   disabled={creatingTask || isViewer}
-                  className="flex-1 bg-sky-500 hover:bg-sky-400 text-slate-950 font-bold py-2.5 px-4 rounded-xl text-xs tracking-wider uppercase transition-all disabled:opacity-50 cursor-pointer"
+                  className="flex-1 bg-sky-500 hover:bg-sky-400 text-white font-bold py-2.5 px-4 rounded-xl text-xs tracking-wider uppercase transition-all disabled:opacity-50 cursor-pointer"
                 >
                   {creatingTask ? (isEditing ? "Updating Task..." : "Creating Task...") : (isEditing ? "Update & Save Task" : "Create & Save Task")}
                 </button>

@@ -23,9 +23,27 @@ export async function GET(request) {
       }
     }
 
-    // 2. Fetch all tasks
-    const tasksRes = await fetch(`${supabaseUrl}/rest/v1/tasks?select=*&order=id.asc`, {
-      headers: { apikey: supabaseKey, Authorization: `Bearer ${supabaseKey}` },
+    // 2. Fetch tasks (paginated if params present)
+    const { searchParams } = new URL(request.url);
+    const limitParam = searchParams.get("limit");
+    const pageParam = searchParams.get("page") || "1";
+
+    let url = `${supabaseUrl}/rest/v1/tasks?select=*&order=id.asc`;
+    const headers = {
+      apikey: supabaseKey,
+      Authorization: `Bearer ${supabaseKey}`,
+    };
+
+    if (limitParam) {
+      const limit = parseInt(limitParam, 10);
+      const page = parseInt(pageParam, 10);
+      const offset = (page - 1) * limit;
+      url += `&offset=${offset}&limit=${limit}`;
+      headers["Prefer"] = "count=exact";
+    }
+
+    const tasksRes = await fetch(url, {
+      headers,
       next: { revalidate: 0 },
     });
 
@@ -33,6 +51,9 @@ export async function GET(request) {
       throw new Error(`Failed to fetch tasks: ${await tasksRes.text()}`);
     }
     const tasks = await tasksRes.json();
+    const totalCount = limitParam
+      ? parseInt(tasksRes.headers.get("content-range")?.split("/")[1] || "0", 10)
+      : tasks.length;
 
     // 3. Fetch user completions if logged in
     let completionsMap = {};
@@ -69,7 +90,16 @@ export async function GET(request) {
       };
     });
 
-    return NextResponse.json({ success: true, data: processedTasks });
+    const responseData = { success: true, data: processedTasks };
+    if (limitParam) {
+      responseData.pagination = {
+        page: parseInt(pageParam, 10),
+        limit: parseInt(limitParam, 10),
+        total: totalCount,
+        totalPages: Math.ceil(totalCount / parseInt(limitParam, 10)),
+      };
+    }
+    return NextResponse.json(responseData);
   } catch (error) {
     console.error("GET tasks error:", error);
     return NextResponse.json({ success: false, error: "Internal server error" }, { status: 500 });

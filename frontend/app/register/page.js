@@ -4,6 +4,7 @@ import React, { useState, useEffect, useRef, Suspense } from "react";
 import Link from "next/link";
 import { useSearchParams, useRouter } from "next/navigation";
 import BackgroundVideo from "@/components/BackgroundVideo";
+import BallLoader from "@/components/BallLoader";
 import { getBackendUrl } from "@/utils/api";
 import { TEAM_WHATSAPP_LINKS, DOMAINS, TEAM_FLAGS } from "@/utils/constants";
 
@@ -1385,6 +1386,7 @@ function RegisterForm() {
           </div>
         </div>
       )}
+      {isVerifyingOtp && <BallLoader fullScreen={true} />}
     </div>
   );
 }

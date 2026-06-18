@@ -8,6 +8,7 @@ import Ticker from "@/components/Ticker";
 import Footer from "@/components/Footer";
 import Sidebar from "@/app/tasks/components/Sidebar/Sidebar";
 
+
 export default function LayoutContent({ children }) {
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -67,7 +68,6 @@ export default function LayoutContent({ children }) {
   };
 
 
-
   if (isAdmin || pathname === "/development") {
     // Admin and development routes render their own layout — no public chrome
     return <>{children}</>;
@@ -76,7 +76,7 @@ export default function LayoutContent({ children }) {
   if (isArenaRoute && checkingAuth) {
     return (
       <div className="w-full min-h-screen bg-[#090A0F] flex items-center justify-center">
-        <div className="w-8 h-8 rounded-full border-2 border-violet-500 border-t-transparent animate-spin" />
+        <div className="w-8 h-8 rounded-full border-2 border-[#4F46E5] border-t-transparent animate-spin" />
       </div>
     );
   }

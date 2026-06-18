@@ -206,42 +206,227 @@ function DomainBreakdown({ domainStats, totalUsers }) {
   );
 }
 
-function DailyTrend({ dailyTrend }) {
-  const maxCount = Math.max(...dailyTrend.map((d) => d.count), 1);
+function RegistrationTrendChart({ trends, fallback }) {
+  const [filter, setFilter] = useState("7d"); // "24h" | "7d"
+  const [sliderVal, setSliderVal] = useState(24); // slider ranges from 0 (oldest) to 24 (most recent)
+  const [currentTimeText, setCurrentTimeText] = useState("");
+
+  useEffect(() => {
+    const now = new Date();
+    const formatted = now.toLocaleDateString(undefined, {
+      day: "numeric",
+      month: "short",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+      second: "2-digit",
+      hour12: true
+    });
+    setCurrentTimeText(formatted);
+  }, []);
+
+  const apiKeyMap = {
+    "24h": "hourly",
+    "7d": "weekly",
+  };
+
+  const fullTrend = trends?.[apiKeyMap[filter]] || (filter === "7d" ? fallback : []) || [];
+  
+  // Slice activeTrend based on filter and sliderVal
+  const activeTrend = filter === "24h" ? fullTrend.slice(sliderVal, sliderVal + 24) : fullTrend;
+
+  const maxCount = Math.max(...activeTrend.map((d) => d.count), 1);
+  const gridLines = [maxCount, Math.round(maxCount / 2), 0];
 
   return (
-    <div className={`${THEME.panel} rounded-2xl p-5`}>
-      <h3 className="text-xs font-black uppercase tracking-[0.18em] text-slate-700 mb-4">
-        Registration Trend (7 Days)
-      </h3>
-      <div className="flex items-end gap-2 h-32">
-        {dailyTrend.map((d) => {
-          const height = (d.count / maxCount) * 100;
-          const label = d.date.slice(5);
-          return (
-            <div
-              key={d.date}
-              className="flex-1 flex flex-col items-center gap-1"
+    <div className={`${THEME.panel} rounded-2xl p-5 mt-6 relative overflow-hidden flex flex-col`}>
+      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 mb-6">
+        <div>
+          <h3 className="text-xs font-black uppercase tracking-[0.18em] text-slate-700">
+            Registration Trend
+          </h3>
+          <p className="text-[10px] text-slate-400 mt-0.5">
+            {filter === "24h"
+              ? "Hourly signups over the last 24 hours (Hours in X-axis, users count in Y-axis)"
+              : "Daily signups over the last 7 days"}
+          </p>
+        </div>
+        
+        {/* Toggle Filter Buttons */}
+        <div className="flex border border-slate-200 rounded-lg p-0.5 bg-slate-50 text-[10px] font-bold">
+          {[
+            { key: "24h", label: "24 Hours" },
+            { key: "7d", label: "7 Days" }
+          ].map((t) => (
+            <button
+              key={t.key}
+              onClick={() => setFilter(t.key)}
+              className={`px-3 py-1 rounded-md transition-all uppercase tracking-wider cursor-pointer ${
+                filter === t.key
+                  ? "bg-white text-sky-700 shadow-sm border border-slate-200/50"
+                  : "text-slate-500 hover:text-slate-900 border border-transparent"
+              }`}
             >
-              <span className="text-[9px] text-slate-500 font-mono">
-                {d.count}
-              </span>
-              <div className="w-full flex justify-center">
-                <div
-                  className="w-full max-w-[28px] rounded-t-md transition-all duration-500"
-                  style={{
-                    height: `${Math.max(height, 4)}%`,
-                    background:
-                      "linear-gradient(180deg, rgba(56,189,248,0.95), rgba(29,78,216,0.72))",
-                  }}
-                />
+              {t.label}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Chart and X-Axis Container */}
+      <div className="relative flex flex-col pl-10 pr-2 mt-2">
+        {/* The Chart (Grid & Bars) */}
+        <div className="relative h-36 flex items-end">
+          {/* Background Grid Lines */}
+          <div className="absolute inset-0 flex flex-col justify-between pointer-events-none pr-2">
+            {gridLines.map((val, idx) => (
+              <div key={idx} className="w-full flex items-center gap-2">
+                <span className="text-[9px] font-mono text-slate-400 w-8 text-right select-none -ml-10">
+                  {val}
+                </span>
+                <div className="flex-1 border-t border-slate-100 border-dashed" />
               </div>
-              <span className="text-[8px] text-slate-600 font-mono">
-                {label}
-              </span>
-            </div>
-          );
-        })}
+            ))}
+          </div>
+
+          {/* Bars Container */}
+          <div className="relative w-full h-full flex items-end gap-1 sm:gap-2 z-10">
+            {activeTrend.map((d, idx) => {
+              const height = (d.count / maxCount) * 100;
+
+              return (
+                <div
+                  key={d.date || idx}
+                  className="flex-1 flex flex-col justify-end items-center h-full group relative min-w-[4px]"
+                >
+                  {/* Bar Value Tooltip on Hover */}
+                  <div className="absolute -top-7 opacity-0 group-hover:opacity-100 transition-opacity duration-200 bg-slate-900 text-white text-[9px] font-mono font-bold px-2 py-0.5 rounded shadow-md pointer-events-none whitespace-nowrap z-20">
+                     {d.count} {d.count === 1 ? "signup" : "signups"}
+                     {filter === "24h" && <span className="text-slate-400 block text-[8px] font-normal">{d.date}</span>}
+                  </div>
+
+                  {/* The Bar */}
+                  <div
+                    className={`w-full rounded-t transition-all duration-500 ease-out bg-gradient-to-t from-sky-600/90 to-sky-400 hover:from-sky-500 hover:to-sky-300 shadow-sm cursor-pointer ${
+                      filter === "24h" ? "max-w-[12px]" : "max-w-[36px] rounded-t-md"
+                    }`}
+                    style={{
+                      height: `${Math.max(height, 5)}%`,
+                    }}
+                  />
+                </div>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* X-Axis Labels Row */}
+        <div className="flex w-full mt-2 gap-1 sm:gap-2 text-[8px] sm:text-[9px] text-slate-400 font-mono select-none">
+          {activeTrend.map((d, idx) => {
+            let formattedLabel = d.label;
+            if (filter === "7d") {
+              const parts = d.date.split("-");
+              const day = parts[2] || "";
+              const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+              const month = parts[1] ? monthNames[parseInt(parts[1], 10) - 1] : "";
+              formattedLabel = `${day} ${month}`;
+            }
+
+            return (
+              <div key={idx} className="flex-1 text-center truncate">
+                {formattedLabel}
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* Slider Controls for 24h filter */}
+      {filter === "24h" && fullTrend.length > 24 && (
+        <div className="flex flex-col gap-2 mt-4 border-t border-slate-100/80 pt-3">
+          <div className="flex justify-between items-center text-xs font-semibold text-slate-700">
+            <span>Slide to view previous hours:</span>
+            <span className="font-mono text-sky-700 bg-sky-50 px-2 py-0.5 rounded border border-sky-100">
+              Showing: {activeTrend[0]?.label} to {activeTrend[23]?.label}
+            </span>
+          </div>
+          <div className="flex items-center gap-3">
+            <span className="text-[10px] text-slate-400 font-bold uppercase select-none">Earlier</span>
+            <input
+              type="range"
+              min="0"
+              max={fullTrend.length - 24}
+              value={sliderVal}
+              onChange={(e) => setSliderVal(parseInt(e.target.value, 10))}
+              className="flex-1 h-1.5 bg-slate-100 rounded-lg appearance-none cursor-pointer accent-sky-600 focus:outline-none"
+            />
+            <span className="text-[10px] text-slate-400 font-bold uppercase select-none">Recent</span>
+          </div>
+        </div>
+      )}
+
+      <div className="mt-4 flex flex-col sm:flex-row sm:justify-between sm:items-center gap-1.5 text-[9px] text-slate-400/95 font-mono select-none border-t border-slate-100/80 pt-3">
+        <span>* All times are represented in your local timezone ({typeof window !== "undefined" ? Intl.DateTimeFormat().resolvedOptions().timeZone : "Local"})</span>
+        {currentTimeText && (
+          <span className="font-bold text-slate-500">Current Time: {currentTimeText}</span>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function TaskCompletionsTable({ taskStats }) {
+  if (!taskStats || taskStats.length === 0) return null;
+
+  return (
+    <div className={`${THEME.panel} rounded-2xl overflow-hidden mt-6 bg-white`}>
+      <div className="px-5 py-4 border-b border-slate-200/90 flex justify-between items-center">
+        <div>
+          <h3 className="text-xs font-black uppercase tracking-[0.18em] text-slate-700">
+            Task Completions Overview
+          </h3>
+          <p className="text-[10px] text-slate-400 mt-0.5">Completion count for each active challenge</p>
+        </div>
+        <span className="text-[9px] font-bold text-sky-700 bg-sky-50 px-2.5 py-0.5 rounded-full border border-sky-100 font-mono">
+          Challenge Stats
+        </span>
+      </div>
+      <div className="overflow-x-auto">
+        <table className="w-full text-xs">
+          <thead>
+            <tr className="border-b border-slate-200/90 text-slate-500 bg-slate-50/50">
+              <th className="text-left px-5 py-3 font-bold uppercase tracking-wider w-20">
+                Task ID
+              </th>
+              <th className="text-left px-5 py-3 font-bold uppercase tracking-wider">
+                Challenge Name
+              </th>
+              <th className="text-right px-5 py-3 font-bold uppercase tracking-wider w-36">
+                Times Completed
+              </th>
+            </tr>
+          </thead>
+          <tbody>
+            {taskStats.map((task) => (
+              <tr
+                key={task.id}
+                className="border-b border-slate-200/70 hover:bg-slate-50/60 transition-colors"
+              >
+                <td className="px-5 py-3 text-slate-500 font-mono font-semibold">
+                  #{task.id}
+                </td>
+                <td className="px-5 py-3 text-slate-800 font-semibold truncate max-w-xs sm:max-w-md">
+                  {task.title}
+                </td>
+                <td className="px-5 py-3 text-right font-mono font-bold text-emerald-700">
+                  <span className="bg-emerald-50 text-emerald-800 border border-emerald-100 rounded-full px-2.5 py-0.5 text-[11px] shadow-sm">
+                    {task.count.toLocaleString()}
+                  </span>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
       </div>
     </div>
   );
@@ -339,9 +524,11 @@ export default function AdminDashboard() {
             domainStats={stats.domainStats}
             totalUsers={stats.totalUsers}
           />
-          <DailyTrend dailyTrend={stats.dailyTrend} />
         </div>
       </div>
+
+      <RegistrationTrendChart trends={stats.trends} fallback={stats.dailyTrend} />
+      <TaskCompletionsTable taskStats={stats.taskStats} />
     </div>
   );
 }

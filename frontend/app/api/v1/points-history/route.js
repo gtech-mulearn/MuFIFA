@@ -192,7 +192,7 @@ export async function GET(request) {
     // 3. Fetch referral bonuses (each referral = +5 points)
     // The registrations table uses `referred_by` with the numeric `id`
     const referralsRes = await fetch(
-      `${supabaseUrl}/rest/v1/registrations?referred_by=eq.${encodeURIComponent(users[0].referal_id)}&select=id,name,user_id,created_at&order=created_at.desc`,
+      `${supabaseUrl}/rest/v1/registrations?referred_by=eq.${encodeURIComponent(userDbId)}&select=id,name,user_id,created_at&order=created_at.desc`,
       {
         headers: {
           apikey: supabaseKey,

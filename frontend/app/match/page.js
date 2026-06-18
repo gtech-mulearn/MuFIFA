@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import Link from "next/link";
 import MatchCard from "@/components/match/MatchCard";
 import CorrectPredictorsModal from "@/components/match/CorrectPredictorsModal";
 import Header from "../tasks/components/Header/Header";
@@ -12,6 +13,309 @@ const TAB_STATUSES = {
   results: new Set(["FINISHED"]),
 };
 
+const FLAGS = {
+  Brazil: "br",
+  Argentina: "ar",
+  Portugal: "pt",
+  Germany: "de",
+  France: "fr",
+  England: "gb-eng",
+  Spain: "es",
+  Netherlands: "nl",
+  Belgium: "be",
+  Croatia: "hr",
+  Uruguay: "uy",
+  Japan: "jp",
+};
+
+const getInitials = (name) => {
+  if (!name) return "⚽";
+  const parts = name.trim().split(/\s+/);
+  if (parts.length === 1) return parts[0].substring(0, 2).toUpperCase();
+  return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+};
+
+function TopPredictorsList({
+  predictors,
+  searchQuery,
+  setSearchQuery,
+  hasMore,
+  onLoadMore,
+  loading,
+}) {
+  const getRankStyle = (rank) => {
+    if (rank === 1)
+      return "bg-[#FBBF24]/10 border-[#FBBF24]/30 text-[#FBBF24] shadow-[0_0_8px_rgba(251,191,36,0.15)]";
+    if (rank === 2)
+      return "bg-[#94A3B8]/10 border-[#94A3B8]/30 text-[#E2E8F0] shadow-[0_0_8px_rgba(148,163,184,0.15)]";
+    if (rank === 3) return "bg-[#D97706]/10 border-[#D97706]/30 text-[#F97316]";
+    return "bg-white/5 border-white/10 text-slate-400";
+  };
+
+  const renderPodiumItem = (pred, rankPosition) => {
+    if (!pred) return null;
+
+    const config = {
+      1: {
+        borderClass: "border-4 border-[#FBBF24] shadow-[0_0_15px_rgba(251,191,36,0.25)]",
+        badgeBg: "bg-[#FBBF24] text-black",
+        standClass: "bg-gradient-to-b from-[#FBBF24]/15 via-[#FBBF24]/3 to-transparent border-t border-x border-[#FBBF24]/30 shadow-[0_-8px_24px_rgba(251,191,36,0.06)]",
+        standHeight: "h-[120px] sm:h-[140px] md:h-[160px]",
+        standNum: "1",
+        standNumClass: "text-[#FBBF24]/10 text-7xl sm:text-8xl",
+        avatarSize: "w-18 h-18 sm:w-24 sm:h-24 md:w-28 md:h-28",
+        containerClass: "max-w-[120px] sm:max-w-[160px] md:max-w-[210px] z-10",
+      },
+      2: {
+        borderClass: "border-4 border-[#94A3B8] shadow-[0_0_15px_rgba(148,163,184,0.15)]",
+        badgeBg: "bg-[#94A3B8] text-black",
+        standClass: "bg-gradient-to-b from-[#94A3B8]/10 via-[#94A3B8]/3 to-transparent border-t border-x border-[#94A3B8]/20 shadow-[0_-8px_24px_rgba(148,163,184,0.03)]",
+        standHeight: "h-[90px] sm:h-[110px] md:h-[130px]",
+        standNum: "2",
+        standNumClass: "text-[#94A3B8]/10 text-6xl sm:text-7xl",
+        avatarSize: "w-14 h-14 sm:w-20 sm:h-20 md:w-24 md:h-24",
+        containerClass: "max-w-[105px] sm:max-w-[140px] md:max-w-[180px]",
+      },
+      3: {
+        borderClass: "border-4 border-[#D97706] shadow-[0_0_15px_rgba(217,119,6,0.15)]",
+        badgeBg: "bg-[#D97706] text-black",
+        standClass: "bg-gradient-to-b from-[#D97706]/10 via-[#D97706]/3 to-transparent border-t border-x border-[#D97706]/20 shadow-[0_-8px_24px_rgba(217,119,6,0.03)]",
+        standHeight: "h-[70px] sm:h-[90px] md:h-[105px]",
+        standNum: "3",
+        standNumClass: "text-[#D97706]/10 text-5xl sm:text-6xl",
+        avatarSize: "w-12 h-12 sm:w-18 sm:h-18 md:w-20 md:h-20",
+        containerClass: "max-w-[95px] sm:max-w-[130px] md:max-w-[160px]",
+      }
+    }[rankPosition];
+
+    const displayCollege = pred.institution && pred.institution !== "N/A"
+      ? pred.institution
+      : "No College Listed";
+
+    return (
+      <div className={`flex-1 flex flex-col items-center text-center group ${config.containerClass}`}>
+        {/* Avatar Container */}
+        <div className="relative mb-2 transition-transform duration-300 group-hover:-translate-y-1">
+          <div className={`rounded-full bg-slate-800 overflow-hidden flex items-center justify-center shrink-0 ${config.avatarSize} ${config.borderClass}`}>
+            {pred.avatar_url ? (
+              <img
+                src={pred.avatar_url}
+                alt={pred.name}
+                className="w-full h-full object-cover"
+              />
+            ) : (
+              <span className="text-[10px] sm:text-xs font-bold text-slate-400">
+                {getInitials(pred.name)}
+              </span>
+            )}
+          </div>
+          {/* Overlapping rank badge */}
+          <span className={`absolute -bottom-1 -right-1 w-5 h-5 rounded-full border border-white/20 text-[9px] sm:text-[10px] font-black flex items-center justify-center shadow-lg ${config.badgeBg}`}>
+            {rankPosition}
+          </span>
+        </div>
+
+        {/* User profile info */}
+        <div className="w-full flex flex-col items-center mb-2 min-h-[90px] sm:min-h-[105px] justify-end">
+          <Link
+            href={`/profile/${pred.user_id}`}
+            className="text-[10px] sm:text-xs font-bold text-slate-200 group-hover:text-white hover:underline transition-colors truncate max-w-full"
+          >
+            {pred.name}
+          </Link>
+          <span className="text-[8px] sm:text-[9px] text-slate-500 truncate max-w-full font-semibold">
+            {displayCollege}
+          </span>
+          <span className={`inline-block px-1.5 py-0.5 mt-1 rounded text-[7px] font-black uppercase tracking-wider border shrink-0 ${
+            pred.domain?.toLowerCase() === "cybersecurity"
+              ? "bg-[#10B981]/10 border-[#10B981]/20 text-[#10B981]"
+              : pred.domain?.toLowerCase() === "web"
+              ? "bg-[#3B82F6]/10 border-[#3B82F6]/20 text-[#3B82F6]"
+              : "bg-white/5 border-white/10 text-slate-400"
+          }`}>
+            {pred.domain || "N/A"}
+          </span>
+          <span className="text-xs sm:text-sm md:text-base font-black text-[#00E676] mt-1 tracking-wide flex items-center gap-0.5">
+            {pred.predictionPoints > 0 ? `+${pred.predictionPoints}` : pred.predictionPoints}{" "}
+            <span className="text-[8px] text-slate-500 font-semibold uppercase">pts</span>
+          </span>
+        </div>
+
+        {/* Stand Box */}
+        <div className={`w-full border-t border-x rounded-t-[1.5rem] relative flex items-end justify-center pb-4 sm:pb-6 ${config.standClass} ${config.standHeight}`}>
+          <span className={`absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 font-black select-none pointer-events-none ${config.standNumClass}`}>
+            {config.standNum}
+          </span>
+          <span className="text-[8px] sm:text-[10px] text-slate-400 font-extrabold uppercase tracking-wide z-10 select-none">
+            {pred.correctPredictions}/{pred.totalPredictions}
+          </span>
+        </div>
+      </div>
+    );
+  };
+
+  const hasPodium = searchQuery.trim() === "" && predictors.length >= 3;
+  const listItems = hasPodium ? predictors.slice(3) : predictors;
+  const listOffset = hasPodium ? 3 : 0;
+
+  return (
+    <div className="bg-glass-card rounded-2xl py-5 px-0 border border-white/10 backdrop-blur-md shadow-xl flex flex-col gap-4 w-full">
+      {/* Search Bar */}
+      <div className="px-4">
+        <input
+          type="text"
+          placeholder="Search predictor by name or @username..."
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          className="bg-black/40 border border-white/10 rounded-lg px-3 py-2 text-xs text-slate-200 placeholder-slate-600 focus:outline-none focus:border-[#06B6D4] w-full transition-colors"
+        />
+      </div>
+
+      {/* Podium stand for top 3 */}
+      {hasPodium && (
+        <div className="px-2 sm:px-4 pb-6 pt-4 flex justify-center items-end gap-2 sm:gap-4 border-b border-white/5 bg-white/[0.01]">
+          {renderPodiumItem(predictors[1], 2)} {/* 2nd Place */}
+          {renderPodiumItem(predictors[0], 1)} {/* 1st Place */}
+          {renderPodiumItem(predictors[2], 3)} {/* 3rd Place */}
+        </div>
+      )}
+
+      {/* Standings Table Header */}
+      <div className="flex items-center justify-between py-2 px-4 border-b border-white/5 text-[10px] font-bold text-slate-500 uppercase tracking-wider">
+        <div className="flex items-center gap-2">
+          <span>Rank & Player</span>
+        </div>
+        <div className="flex items-center gap-4 sm:gap-6">
+          <span className="hidden sm:inline">Squad</span>
+          <span>Predictions</span>
+          <span className="hidden sm:inline">Exact</span>
+          <span className="hidden sm:inline">Accuracy</span>
+          <span className="min-w-[60px] text-right">Points</span>
+        </div>
+      </div>
+
+      {/* Standings Table Rows */}
+      <div className="flex flex-col">
+        {listItems.length > 0 ? (
+          listItems.map((pred, idx) => {
+            const rank = idx + 1 + listOffset;
+            return (
+              <div
+                key={pred.user_id}
+                className="flex items-center justify-between py-3.5 px-4 border-b border-white/5 hover:bg-white/[0.02] transition-colors group last:border-b-0 animate-in fade-in duration-200"
+              >
+                {/* Left side: Rank, Avatar, Name */}
+                <div className="flex items-center gap-2.5 min-w-0 flex-1">
+                  <span
+                    className={`inline-flex items-center justify-center w-6 h-6 rounded-md text-[10px] font-bold border shrink-0 ${getRankStyle(rank)}`}
+                  >
+                    {rank}
+                  </span>
+
+                  <div className="w-7 h-7 rounded-full bg-slate-800 border border-white/5 overflow-hidden flex items-center justify-center shrink-0">
+                    {pred.avatar_url ? (
+                      <img
+                        src={pred.avatar_url}
+                        alt={pred.name}
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <span className="text-[9px] font-bold text-slate-400">
+                        {getInitials(pred.name)}
+                      </span>
+                    )}
+                  </div>
+
+                  <div className="flex flex-col min-w-0 text-left">
+                    <Link
+                      href={`/profile/${pred.user_id}`}
+                      className="text-xs font-semibold text-slate-200 group-hover:text-white hover:underline transition-colors truncate"
+                    >
+                      {pred.name}
+                    </Link>
+                    <span className="text-[9px] font-medium text-slate-500 truncate">
+                      @{pred.user_id}
+                    </span>
+                  </div>
+                </div>
+
+                {/* Right side: Stats */}
+                <div className="flex items-center gap-4 sm:gap-6 shrink-0">
+                  {/* Squad flag */}
+                  {pred.team && FLAGS[pred.team] ? (
+                    <span
+                      className={`fi fi-${FLAGS[pred.team]} rounded-sm shadow-sm border border-white/10 shrink-0`}
+                      style={{ width: "16px", height: "12px" }}
+                      title={pred.team}
+                    />
+                  ) : (
+                    <span className="hidden sm:inline-block w-4 h-3 shrink-0" />
+                  )}
+
+                  {/* Predictions Count (Correct / Total) */}
+                  <div className="flex flex-col items-center">
+                    <span className="text-xs font-semibold text-slate-200">
+                      {pred.correctPredictions}
+                      <span className="text-slate-500 font-normal">/{pred.totalPredictions}</span>
+                    </span>
+                    <span className="text-[8px] text-slate-500 font-bold uppercase tracking-wider sm:hidden">
+                      {pred.accuracy}%
+                    </span>
+                  </div>
+
+                  {/* Exact Scores Badge */}
+                  <span className="hidden sm:inline-block px-1.5 py-0.5 rounded text-[8px] font-black uppercase tracking-wider bg-amber-500/10 border border-amber-500/20 text-amber-400">
+                    {pred.exactPredictions} Exact
+                  </span>
+
+                  {/* Accuracy Badge */}
+                  <span className="hidden sm:inline-block px-1.5 py-0.5 rounded text-[8px] font-black uppercase tracking-wider bg-[#06B6D4]/10 border border-[#06B6D4]/20 text-[#06B6D4]">
+                    {pred.accuracy}% ACC
+                  </span>
+
+                  {/* Prediction Points */}
+                  <div className="flex items-center gap-0.5 min-w-[60px] justify-end">
+                    <span className={`text-xs font-bold ${pred.predictionPoints > 0 ? "text-[#00E676]" : pred.predictionPoints < 0 ? "text-rose-500" : "text-slate-400"}`}>
+                      {pred.predictionPoints > 0 ? `+${pred.predictionPoints}` : pred.predictionPoints}
+                    </span>
+                    <span className="text-[9px] text-slate-500 uppercase tracking-wider font-semibold">
+                      pts
+                    </span>
+                  </div>
+                </div>
+              </div>
+            );
+          })
+        ) : (
+          <div className="py-12 mx-4 text-center text-slate-500 text-xs font-bold border border-white/5 rounded-lg bg-white/[0.005]">
+            No predictors found matching your search.
+          </div>
+        )}
+      </div>
+
+      {/* Pagination View More Button */}
+      {hasMore && (
+        <div className="pt-4 pb-2 text-center border-t border-white/5">
+          <button
+            onClick={onLoadMore}
+            disabled={loading}
+            className="px-6 py-2 rounded-xl bg-white/5 border border-white/10 hover:border-white/20 text-xs font-bold uppercase tracking-wider text-slate-300 hover:text-white transition-all cursor-pointer disabled:opacity-50 flex items-center justify-center gap-2 mx-auto"
+          >
+            {loading ? (
+              <>
+                <span className="w-3 h-3 rounded-full border-2 border-white border-t-transparent animate-spin" />
+                Loading More...
+              </>
+            ) : (
+              "View More Predictors"
+            )}
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function MatchPage() {
   const [matches, setMatches] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -21,6 +325,62 @@ export default function MatchPage() {
   const [resultsVisible, setResultsVisible] = useState(2);
   const [orderedMatchIds, setOrderedMatchIds] = useState([]);
   const [selectedMatchForPredictors, setSelectedMatchForPredictors] = useState(null);
+
+  // Top Predictors Tab State
+  const [predictors, setPredictors] = useState([]);
+  const [predictorsLoading, setPredictorsLoading] = useState(false);
+  const [predictorsError, setPredictorsError] = useState(null);
+  const [predictorsSearchQuery, setPredictorsSearchQuery] = useState("");
+  const [predictorsOffset, setPredictorsOffset] = useState(0);
+  const [hasMorePredictors, setHasMorePredictors] = useState(false);
+
+  const fetchTopPredictors = async (reset = false) => {
+    setPredictorsLoading(true);
+    setPredictorsError(null);
+    try {
+      const currentOffset = reset ? 0 : predictorsOffset;
+      const res = await fetch(
+        `/api/v1/predictions/top?limit=12&offset=${currentOffset}&search=${encodeURIComponent(
+          predictorsSearchQuery
+        )}`
+      );
+      const data = await res.json();
+      if (res.ok && data?.success) {
+        if (reset) {
+          setPredictors(data.data ?? []);
+          setPredictorsOffset((data.data ?? []).length);
+        } else {
+          setPredictors((prev) => [...prev, ...(data.data ?? [])]);
+          setPredictorsOffset((prev) => prev + (data.data ?? []).length);
+        }
+        setHasMorePredictors(data.pagination?.hasMore ?? false);
+      } else {
+        setPredictorsError(data?.error?.message || "Failed to load top predictors");
+      }
+    } catch {
+      setPredictorsError("Failed to load top predictors");
+    } finally {
+      setPredictorsLoading(false);
+    }
+  };
+
+  // Load predictors on tab switch
+  useEffect(() => {
+    if (activeTab === "top_predictors") {
+      fetchTopPredictors(true);
+    }
+  }, [activeTab]);
+
+  // Debounced search trigger for predictors
+  useEffect(() => {
+    if (activeTab !== "top_predictors") return;
+
+    const delayDebounceFn = setTimeout(() => {
+      fetchTopPredictors(true);
+    }, 450);
+
+    return () => clearTimeout(delayDebounceFn);
+  }, [predictorsSearchQuery]);
 
   // Silently check auth — match page is public, no redirect
   useEffect(() => {
@@ -175,10 +535,11 @@ export default function MatchPage() {
           {/* Left / Main column (Match Content) */}
           <div className="lg:col-span-9 flex flex-col gap-6 w-full">
             {/* Tab Bar */}
-            <div className="flex bg-black/40 border border-white/5 p-1 rounded-xl w-full max-w-sm mx-auto">
+            <div className="flex bg-black/40 border border-white/5 p-1 rounded-xl w-full max-w-md mx-auto">
               {[
                 { key: "matches", label: "Matches" },
                 { key: "results", label: "Results" },
+                { key: "top_predictors", label: "Top Predictors" },
               ].map(({ key, label }) => (
                 <button
                   key={key}
@@ -201,7 +562,43 @@ export default function MatchPage() {
             </div>
 
             {/* Content */}
-            {loading ? (
+            {activeTab === "top_predictors" ? (
+              predictorsLoading ? (
+                <div className="py-16 flex flex-col items-center justify-center gap-3">
+                  <div className="w-6 h-6 rounded-full border-2 border-[#4F46E5] border-t-transparent animate-spin" />
+                  <span className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">
+                    Loading Top Predictors...
+                  </span>
+                </div>
+              ) : predictorsError ? (
+                <div className="rounded-2xl bg-black/40 border border-red-500/30 p-6 flex flex-col items-center gap-4 text-center">
+                  <div className="w-10 h-10 rounded-full bg-red-500/10 border border-red-500/30 flex items-center justify-center">
+                    <span className="text-red-400 text-lg">!</span>
+                  </div>
+                  <div>
+                    <p className="text-sm font-semibold text-red-400">{predictorsError}</p>
+                    <p className="text-[10px] text-slate-500 mt-1">
+                      Could not load predictors data from the server.
+                    </p>
+                  </div>
+                  <button
+                    onClick={fetchTopPredictors}
+                    className="px-5 py-2 rounded-lg bg-red-500/10 border border-red-500/30 text-red-400 hover:bg-red-500/20 hover:border-red-500/50 text-xs font-bold uppercase tracking-wider transition-all cursor-pointer"
+                  >
+                    Retry
+                  </button>
+                </div>
+              ) : (
+                <TopPredictorsList
+                  predictors={predictors}
+                  searchQuery={predictorsSearchQuery}
+                  setSearchQuery={setPredictorsSearchQuery}
+                  hasMore={hasMorePredictors}
+                  onLoadMore={() => fetchTopPredictors(false)}
+                  loading={predictorsLoading}
+                />
+              )
+            ) : loading ? (
               /* Skeleton loading grid */
               <div className="grid grid-cols-1 gap-4">
                 {Array.from({ length: 6 }).map((_, i) => (

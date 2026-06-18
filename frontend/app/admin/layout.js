@@ -95,6 +95,23 @@ function CreateTaskIcon() {
   );
 }
 
+function TestStatIcon() {
+  return (
+    <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
+      <path strokeLinecap="round" strokeLinejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 00-2 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+      <path strokeLinecap="round" strokeLinejoin="round" d="M9 14h6m-6-4h6m-6 8h3" />
+    </svg>
+  );
+}
+
+function EmailIcon() {
+  return (
+    <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
+      <path strokeLinecap="round" strokeLinejoin="round" d="M21.75 6.75v10.5a2.25 2.25 0 01-2.25 2.25h-15a2.25 2.25 0 01-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25m19.5 0v.243a2.25 2.25 0 01-1.07 1.916l-7.5 4.615a2.25 2.25 0 01-2.36 0L3.32 8.91a2.25 2.25 0 01-1.07-1.916V6.75" />
+    </svg>
+  );
+}
+
 function Sidebar({ admin, collapsed, setCollapsed }) {
   const pathname = usePathname();
 
@@ -104,6 +121,8 @@ function Sidebar({ admin, collapsed, setCollapsed }) {
     { name: "Predictions", href: "/admin/predictions", icon: <PredictionsIcon /> },
     { name: "Tasks", href: "/admin/tasks", icon: <TasksIcon /> },
     { name: "Create Task", href: "/admin/tasks/create", icon: <CreateTaskIcon /> },
+    { name: "Test Stat", href: "/admin/test-stat", icon: <TestStatIcon /> },
+    { name: "Send Email", href: "/admin/email", icon: <EmailIcon /> },
   ];
 
   if (admin?.role === "superadmin") {
@@ -138,7 +157,13 @@ function Sidebar({ admin, collapsed, setCollapsed }) {
             const isActive =
               link.href === "/admin"
                 ? pathname === "/admin"
-                : pathname.startsWith(link.href);
+                : pathname.startsWith(link.href) &&
+                  !links.some(
+                    (other) =>
+                      other.href !== link.href &&
+                      other.href.startsWith(link.href) &&
+                      pathname.startsWith(other.href)
+                  );
 
             return (
               <Link
@@ -185,7 +210,13 @@ function Sidebar({ admin, collapsed, setCollapsed }) {
           const isActive =
             link.href === "/admin"
               ? pathname === "/admin"
-              : pathname.startsWith(link.href);
+              : pathname.startsWith(link.href) &&
+                !links.some(
+                  (other) =>
+                    other.href !== link.href &&
+                    other.href.startsWith(link.href) &&
+                    pathname.startsWith(other.href)
+                );
 
           return (
             <Link
