@@ -109,7 +109,7 @@ export async function POST(request) {
       const userId = email.split("@")[0];
 
       if (action === "resend_otp") {
-        const existingSession = getOtpSession(email);
+        const existingSession = await getOtpSession(email);
         if (!existingSession) {
           return jsonError(400, "SESSION_EXPIRED", "OTP session has expired or does not exist. Please request a new OTP.");
         }
@@ -157,7 +157,7 @@ export async function POST(request) {
         return jsonError(409, "CONFLICT_ERROR", "This phone number has already been registered.");
       }
       const otp = crypto.randomInt(100000, 1000000).toString();
-      const session = createOtpSession(email, { name, email, phone, domain, team, referralId }, otp);
+      const session = await createOtpSession(email, { name, email, phone, domain, team, referralId }, otp);
 
       const mailSent = await sendRegistrationOtpEmail({ email, name, otp });
       if (!mailSent) {
@@ -183,7 +183,7 @@ export async function POST(request) {
       if (!email) {
         return jsonError(400, "BAD_REQUEST", "Email is required for cancellation.");
       }
-      clearOtpSession(email);
+      await clearOtpSession(email);
       return NextResponse.json({ success: true, message: "OTP session cancelled." });
     }
 
@@ -194,14 +194,14 @@ export async function POST(request) {
         return jsonError(400, "BAD_REQUEST", "Email and OTP are required.");
       }
 
-      const session = getOtpSession(email);
+      const session = await getOtpSession(email);
       if (!session) {
         return jsonError(400, "EXPIRED_OR_NOT_FOUND", "OTP session has expired or does not exist.");
       }
 
       if (session.otp !== otp) {
         let maxAttemptsReached = false;
-        const updated = updateOtpSession(email, (curr) => {
+        const updated = await updateOtpSession(email, (curr) => {
           const nextAttempts = curr.attempts + 1;
           if (nextAttempts >= OTP_MAX_ATTEMPTS) {
             maxAttemptsReached = true;
@@ -210,7 +210,7 @@ export async function POST(request) {
         });
 
         if (maxAttemptsReached) {
-          clearOtpSession(email);
+          await clearOtpSession(email);
           return jsonError(400, "MAX_ATTEMPTS_REACHED", "Too many failed attempts. Please request a new OTP.");
         }
 
@@ -306,7 +306,7 @@ export async function POST(request) {
       // Pass the generated plain-text password to the email template
       player.plainPassword = plainPassword;
 
-      clearOtpSession(email);
+      await clearOtpSession(email);
 
       if (player.team) {
         await adjustSquadPoints(supabaseUrl, supabaseKey, player.team, 10);
@@ -403,7 +403,7 @@ export async function GET(request) {
       return jsonError(400, "BAD_REQUEST", "Email is required.");
     }
 
-    const session = getOtpSession(email);
+    const session = await getOtpSession(email);
     if (!session) {
       return NextResponse.json({
         success: false,

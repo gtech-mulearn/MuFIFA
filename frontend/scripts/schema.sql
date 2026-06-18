@@ -174,3 +174,19 @@ ON CONFLICT (id) DO UPDATE SET
     xp_teamwork = EXCLUDED.xp_teamwork,
     xp_execution = EXCLUDED.xp_execution,
     tier = EXCLUDED.tier;
+
+-- 4. Create the `otp` table to store registration verification flows
+CREATE TABLE IF NOT EXISTS otp (
+    email VARCHAR(255) PRIMARY KEY,
+    otp VARCHAR(10) NOT NULL,
+    payload JSONB NOT NULL,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    expires_at TIMESTAMP WITH TIME ZONE NOT NULL,
+    resend_available_at TIMESTAMP WITH TIME ZONE NOT NULL,
+    attempts INT DEFAULT 0
+);
+
+ALTER TABLE otp FORCE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Allow service role full access on otp" ON otp;
+CREATE POLICY "Allow service role full access on otp" ON otp FOR ALL USING (true);
+
