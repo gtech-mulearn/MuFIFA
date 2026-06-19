@@ -28,7 +28,7 @@ export async function GET(request) {
     const limitParam = searchParams.get("limit");
     const pageParam = searchParams.get("page") || "1";
 
-    let url = `${supabaseUrl}/rest/v1/tasks?select=*&order=id.asc`;
+    let url = `${supabaseUrl}/rest/v1/tasks?select=*&tier=gt.0&order=id.asc`;
     const headers = {
       apikey: supabaseKey,
       Authorization: `Bearer ${supabaseKey}`,

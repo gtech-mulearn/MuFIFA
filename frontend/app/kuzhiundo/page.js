@@ -23,99 +23,7 @@ const getTeamPlayerImage = (teamName) => {
   return null;
 };
 
-// Mock user leaderboard data with avatars
-const DUMMY_KUZHIUNDO_LEADERBOARD = [
-  {
-    id: "usr_9981",
-    name: "Adhwith A S",
-    username: "adhwith_as",
-    submissions: 89,
-    domain: "Strategist",
-    team: "Brazil",
-    avatar_url: "https://api.dicebear.com/7.x/avataaars/svg?seed=adhwith_as",
-  },
-  {
-    id: "usr_4201",
-    name: "Midhun Krishna",
-    username: "midhun_k",
-    submissions: 74,
-    domain: "Coder",
-    team: "Argentina",
-    avatar_url: "https://api.dicebear.com/7.x/avataaars/svg?seed=midhun_k",
-  },
-  {
-    id: "usr_1102",
-    name: "Neha Menon",
-    username: "neha_m",
-    submissions: 61,
-    domain: "Creative",
-    team: "Portugal",
-    avatar_url: "https://api.dicebear.com/7.x/avataaars/svg?seed=neha_m",
-  },
-  {
-    id: "usr_3592",
-    name: "Aravind S",
-    username: "aravind_s",
-    submissions: 50,
-    domain: "Maker",
-    team: "Germany",
-    avatar_url: "https://api.dicebear.com/7.x/avataaars/svg?seed=aravind_s",
-  },
-  {
-    id: "usr_6711",
-    name: "Anjali R",
-    username: "anjali_r",
-    submissions: 42,
-    domain: "Coder",
-    team: "France",
-    avatar_url: "https://api.dicebear.com/7.x/avataaars/svg?seed=anjali_r",
-  },
-  {
-    id: "usr_5210",
-    name: "Rahul P",
-    username: "rahul_p",
-    submissions: 35,
-    domain: "Strategist",
-    team: "England",
-    avatar_url: "https://api.dicebear.com/7.x/avataaars/svg?seed=rahul_p",
-  },
-  {
-    id: "usr_1044",
-    name: "Shreya Nair",
-    username: "shreya_n",
-    submissions: 28,
-    domain: "Creative",
-    team: "Spain",
-    avatar_url: "https://api.dicebear.com/7.x/avataaars/svg?seed=shreya_n",
-  },
-  {
-    id: "usr_8829",
-    name: "Gautham R",
-    username: "gautham_r",
-    submissions: 22,
-    domain: "Maker",
-    team: "Netherlands",
-    avatar_url: "https://api.dicebear.com/7.x/avataaars/svg?seed=gautham_r",
-  },
-  {
-    id: "usr_7322",
-    name: "Devika S",
-    username: "devika_s",
-    submissions: 17,
-    domain: "Coder",
-    team: "Belgium",
-    avatar_url: "https://api.dicebear.com/7.x/avataaars/svg?seed=devika_s",
-  },
-  {
-    id: "usr_1993",
-    name: "Rohit K",
-    username: "rohit_k",
-    submissions: 12,
-    domain: "Strategist",
-    team: "Croatia",
-    avatar_url: "https://api.dicebear.com/7.x/avataaars/svg?seed=rohit_k",
-  },
-];
+// DOMAIN_STYLES for the leaderboard rows
 
 const DOMAIN_STYLES = {
   Coder: "bg-cyan-500/10 border-cyan-500/35 text-cyan-400",
@@ -141,11 +49,6 @@ export default function KuzhiundoLeaderboard() {
   const [teamsData, setTeamsData] = useState([]);
   const [dataLoading, setDataLoading] = useState(true);
 
-  // Sync state
-  const [syncLoading, setSyncLoading] = useState(false);
-  const [syncSuccess, setSyncSuccess] = useState(null);
-  const [syncError, setSyncError] = useState(null);
-
   const fetchLeaderboards = async (timeframe = "alltime") => {
     try {
       setDataLoading(true);
@@ -162,59 +65,6 @@ export default function KuzhiundoLeaderboard() {
       console.error("Failed to load leaderboards:", err);
     } finally {
       setDataLoading(false);
-    }
-  };
-
-  const handleSyncStats = async () => {
-    setSyncLoading(true);
-    setSyncSuccess(null);
-    setSyncError(null);
-    try {
-      const res = await fetch("/api/v1/kuzhiundo/sync", {
-        method: "POST",
-      });
-      const data = await res.json();
-      if (res.ok && data.success) {
-        setSyncSuccess(data.message || "Stats synced successfully!");
-
-        // Refresh local player mu_points in state immediately
-        if (data.data) {
-          setPlayer((prev) => {
-            const currentSocials = (() => {
-              if (!prev?.socials) return {};
-              if (typeof prev.socials === "object") return prev.socials;
-              try {
-                return JSON.parse(prev.socials);
-              } catch {
-                return {};
-              }
-            })();
-            return {
-              ...prev,
-              mu_points:
-                data.data.mu_points !== undefined
-                  ? data.data.mu_points
-                  : prev?.mu_points,
-              socials: {
-                ...currentSocials,
-                kuzhiundo_submissions: data.data.submissions,
-              },
-            };
-          });
-        }
-
-        await fetchLeaderboards(activeTimeframe);
-        setTimeout(() => setSyncSuccess(null), 6000);
-      } else {
-        setSyncError(data.error || "Sync failed.");
-        setTimeout(() => setSyncError(null), 6000);
-      }
-    } catch (err) {
-      console.error(err);
-      setSyncError("Network error. Please try again.");
-      setTimeout(() => setSyncError(null), 6000);
-    } finally {
-      setSyncLoading(false);
     }
   };
 
@@ -244,6 +94,39 @@ export default function KuzhiundoLeaderboard() {
       fetchLeaderboards(activeTimeframe);
     }
   }, [player, activeTimeframe]);
+
+  // Silent auto-sync on mount if user has a linked Kuzhiundo ID
+  useEffect(() => {
+    async function syncKuzhiundo() {
+      if (!player) return;
+
+      const socials = (() => {
+        if (!player.socials) return {};
+        if (typeof player.socials === "object") return player.socials;
+        try {
+          return JSON.parse(player.socials);
+        } catch {
+          return {};
+        }
+      })();
+
+      if (socials.kuzhiundo_uuid) {
+        try {
+          const syncRes = await fetch("/api/v1/kuzhiundo/sync", {
+            method: "POST",
+          });
+          const syncJson = await syncRes.json();
+          if (syncJson.success && syncJson.data && syncJson.data.delta > 0) {
+            // Re-fetch to get updated points
+            fetchLeaderboards(activeTimeframe);
+          }
+        } catch (err) {
+          console.error("Auto-sync error:", err);
+        }
+      }
+    }
+    syncKuzhiundo();
+  }, [player]);
 
   // Adjust submissions for the timeframe fetched from the API
   const processedMappersData = useMemo(() => {
@@ -1119,7 +1002,8 @@ export default function KuzhiundoLeaderboard() {
             <div
               className="w-full border border-violet-500/20 hover:border-violet-500/35 rounded-2xl p-6 md:p-8 backdrop-blur-md shadow-2xl relative overflow-hidden flex flex-col justify-between group transition-all duration-300"
               style={{
-                backgroundImage: "linear-gradient(to bottom, rgba(27, 21, 56, 0.85), rgba(9, 11, 21, 0.95)), url('/kuzhiundo_logo.png')",
+                backgroundImage:
+                  "linear-gradient(to bottom, rgba(27, 21, 56, 0.85), rgba(9, 11, 21, 0.95)), url('/kuzhiundo_logo.png')",
                 backgroundSize: "cover",
                 backgroundPosition: "center",
               }}
@@ -1168,108 +1052,6 @@ export default function KuzhiundoLeaderboard() {
                   </svg>
                 </a>
               </div>
-            </div>
-
-            {/* Sync Card */}
-            <div className="w-full bg-[#0d0920]/45 border border-white/5 rounded-2xl p-6 backdrop-blur-md shadow-2xl relative overflow-hidden flex flex-col gap-4">
-              <div className="flex items-center gap-2">
-                <span className="w-2.5 h-2.5 rounded-full bg-violet-500 animate-pulse" />
-                <span className="text-[10px] font-black uppercase tracking-widest text-violet-400">
-                  Sync My Progress
-                </span>
-              </div>
-
-              {(() => {
-                const socialsObj = (() => {
-                  if (!player?.socials) return {};
-                  if (typeof player.socials === "object") return player.socials;
-                  try {
-                    return JSON.parse(player.socials);
-                  } catch {
-                    return {};
-                  }
-                })();
-                const linkedUuid = socialsObj.kuzhiundo_uuid || "";
-
-                if (linkedUuid) {
-                  return (
-                    <div className="flex flex-col gap-3">
-                      {syncSuccess && (
-                        <div className="text-[10px] bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 font-bold py-2.5 px-4 rounded-xl text-center">
-                          {syncSuccess}
-                        </div>
-                      )}
-                      {syncError && (
-                        <div className="text-[10px] bg-rose-500/10 border border-rose-500/20 text-rose-400 font-bold py-2.5 px-4 rounded-xl text-center">
-                          {syncError}
-                        </div>
-                      )}
-
-                      <button
-                        onClick={handleSyncStats}
-                        disabled={syncLoading}
-                        className="cursor-pointer w-full px-5 py-3 bg-violet-600/10 hover:bg-violet-600/25 border border-violet-500/30 text-violet-450 hover:text-white rounded-xl text-xs font-bold tracking-wider uppercase transition-all flex items-center justify-center gap-2 hover:scale-[1.01] active:scale-[0.99] disabled:opacity-40 disabled:cursor-not-allowed"
-                      >
-                        {syncLoading ? (
-                          <span className="w-4 h-4 border-2 border-violet-400 border-t-transparent rounded-full animate-spin" />
-                        ) : (
-                          <>
-                            <svg
-                              className="w-4 h-4"
-                              fill="none"
-                              stroke="currentColor"
-                              strokeWidth="2.5"
-                              viewBox="0 0 24 24"
-                            >
-                              <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182m0-4.991v4.99"
-                              />
-                            </svg>
-                            <span>Sync..</span>
-                          </>
-                        )}
-                      </button>
-                    </div>
-                  );
-                } else {
-                  return (
-                    <div className="flex flex-col gap-3">
-                      <p className="text-[11px] text-slate-400 font-semibold leading-relaxed">
-                        Verify the Kuzhiyundo Challenge under{" "}
-                        <Link
-                          href="/tasks"
-                          className="text-violet-400 hover:underline"
-                        >
-                          Challenges
-                        </Link>{" "}
-                        to link your pothole mappings and sync scores
-                        dynamically.
-                      </p>
-                      <Link
-                        href="/tasks"
-                        className="w-full px-5 py-3 bg-[#110e20] hover:bg-[#1b1735] border border-white/5 text-slate-350 hover:text-white rounded-xl text-xs font-bold tracking-wider uppercase transition-all flex items-center justify-center gap-2 hover:scale-[1.01] active:scale-[0.99]"
-                      >
-                        <span>Go to Challenges</span>
-                        <svg
-                          className="w-4 h-4"
-                          fill="none"
-                          stroke="currentColor"
-                          strokeWidth="2.5"
-                          viewBox="0 0 24 24"
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            d="M8.25 4.5l7.5 7.5-7.5 7.5"
-                          />
-                        </svg>
-                      </Link>
-                    </div>
-                  );
-                }
-              })()}
             </div>
           </div>
         </div>

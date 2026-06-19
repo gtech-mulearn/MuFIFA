@@ -1,7 +1,8 @@
 import { NextResponse } from "next/server";
-import { kuzhiundoCache } from "@/utils/kuzhiundoCache";
-
-const CACHE_TTL = 3600000; // 1 hour in milliseconds
+import {
+  KUZHIUNDO_BASE_POINTS,
+  KUZHIUNDO_PER_SUBMISSION,
+} from "@/utils/kuzhiundo";
 
 const TEAM_FLAGS = {
   Brazil: "br",
@@ -24,18 +25,6 @@ export async function GET(request) {
     const period = searchParams.get("period");
     const q = searchParams.get("q");
 
-    const isFilterApplied = !!(period || q);
-    const now = Date.now();
-
-    if (!isFilterApplied && kuzhiundoCache.teams && (now - kuzhiundoCache.teamsTimestamp < CACHE_TTL)) {
-      return NextResponse.json({
-        success: true,
-        data: kuzhiundoCache.teams,
-        cached: true,
-        expires_at: new Date(kuzhiundoCache.teamsTimestamp + CACHE_TTL).toISOString(),
-      });
-    }
-
     let url = "https://kuzhiundo.com/api/leaderboard/teams";
     const params = [];
     if (period) params.push(`period=${encodeURIComponent(period)}`);
@@ -56,7 +45,8 @@ export async function GET(request) {
     const teamsList = teams.map((t) => {
       const reports = parseInt(t.reports || "0", 10);
       const mappers = parseInt(t.mappers || "0", 10);
-      const points = (mappers * 9) + reports;
+      const points =
+        mappers * KUZHIUNDO_BASE_POINTS + reports * KUZHIUNDO_PER_SUBMISSION;
 
       return {
         team: t.team,
@@ -92,20 +82,16 @@ export async function GET(request) {
       return b.submissions - a.submissions;
     });
 
-    if (!isFilterApplied) {
-      kuzhiundoCache.teams = sortedTeamsList;
-      kuzhiundoCache.teamsTimestamp = now;
-    }
-
     return NextResponse.json({
       success: true,
       data: sortedTeamsList,
       cached: false,
-      expires_at: new Date(now + CACHE_TTL).toISOString(),
     });
-
   } catch (error) {
     console.error("Teams leaderboard proxy error:", error);
-    return NextResponse.json({ success: false, error: "Internal server error" }, { status: 500 });
+    return NextResponse.json(
+      { success: false, error: "Internal server error" },
+      { status: 500 },
+    );
   }
 }

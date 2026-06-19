@@ -21,8 +21,8 @@ export async function GET(request) {
       Authorization: `Bearer ${supabaseKey}`,
     };
 
-    // 2. Fetch all registrations (id, user_id, name, team, referred_by, mu_points, tasks)
-    const regRes = await fetch(`${supabaseUrl}/rest/v1/registrations?select=id,user_id,name,team,referred_by,mu_points,tasks&limit=5000`, {
+    // 2. Fetch all registrations (id, user_id, name, team, referred_by, mu_points, tasks, socials)
+    const regRes = await fetch(`${supabaseUrl}/rest/v1/registrations?select=id,user_id,name,team,referred_by,mu_points,tasks,socials&limit=5000`, {
       method: "GET",
       headers,
       next: { revalidate: 0 }
@@ -30,8 +30,8 @@ export async function GET(request) {
     if (!regRes.ok) throw new Error(`Failed to fetch registrations: ${await regRes.text()}`);
     const registrations = await regRes.json();
 
-    // 3. Fetch all task completions (user_id, points_awarded)
-    const completionsRes = await fetch(`${supabaseUrl}/rest/v1/user_completed_tasks?select=user_id,points_awarded&limit=5000`, {
+    // 3. Fetch all task completions (user_id, task_id, points_awarded)
+    const completionsRes = await fetch(`${supabaseUrl}/rest/v1/user_completed_tasks?select=user_id,task_id,points_awarded&limit=5000`, {
       method: "GET",
       headers,
       next: { revalidate: 0 }
@@ -47,6 +47,27 @@ export async function GET(request) {
     });
     if (!predictionsRes.ok) throw new Error(`Failed to fetch predictions: ${await predictionsRes.text()}`);
     const predictions = await predictionsRes.json();
+
+    // 4b. Fetch live Kuzhiundo individuals leaderboard
+    let kuzhiundoApiReports = {};
+    try {
+      const kuzhiRes = await fetch("https://kuzhiundo.com/api/leaderboard/individuals", {
+        method: "GET",
+        headers: { Accept: "application/json" },
+        cache: "no-store",
+      });
+      if (kuzhiRes.ok) {
+        const kuzhiData = await kuzhiRes.json();
+        const users = kuzhiData.users || [];
+        users.forEach((u) => {
+          if (u.id) {
+            kuzhiundoApiReports[u.id] = parseInt(u.reports || "0", 10);
+          }
+        });
+      }
+    } catch (err) {
+      console.error("Failed to fetch Kuzhiundo individuals in test-stat:", err);
+    }
 
     // 5. Fetch actual squads table points for comparison
     const squadsRes = await fetch(`${supabaseUrl}/rest/v1/squads?select=name,points`, {
@@ -105,10 +126,17 @@ export async function GET(request) {
       }
     });
 
-    // Calculate per-user task points
+    // Calculate per-user task points and Kuzhiundo points
     const userTaskPoints = {};
+    const userKuzhiundoPoints = {};
     completions.forEach((c) => {
-      userTaskPoints[c.user_id] = (userTaskPoints[c.user_id] || 0) + (Number(c.points_awarded) || 0);
+      const taskId = Number(c.task_id);
+      const points = Number(c.points_awarded) || 0;
+      if (taskId === 4 || taskId === 100) {
+        userKuzhiundoPoints[c.user_id] = (userKuzhiundoPoints[c.user_id] || 0) + points;
+      } else {
+        userTaskPoints[c.user_id] = (userTaskPoints[c.user_id] || 0) + points;
+      }
     });
 
     // Calculate per-user prediction points
@@ -133,6 +161,9 @@ export async function GET(request) {
         basePoints: 0,
         referralPoints: 0,
         taskPoints: 0,
+        kuzhiundoPoints: 0,
+        kuzhiDbSubmissions: 0,
+        kuzhiApiSubmissions: 0,
         predictionPoints: 0,
         calculatedTotal: 0,
         actualSquadPoints: s.points || 0,
@@ -153,6 +184,9 @@ export async function GET(request) {
           basePoints: 0,
           referralPoints: 0,
           taskPoints: 0,
+          kuzhiundoPoints: 0,
+          kuzhiDbSubmissions: 0,
+          kuzhiApiSubmissions: 0,
           predictionPoints: 0,
           calculatedTotal: 0,
           actualSquadPoints: 0,
@@ -172,8 +206,27 @@ export async function GET(request) {
       const userTasksVal = userTaskPoints[r.user_id] || 0;
       stats.taskPoints += userTasksVal;
 
+      const userKuzhiVal = userKuzhiundoPoints[r.user_id] || 0;
+      stats.kuzhiundoPoints += userKuzhiVal;
+
       const userPredsVal = userPredictionPoints[r.user_id] || 0;
       stats.predictionPoints += userPredsVal;
+
+      const socialsObj = (() => {
+        if (!r.socials) return {};
+        if (typeof r.socials === "object") return r.socials;
+        try {
+          return JSON.parse(r.socials);
+        } catch {
+          return {};
+        }
+      })();
+
+      const kuzhiDbCount = parseInt(socialsObj.kuzhiundo_submissions || "0", 10);
+      const kuzhiApiCount = kuzhiundoApiReports[r.id] || 0;
+
+      stats.kuzhiDbSubmissions += kuzhiDbCount;
+      stats.kuzhiApiSubmissions += kuzhiApiCount;
 
       stats.members.push({
         id: r.id,
@@ -185,15 +238,20 @@ export async function GET(request) {
         tasksReferralCount: referrals,
         referralPoints: referrals * 5,
         taskPoints: userTasksVal,
+        kuzhiundoPoints: userKuzhiVal,
+        kuzhiundoUuid: socialsObj.kuzhiundo_uuid || null,
+        kuzhiundoSubmissions: kuzhiDbCount,
+        kuzhiDbSubmissions: kuzhiDbCount,
+        kuzhiApiSubmissions: kuzhiApiCount,
         predictionPoints: userPredsVal,
-        totalPoints: 10 + referrals * 5 + userTasksVal + userPredsVal,
+        totalPoints: 10 + referrals * 5 + userTasksVal + userKuzhiVal + userPredsVal,
       });
     });
 
     // Calculate calculatedTotal
     Object.keys(teamStats).forEach((teamName) => {
       const stats = teamStats[teamName];
-      stats.calculatedTotal = stats.basePoints + stats.referralPoints + stats.taskPoints + stats.predictionPoints;
+      stats.calculatedTotal = stats.basePoints + stats.referralPoints + stats.taskPoints + stats.kuzhiundoPoints + stats.predictionPoints;
     });
 
     const sortedStats = Object.values(teamStats).sort((a, b) => b.calculatedTotal - a.calculatedTotal);

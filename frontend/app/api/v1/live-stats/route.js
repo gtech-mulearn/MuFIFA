@@ -6,22 +6,26 @@ export async function GET(request) {
     const supabaseKey = process.env.SUPABASE_KEY;
 
     if (!supabaseUrl || !supabaseKey) {
-      return NextResponse.json({
-        success: false,
-        error: {
-          code: "SERVICE_UNAVAILABLE",
-          message: "Database credentials are not configured in environment variables.",
-          details: null,
+      return NextResponse.json(
+        {
+          success: false,
+          error: {
+            code: "SERVICE_UNAVAILABLE",
+            message:
+              "Database credentials are not configured in environment variables.",
+            details: null,
+          },
         },
-      }, { status: 503 });
+        { status: 503 },
+      );
     }
 
     const targetUrl = `${supabaseUrl}/rest/v1/registrations?select=user_id,team,mu_points`;
     const res = await fetch(targetUrl, {
       method: "GET",
       headers: {
-        "apikey": supabaseKey,
-        "Authorization": `Bearer ${supabaseKey}`,
+        apikey: supabaseKey,
+        Authorization: `Bearer ${supabaseKey}`,
       },
       next: { revalidate: 0 },
     });
@@ -37,8 +41,8 @@ export async function GET(request) {
     const squadsRes = await fetch(squadsUrl, {
       method: "GET",
       headers: {
-        "apikey": supabaseKey,
-        "Authorization": `Bearer ${supabaseKey}`,
+        apikey: supabaseKey,
+        Authorization: `Bearer ${supabaseKey}`,
       },
       next: { revalidate: 0 },
     });
@@ -76,7 +80,8 @@ export async function GET(request) {
     const referral_analytics = {};
     registrations.forEach((r) => {
       if (r.user_id) {
-        referral_analytics[r.user_id] = (referral_analytics[r.user_id] || 0) + 1;
+        referral_analytics[r.user_id] =
+          (referral_analytics[r.user_id] || 0) + 1;
       }
     });
 
@@ -101,7 +106,11 @@ export async function GET(request) {
       }
       const activeCount = pointsArray.filter((pts) => pts > 0).length;
       const median = calculateMedian(pointsArray);
-      const score = median * (activeCount / registeredCount) * Math.log10(activeCount + 1) * 100;
+      const score =
+        median *
+        (activeCount / registeredCount) *
+        Math.log10(activeCount + 1) *
+        100;
       squad_points[team] = Math.round(score);
     });
 
@@ -111,21 +120,26 @@ export async function GET(request) {
       squad_points,
     };
 
-    return NextResponse.json({
-      success: true,
-      response: statsPayload,
-      data: statsPayload,
-    }, { status: 200 });
-
+    return NextResponse.json(
+      {
+        success: true,
+        response: statsPayload,
+        data: statsPayload,
+      },
+      { status: 200 },
+    );
   } catch (error) {
     console.error("Next.js live-stats API error:", error);
-    return NextResponse.json({
-      success: false,
-      error: {
-        code: "INTERNAL_SERVER_ERROR",
-        message: "An unexpected error occurred while compiling live stats.",
-        details: null,
+    return NextResponse.json(
+      {
+        success: false,
+        error: {
+          code: "INTERNAL_SERVER_ERROR",
+          message: "An unexpected error occurred while compiling live stats.",
+          details: null,
+        },
       },
-    }, { status: 500 });
+      { status: 500 },
+    );
   }
 }

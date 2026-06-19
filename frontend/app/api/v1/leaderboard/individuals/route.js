@@ -20,12 +20,13 @@ export async function GET(request) {
             message: "Database credentials are not configured.",
           },
         },
-        { status: 503 }
+        { status: 503 },
       );
     }
 
-    const selectFields = "id,name,user_id,team,domain,mu_points,avatar_url,created_at";
-    
+    const selectFields =
+      "id,name,user_id,team,domain,mu_points,avatar_url,created_at";
+
     const orderDirection = sort === "asc" ? "asc" : "desc";
     let query = `${supabaseUrl}/rest/v1/registrations?select=${selectFields}&order=mu_points.${orderDirection},name.asc&limit=${limit}&offset=${offset}`;
 
@@ -39,7 +40,7 @@ export async function GET(request) {
       headers: {
         apikey: supabaseKey,
         Authorization: `Bearer ${supabaseKey}`,
-        "Prefer": "count=exact",
+        Prefer: "count=exact",
       },
     });
 
@@ -48,7 +49,7 @@ export async function GET(request) {
     }
 
     const players = await res.json();
-    
+
     // Parse total count from Content-Range header
     const contentRange = res.headers.get("content-range");
     let totalCount = players.length + offset;
@@ -79,7 +80,7 @@ export async function GET(request) {
           message: "An unexpected error occurred.",
         },
       },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

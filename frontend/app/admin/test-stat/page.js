@@ -319,6 +319,24 @@ export default function TestStatPage() {
                   </th>
                   <th
                     className="text-right px-5 py-3 font-bold uppercase tracking-wider cursor-pointer hover:text-slate-900 transition-colors select-none"
+                    onClick={() => handleSort("kuzhiundoPoints")}
+                  >
+                    Kuzhiundo <SortIcon col="kuzhiundoPoints" sortKey={sortKey} sortDir={sortDir} />
+                  </th>
+                  <th
+                    className="text-right px-5 py-3 font-bold uppercase tracking-wider cursor-pointer hover:text-slate-900 transition-colors select-none"
+                    onClick={() => handleSort("kuzhiDbSubmissions")}
+                  >
+                    Kuzhi DB <SortIcon col="kuzhiDbSubmissions" sortKey={sortKey} sortDir={sortDir} />
+                  </th>
+                  <th
+                    className="text-right px-5 py-3 font-bold uppercase tracking-wider cursor-pointer hover:text-slate-900 transition-colors select-none"
+                    onClick={() => handleSort("kuzhiApiSubmissions")}
+                  >
+                    Kuzhi API <SortIcon col="kuzhiApiSubmissions" sortKey={sortKey} sortDir={sortDir} />
+                  </th>
+                  <th
+                    className="text-right px-5 py-3 font-bold uppercase tracking-wider cursor-pointer hover:text-slate-900 transition-colors select-none"
                     onClick={() => handleSort("predictionPoints")}
                   >
                     Predictions <SortIcon col="predictionPoints" sortKey={sortKey} sortDir={sortDir} />
@@ -384,6 +402,15 @@ export default function TestStatPage() {
                       </td>
                       <td className="px-5 py-3.5 text-right text-slate-500 font-mono">
                         {team.taskPoints}
+                      </td>
+                      <td className="px-5 py-3.5 text-right text-slate-500 font-mono">
+                        {team.kuzhiundoPoints || 0}
+                      </td>
+                      <td className="px-5 py-3.5 text-right text-slate-500 font-mono">
+                        {team.kuzhiDbSubmissions || 0}
+                      </td>
+                      <td className="px-5 py-3.5 text-right text-slate-500 font-mono">
+                        {team.kuzhiApiSubmissions || 0}
                       </td>
                       <td className="px-5 py-3.5 text-right text-slate-500 font-mono">
                         {team.predictionPoints}
@@ -485,7 +512,7 @@ export default function TestStatPage() {
             </div>
 
             {/* Modal Members Table */}
-            <div className="flex-1 overflow-y-auto min-h-0 border border-slate-200/80 rounded-xl">
+            <div className="flex-1 overflow-x-auto overflow-y-auto min-h-0 border border-slate-200/80 rounded-xl">
               <table className="w-full text-xs text-left">
                 <thead className="sticky top-0 z-10 bg-slate-50/95 backdrop-blur border-b border-slate-200/90 text-slate-500">
                   <tr>
@@ -528,6 +555,24 @@ export default function TestStatPage() {
                     </th>
                     <th
                       className="px-4 py-2.5 font-bold uppercase tracking-wider text-right cursor-pointer hover:text-slate-900 transition-colors select-none"
+                      onClick={() => handleMemberSort("kuzhiundoPoints")}
+                    >
+                      Kuzhiundo <SortIcon col="kuzhiundoPoints" sortKey={memberSortKey} sortDir={memberSortDir} />
+                    </th>
+                    <th
+                      className="px-4 py-2.5 font-bold uppercase tracking-wider text-right cursor-pointer hover:text-slate-900 transition-colors select-none"
+                      onClick={() => handleMemberSort("kuzhiDbSubmissions")}
+                    >
+                      Kuzhi DB <SortIcon col="kuzhiDbSubmissions" sortKey={memberSortKey} sortDir={memberSortDir} />
+                    </th>
+                    <th
+                      className="px-4 py-2.5 font-bold uppercase tracking-wider text-right cursor-pointer hover:text-slate-900 transition-colors select-none"
+                      onClick={() => handleMemberSort("kuzhiApiSubmissions")}
+                    >
+                      Kuzhi API <SortIcon col="kuzhiApiSubmissions" sortKey={memberSortKey} sortDir={memberSortDir} />
+                    </th>
+                    <th
+                      className="px-4 py-2.5 font-bold uppercase tracking-wider text-right cursor-pointer hover:text-slate-900 transition-colors select-none"
                       onClick={() => handleMemberSort("predictionPoints")}
                     >
                       Predictions <SortIcon col="predictionPoints" sortKey={memberSortKey} sortDir={memberSortDir} />
@@ -549,7 +594,7 @@ export default function TestStatPage() {
                 <tbody className="divide-y divide-slate-100">
                   {sortedMembers.length === 0 ? (
                     <tr>
-                      <td colSpan="10" className="text-center py-8 text-slate-400">
+                      <td colSpan="13" className="text-center py-8 text-slate-400">
                         No members found matching your search.
                       </td>
                     </tr>
@@ -557,12 +602,22 @@ export default function TestStatPage() {
                     sortedMembers.map((m, idx) => (
                       <tr key={m.user_id || idx} className="hover:bg-slate-50/70 transition-colors">
                         <td className="px-4 py-2.5 text-center text-slate-500 font-mono">{idx + 1}</td>
-                        <td className="px-4 py-2.5 font-semibold text-slate-800">{m.name}</td>
+                        <td className="px-4 py-2.5 text-slate-800">
+                          <div className="font-semibold">{m.name}</div>
+                          {m.kuzhiundoUuid && (
+                            <div className="text-[9px] text-slate-400 font-mono mt-0.5" title={`UUID: ${m.kuzhiundoUuid}`}>
+                              🔗 Kuzhiundo: {m.kuzhiundoSubmissions} report(s)
+                            </div>
+                          )}
+                        </td>
                         <td className="px-4 py-2.5 text-right font-mono text-slate-500">{m.basePoints}</td>
                         <td className="px-4 py-2.5 text-right font-mono text-slate-500">{m.referredByCount}</td>
                         <td className="px-4 py-2.5 text-right font-mono text-slate-500">{m.tasksReferralCount}</td>
                         <td className="px-4 py-2.5 text-right font-mono text-slate-500">{m.referralPoints}</td>
                         <td className="px-4 py-2.5 text-right font-mono text-slate-500">{m.taskPoints}</td>
+                        <td className="px-4 py-2.5 text-right font-mono text-slate-500">{m.kuzhiundoPoints || 0}</td>
+                        <td className="px-4 py-2.5 text-right font-mono text-slate-500">{m.kuzhiDbSubmissions || 0}</td>
+                        <td className="px-4 py-2.5 text-right font-mono text-slate-500">{m.kuzhiApiSubmissions || 0}</td>
                         <td className="px-4 py-2.5 text-right font-mono text-slate-500">{m.predictionPoints}</td>
                         <td className="px-4 py-2.5 text-right font-mono font-bold text-sky-700 bg-sky-50/10">{m.totalPoints}</td>
                         <td className="px-4 py-2.5 text-right font-mono text-slate-600 bg-slate-50/5">{m.muPoints}</td>
@@ -588,6 +643,15 @@ export default function TestStatPage() {
                       </td>
                       <td className="px-4 py-2.5 text-right font-mono">
                         {sortedMembers.reduce((sum, m) => sum + m.taskPoints, 0)}
+                      </td>
+                      <td className="px-4 py-2.5 text-right font-mono">
+                        {sortedMembers.reduce((sum, m) => sum + (m.kuzhiundoPoints || 0), 0)}
+                      </td>
+                      <td className="px-4 py-2.5 text-right font-mono">
+                        {sortedMembers.reduce((sum, m) => sum + (m.kuzhiDbSubmissions || 0), 0)}
+                      </td>
+                      <td className="px-4 py-2.5 text-right font-mono">
+                        {sortedMembers.reduce((sum, m) => sum + (m.kuzhiApiSubmissions || 0), 0)}
                       </td>
                       <td className="px-4 py-2.5 text-right font-mono">
                         {sortedMembers.reduce((sum, m) => sum + m.predictionPoints, 0)}

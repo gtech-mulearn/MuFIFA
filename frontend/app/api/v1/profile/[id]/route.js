@@ -14,7 +14,7 @@ export async function GET(request, { params }) {
             message: "Player ID parameter is required.",
           },
         },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -32,11 +32,12 @@ export async function GET(request, { params }) {
             message: "Database credentials are not configured.",
           },
         },
-        { status: 503 }
+        { status: 503 },
       );
     }
 
-    const selectFields = "id,name,user_id,team,domain,mu_points,avatar_url,created_at,email,phone,referal_id,tasks,ticket_url,referred_by,institution,bio,socials,muid";
+    const selectFields =
+      "id,name,user_id,team,domain,mu_points,avatar_url,created_at,email,phone,referal_id,tasks,ticket_url,referred_by,institution,bio,socials,muid";
 
     // 1. Try to find the user by user_id (username)
     let query = `${supabaseUrl}/rest/v1/registrations?user_id=eq.${encodeURIComponent(cleanId)}&select=${selectFields}&limit=1`;
@@ -56,7 +57,10 @@ export async function GET(request, { params }) {
 
     // 2. If not found, check if cleanId could be a database ID (UUID or numeric)
     if (!rows || rows.length === 0) {
-      const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(cleanId);
+      const isUuid =
+        /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
+          cleanId,
+        );
       const isInteger = /^\d+$/.test(cleanId);
 
       if (isUuid || isInteger) {
@@ -86,12 +90,12 @@ export async function GET(request, { params }) {
             message: "Player profile not found.",
           },
         },
-        { status: 404 }
+        { status: 404 },
       );
     }
 
     const profile = rows[0];
-    
+
     // Fetch user rank dynamically by counting players with strictly more mu_points
     let rank = 1;
     try {
@@ -101,7 +105,7 @@ export async function GET(request, { params }) {
         headers: {
           apikey: supabaseKey,
           Authorization: `Bearer ${supabaseKey}`,
-          "Prefer": "count=exact",
+          Prefer: "count=exact",
         },
       });
       if (rankRes.ok) {
@@ -123,7 +127,10 @@ export async function GET(request, { params }) {
     if (matchToken) {
       try {
         const decoded = verifyToken(matchToken[1]);
-        if (decoded && (decoded.id === profile.id || decoded.user_id === profile.user_id)) {
+        if (
+          decoded &&
+          (decoded.id === profile.id || decoded.user_id === profile.user_id)
+        ) {
           isOwner = true;
         }
       } catch (err) {
@@ -142,7 +149,7 @@ export async function GET(request, { params }) {
         headers: {
           apikey: supabaseKey,
           Authorization: `Bearer ${supabaseKey}`,
-          "Prefer": "count=exact",
+          Prefer: "count=exact",
         },
       });
       if (predRes.ok) {
@@ -216,7 +223,7 @@ export async function GET(request, { params }) {
           message: "An unexpected error occurred.",
         },
       },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
@@ -228,7 +235,7 @@ export async function PATCH(request, { params }) {
     if (!id || !id.trim()) {
       return NextResponse.json(
         { success: false, error: "Player ID parameter is required." },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -240,7 +247,7 @@ export async function PATCH(request, { params }) {
     if (!match) {
       return NextResponse.json(
         { success: false, error: "Authentication required to update profile." },
-        { status: 401 }
+        { status: 401 },
       );
     }
 
@@ -249,7 +256,7 @@ export async function PATCH(request, { params }) {
     if (!decoded || !decoded.id) {
       return NextResponse.json(
         { success: false, error: "Invalid session. Please log in again." },
-        { status: 401 }
+        { status: 401 },
       );
     }
 
@@ -259,7 +266,7 @@ export async function PATCH(request, { params }) {
     if (!supabaseUrl || !supabaseKey) {
       return NextResponse.json(
         { success: false, error: "Database credentials are not configured." },
-        { status: 503 }
+        { status: 503 },
       );
     }
 
@@ -290,7 +297,9 @@ export async function PATCH(request, { params }) {
         },
       });
       if (!res.ok) {
-        throw new Error(`Failed to query registrations by id: ${await res.text()}`);
+        throw new Error(
+          `Failed to query registrations by id: ${await res.text()}`,
+        );
       }
       rows = await res.json();
     }
@@ -298,7 +307,7 @@ export async function PATCH(request, { params }) {
     if (!rows || rows.length === 0) {
       return NextResponse.json(
         { success: false, error: "Player profile not found." },
-        { status: 404 }
+        { status: 404 },
       );
     }
 
@@ -307,8 +316,11 @@ export async function PATCH(request, { params }) {
     // 3. Authorization check
     if (decoded.id !== profile.id && decoded.user_id !== profile.user_id) {
       return NextResponse.json(
-        { success: false, error: "Forbidden: You are not authorized to edit this profile." },
-        { status: 403 }
+        {
+          success: false,
+          error: "Forbidden: You are not authorized to edit this profile.",
+        },
+        { status: 403 },
       );
     }
 
@@ -329,29 +341,35 @@ export async function PATCH(request, { params }) {
     if (Object.keys(updateData).length === 0) {
       return NextResponse.json(
         { success: false, error: "No fields provided for update." },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
     // 5. Update Database Row
-    const patchRes = await fetch(`${supabaseUrl}/rest/v1/registrations?id=eq.${profile.id}`, {
-      method: "PATCH",
-      headers: {
-        apikey: supabaseKey,
-        Authorization: `Bearer ${supabaseKey}`,
-        "Content-Type": "application/json",
-        "Prefer": "return=representation",
+    const patchRes = await fetch(
+      `${supabaseUrl}/rest/v1/registrations?id=eq.${profile.id}`,
+      {
+        method: "PATCH",
+        headers: {
+          apikey: supabaseKey,
+          Authorization: `Bearer ${supabaseKey}`,
+          "Content-Type": "application/json",
+          Prefer: "return=representation",
+        },
+        body: JSON.stringify(updateData),
       },
-      body: JSON.stringify(updateData),
-    });
+    );
 
     if (!patchRes.ok) {
       const errText = await patchRes.text();
       // Handle unique constraint check (for phone)
       if (errText.includes("registrations_phone_key")) {
         return NextResponse.json(
-          { success: false, error: "Phone number is already registered by another player." },
-          { status: 400 }
+          {
+            success: false,
+            error: "Phone number is already registered by another player.",
+          },
+          { status: 400 },
         );
       }
       throw new Error(`Supabase PATCH failed: ${errText}`);
@@ -366,7 +384,7 @@ export async function PATCH(request, { params }) {
     console.error("Update player profile error:", error);
     return NextResponse.json(
       { success: false, error: "Internal server error" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

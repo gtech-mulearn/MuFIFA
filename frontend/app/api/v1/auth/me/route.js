@@ -6,22 +6,33 @@ const PLAYER_COOKIE = "player_token";
 export async function GET(request) {
   try {
     const cookieHeader = request.headers.get("cookie") || "";
-    const match = cookieHeader.match(new RegExp(`(?:^|;\\s*)${PLAYER_COOKIE}=([^;]*)`));
+    const match = cookieHeader.match(
+      new RegExp(`(?:^|;\\s*)${PLAYER_COOKIE}=([^;]*)`),
+    );
     if (!match) {
-      return NextResponse.json({ success: false, error: "Not authenticated" }, { status: 401 });
+      return NextResponse.json(
+        { success: false, error: "Not authenticated" },
+        { status: 401 },
+      );
     }
 
     const token = match[1];
     const decoded = verifyToken(token);
     if (!decoded || !decoded.id) {
-      return NextResponse.json({ success: false, error: "Invalid token" }, { status: 401 });
+      return NextResponse.json(
+        { success: false, error: "Invalid token" },
+        { status: 401 },
+      );
     }
 
     const supabaseUrl = process.env.SUPABASE_URL;
     const supabaseKey = process.env.SUPABASE_KEY;
 
     if (!supabaseUrl || !supabaseKey) {
-      return NextResponse.json({ success: false, error: "Database not configured" }, { status: 503 });
+      return NextResponse.json(
+        { success: false, error: "Database not configured" },
+        { status: 503 },
+      );
     }
 
     // Re-query Supabase to get the latest points and data
@@ -40,7 +51,10 @@ export async function GET(request) {
 
     const rows = await res.json();
     if (!rows || rows.length === 0) {
-      return NextResponse.json({ success: false, error: "User not found" }, { status: 404 });
+      return NextResponse.json(
+        { success: false, error: "User not found" },
+        { status: 404 },
+      );
     }
 
     const player = rows[0];
@@ -54,7 +68,7 @@ export async function GET(request) {
         headers: {
           apikey: supabaseKey,
           Authorization: `Bearer ${supabaseKey}`,
-          "Prefer": "count=exact",
+          Prefer: "count=exact",
         },
       });
       if (predRes.ok) {
@@ -79,6 +93,9 @@ export async function GET(request) {
     });
   } catch (error) {
     console.error("Player auth check error:", error);
-    return NextResponse.json({ success: false, error: "Internal server error" }, { status: 500 });
+    return NextResponse.json(
+      { success: false, error: "Internal server error" },
+      { status: 500 },
+    );
   }
 }
