@@ -20,16 +20,14 @@ const TEAM_FLAGS = {
 
 export async function GET(request) {
   try {
-    const supabaseUrl = process.env.SUPABASE_URL;
-    const supabaseKey = process.env.SUPABASE_KEY;
+    const { searchParams } = new URL(request.url);
+    const period = searchParams.get("period");
+    const q = searchParams.get("q");
 
-    if (!supabaseUrl || !supabaseKey) {
-      return NextResponse.json({ success: false, error: "Database not configured." }, { status: 503 });
-    }
-
-    // Check in-memory cache
+    const isFilterApplied = !!(period || q);
     const now = Date.now();
-    if (kuzhiundoCache.teams && (now - kuzhiundoCache.teamsTimestamp < CACHE_TTL)) {
+
+    if (!isFilterApplied && kuzhiundoCache.teams && (now - kuzhiundoCache.teamsTimestamp < CACHE_TTL)) {
       return NextResponse.json({
         success: true,
         data: kuzhiundoCache.teams,
@@ -38,44 +36,41 @@ export async function GET(request) {
       });
     }
 
-    // Query database to aggregate stats
-    const selectFields = "user_id,team,socials";
-    const [res, completionsRes] = await Promise.all([
-      fetch(`${supabaseUrl}/rest/v1/registrations?select=${selectFields}`, {
-        headers: {
-          apikey: supabaseKey,
-          Authorization: `Bearer ${supabaseKey}`,
-        },
-        next: { revalidate: 0 },
-      }),
-      fetch(`${supabaseUrl}/rest/v1/user_completed_tasks?task_id=eq.4&select=user_id,points_awarded`, {
-        headers: {
-          apikey: supabaseKey,
-          Authorization: `Bearer ${supabaseKey}`,
-        },
-        next: { revalidate: 0 },
-      })
-    ]);
+    let url = "https://kuzhiundo.com/api/leaderboard/teams";
+    const params = [];
+    if (period) params.push(`period=${encodeURIComponent(period)}`);
+    if (q) params.push(`q=${encodeURIComponent(q)}`);
+    if (params.length > 0) {
+      url += `?${params.join("&")}`;
+    }
 
+    const res = await fetch(url, { cache: "no-store" });
     if (!res.ok) {
-      throw new Error(`Failed to query database: ${await res.text()}`);
-    }
-    if (!completionsRes.ok) {
-      throw new Error(`Failed to query completions: ${await completionsRes.text()}`);
+      throw new Error(`Kuzhiundo API returned status ${res.status}`);
     }
 
-    const users = await res.json();
-    const completions = await completionsRes.json();
+    const json = await res.json();
+    const teams = json.teams || [];
 
-    const pointsMap = {};
-    completions.forEach((c) => {
-      pointsMap[c.user_id] = c.points_awarded;
+    // Map to frontend structure
+    const teamsList = teams.map((t) => {
+      const reports = parseInt(t.reports || "0", 10);
+      const mappers = parseInt(t.mappers || "0", 10);
+      const points = (mappers * 9) + reports;
+
+      return {
+        team: t.team,
+        flag: TEAM_FLAGS[t.team] || null,
+        submissions: reports,
+        mappersCount: mappers,
+        points: points,
+      };
     });
 
-    // Initialize all teams
-    const teamsMap = {};
+    // Make sure we include all 12 teams in the standings even if they have 0 mappers/reports
+    const finalTeamsMap = {};
     Object.keys(TEAM_FLAGS).forEach((teamName) => {
-      teamsMap[teamName] = {
+      finalTeamsMap[teamName] = {
         team: teamName,
         flag: TEAM_FLAGS[teamName],
         submissions: 0,
@@ -84,43 +79,33 @@ export async function GET(request) {
       };
     });
 
-    // Aggregate stats from users with linked Kuzhiundo accounts
-    users.forEach((u) => {
-      const socials = (() => {
-        if (!u.socials) return {};
-        if (typeof u.socials === "object") return u.socials;
-        try { return JSON.parse(u.socials); } catch { return {}; }
-      })();
-
-      if (socials.kuzhiundo_uuid && u.team && teamsMap[u.team]) {
-        const submissions = parseInt(socials.kuzhiundo_submissions || "0", 10);
-        const points = pointsMap[u.user_id] !== undefined ? pointsMap[u.user_id] : 10;
-        teamsMap[u.team].submissions += submissions;
-        teamsMap[u.team].mappersCount += 1;
-        teamsMap[u.team].points += points;
+    teamsList.forEach((t) => {
+      if (finalTeamsMap[t.team]) {
+        finalTeamsMap[t.team] = t;
       }
     });
 
-    const teamsList = Object.values(teamsMap).sort((a, b) => {
+    const sortedTeamsList = Object.values(finalTeamsMap).sort((a, b) => {
       if (b.points !== a.points) {
         return b.points - a.points;
       }
       return b.submissions - a.submissions;
     });
 
-    // Save to cache
-    kuzhiundoCache.teams = teamsList;
-    kuzhiundoCache.teamsTimestamp = now;
+    if (!isFilterApplied) {
+      kuzhiundoCache.teams = sortedTeamsList;
+      kuzhiundoCache.teamsTimestamp = now;
+    }
 
     return NextResponse.json({
       success: true,
-      data: teamsList,
+      data: sortedTeamsList,
       cached: false,
       expires_at: new Date(now + CACHE_TTL).toISOString(),
     });
 
   } catch (error) {
-    console.error("Teams leaderboard endpoint error:", error);
+    console.error("Teams leaderboard proxy error:", error);
     return NextResponse.json({ success: false, error: "Internal server error" }, { status: 500 });
   }
 }

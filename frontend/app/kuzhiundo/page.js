@@ -146,12 +146,13 @@ export default function KuzhiundoLeaderboard() {
   const [syncSuccess, setSyncSuccess] = useState(null);
   const [syncError, setSyncError] = useState(null);
 
-  const fetchLeaderboards = async () => {
+  const fetchLeaderboards = async (timeframe = "alltime") => {
     try {
       setDataLoading(true);
+      const query = timeframe === "monthly" ? "?period=month" : "";
       const [indRes, teamRes] = await Promise.all([
-        fetch("/api/v1/kuzhiundo/leaderboard/individuals"),
-        fetch("/api/v1/kuzhiundo/leaderboard/teams"),
+        fetch(`/api/v1/kuzhiundo/leaderboard/individuals${query}`),
+        fetch(`/api/v1/kuzhiundo/leaderboard/teams${query}`),
       ]);
       const indJson = await indRes.json();
       const teamJson = await teamRes.json();
@@ -202,7 +203,7 @@ export default function KuzhiundoLeaderboard() {
           });
         }
 
-        await fetchLeaderboards();
+        await fetchLeaderboards(activeTimeframe);
         setTimeout(() => setSyncSuccess(null), 6000);
       } else {
         setSyncError(data.error || "Sync failed.");
@@ -240,35 +241,22 @@ export default function KuzhiundoLeaderboard() {
 
   useEffect(() => {
     if (player) {
-      fetchLeaderboards();
+      fetchLeaderboards(activeTimeframe);
     }
-  }, [player]);
+  }, [player, activeTimeframe]);
 
-  // Adjust submissions for the "monthly" timeframe mock simulation
+  // Adjust submissions for the timeframe fetched from the API
   const processedMappersData = useMemo(() => {
     return mappersData
       .map((item) => {
-        const monthlySubmissions = Math.max(
-          1,
-          Math.floor(item.submissions * 0.4),
-        );
-        const currentSubmissions =
-          activeTimeframe === "monthly" ? monthlySubmissions : item.submissions;
-        const currentPoints =
-          activeTimeframe === "monthly"
-            ? Math.max(
-                10,
-                item.points - (item.submissions - monthlySubmissions),
-              )
-            : item.points;
         return {
           ...item,
-          currentSubmissions,
-          currentPoints,
+          currentSubmissions: item.submissions,
+          currentPoints: item.points,
         };
       })
       .sort((a, b) => b.currentSubmissions - a.currentSubmissions);
-  }, [mappersData, activeTimeframe]);
+  }, [mappersData]);
 
   // Search filtered mappers
   const filteredMappers = useMemo(() => {
@@ -285,27 +273,13 @@ export default function KuzhiundoLeaderboard() {
   const teamContributions = useMemo(() => {
     return teamsData
       .map((item) => {
-        const monthlySubmissions = Math.max(
-          1,
-          Math.floor(item.submissions * 0.4),
-        );
-        const currentSubmissions =
-          activeTimeframe === "monthly" ? monthlySubmissions : item.submissions;
-        const currentPoints =
-          activeTimeframe === "monthly"
-            ? Math.max(
-                item.mappersCount * 10,
-                item.points - (item.submissions - currentSubmissions),
-              )
-            : item.points;
         return {
           ...item,
-          submissions: currentSubmissions,
-          currentPoints,
+          currentPoints: item.points,
         };
       })
       .sort((a, b) => b.submissions - a.submissions);
-  }, [teamsData, activeTimeframe]);
+  }, [teamsData]);
 
   // Filtered teams list based on search
   const filteredTeams = useMemo(() => {
