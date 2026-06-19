@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import Link from "next/link";
 
 export default function ChallengeModal({
@@ -10,7 +10,8 @@ export default function ChallengeModal({
   verifyError,
   verifySuccess,
 }) {
-  React.useEffect(() => {
+
+  useEffect(() => {
     const handleKeyDown = (e) => {
       if (e.key === "Escape") {
         onClose();
@@ -204,21 +205,17 @@ export default function ChallengeModal({
                 <div className="flex justify-between text-xs font-black text-slate-500 uppercase tracking-wider">
                   <span>Progress</span>
                   <span>
-                    {task.id === 1
-                      ? task.completed
-                        ? "1/1"
-                        : "0/1"
-                      : task.id === 4
-                        ? "0/3"
-                        : "0/1"}
+                    {task.completed ? "1/1" : "0/1"}
                   </span>
                 </div>
                 <div className="w-full bg-[#151225] h-2 rounded-full overflow-hidden">
-                  <div className="bg-violet-500 h-full rounded-full w-[25%]" />
+                  <div className={`bg-violet-500 h-full rounded-full transition-all duration-500 ${task.completed ? "w-full" : "w-0"}`} />
                 </div>
               </div>
             )}
           </div>
+
+
 
           {/* Verification output feedback messages */}
           {verifyError && (

@@ -188,15 +188,7 @@ export default function TasksPage() {
         setVerifyingTaskId(null);
         return;
       }
-    } else if (task.id === 4) {
-      const isEligible = (player?.predictions_count || 0) >= 3;
-      if (!isEligible) {
-        setVerifyError(
-          "Predictions incomplete. Please make at least 3 predictions on any matches.",
-        );
-        setVerifyingTaskId(null);
-        return;
-      }
+
     } else if (task.id === 5) {
       const isEligible = (player?.mu_points || 0) >= 20;
       if (!isEligible) {
@@ -222,7 +214,9 @@ export default function TasksPage() {
       const res = await fetch(`/api/v1/tasks/verify`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ task_id: task.id }),
+        body: JSON.stringify({ 
+          task_id: task.id
+        }),
       });
 
       const data = await res.json();

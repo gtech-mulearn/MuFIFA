@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { verifyToken } from "@/utils/auth";
 import { adjustSquadPoints } from "@/utils/squad";
+import { kuzhiundoCache } from "@/utils/kuzhiundoCache";
 
 const PLAYER_COOKIE = "player_token";
 
@@ -62,6 +63,8 @@ export async function POST(request) {
       return NextResponse.json({ success: true, message: "Task already completed." });
     }
 
+    let pointsDiff = task.mupoint || 0;
+
     // 4. Server-side verification logic for specific tasks
     if (taskIdInt === 1) {
       // Referral Program Challenge
@@ -101,16 +104,68 @@ export async function POST(request) {
       // GitHub Contribution (manual only)
       return NextResponse.json({ success: false, error: "GitHub Contribution requires manual verification and crediting by an admin." }, { status: 400 });
     } else if (taskIdInt === 4) {
-      // Match Tactician (3 predictions)
-      const predQuery = `${supabaseUrl}/rest/v1/match_predictions?user_id=eq.${encodeURIComponent(userId)}&select=id`;
-      const predRes = await fetch(predQuery, {
-        headers: { apikey: supabaseKey, Authorization: `Bearer ${supabaseKey}`, Prefer: "count=exact" }
-      });
-      if (!predRes.ok) throw new Error(`Failed to check predictions: ${await predRes.text()}`);
-      const predCount = parseInt(predRes.headers.get("content-range")?.split("/")[1] || "0", 10);
-      if (predCount < 3) {
-        return NextResponse.json({ success: false, error: "Predictions incomplete. Please make at least 3 predictions on any matches." }, { status: 400 });
+      // Kuzhiyundo Challenge Pothole Mapping verification
+      const kuzhiundo_uuid = player.id;
+
+      let kuzhiData;
+      try {
+        const kuzhiRes = await fetch(`https://www.kuzhiundo.com/api/stats/${encodeURIComponent(kuzhiundo_uuid)}`, {
+          method: "GET",
+          headers: { "Accept": "application/json" },
+          cache: "no-store",
+        });
+        if (!kuzhiRes.ok) {
+          return NextResponse.json({ success: false, error: "Failed to verify UUID on Kuzhiundo. Please verify your UUID is correct and has contributions." }, { status: 400 });
+        }
+        kuzhiData = await kuzhiRes.json();
+      } catch (err) {
+        console.error("External Kuzhiundo API error:", err);
+        return NextResponse.json({ success: false, error: "Kuzhiundo API server is temporarily unreachable. Please try again later." }, { status: 502 });
       }
+
+      if (!kuzhiData || typeof kuzhiData.submission_count !== "number") {
+        return NextResponse.json({ success: false, error: "Invalid stats data returned from Kuzhiundo." }, { status: 400 });
+      }
+
+      if (kuzhiData.submission_count < 1) {
+        return NextResponse.json({ success: false, error: "No pothole submissions found for this Kuzhiundo ID. Please map at least 1 pothole on kuzhiundo.com first." }, { status: 400 });
+      }
+
+      if (!kuzhiData.user_id || !player.user_id || kuzhiData.user_id.toLowerCase() !== player.user_id.toLowerCase()) {
+        return NextResponse.json({ success: false, error: `Username mismatch! This Kuzhiundo ID belongs to '${kuzhiData.user_id}' but you are logged in as '${player.user_id}'.` }, { status: 400 });
+      }
+
+      // Link UUID and update submissions count inside player socials column (JSON)
+      const currentSocials = (() => {
+        if (!player.socials) return {};
+        if (typeof player.socials === "object") return player.socials;
+        try { return JSON.parse(player.socials); } catch { return {}; }
+      })();
+
+      const updatedSocials = {
+        ...currentSocials,
+        kuzhiundo_uuid: kuzhiundo_uuid,
+        kuzhiundo_submissions: kuzhiData.submission_count,
+      };
+
+      const updateSocialsRes = await fetch(`${supabaseUrl}/rest/v1/registrations?id=eq.${player.id}`, {
+        method: "PATCH",
+        headers: {
+          apikey: supabaseKey,
+          Authorization: `Bearer ${supabaseKey}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ socials: updatedSocials }),
+      });
+      if (!updateSocialsRes.ok) {
+        throw new Error(`Failed to save Kuzhiundo ID to profile: ${await updateSocialsRes.text()}`);
+      }
+
+      // First time verification strictly awards the base task points (10 uPoints)
+      pointsDiff = task.mupoint || 10;
+
+      // Clear the cached leaderboards so the newly linked user shows up immediately
+      kuzhiundoCache.clear();
     } else if (taskIdInt === 5) {
       // Squad Synergy (20 points)
       const currentMuPoints = player.mu_points || 0;
@@ -144,7 +199,7 @@ export async function POST(request) {
       body: JSON.stringify({
         user_id: userId,
         task_id: taskIdInt,
-        points_awarded: task.mupoint,
+        points_awarded: pointsDiff,
         xp_creativity: task.xp_creativity,
         xp_branding: task.xp_branding,
         xp_innovation: task.xp_innovation,
@@ -155,7 +210,6 @@ export async function POST(request) {
     if (!insertRes.ok) throw new Error(`Insert completion failed: ${await insertRes.text()}`);
 
     // 6. Update user's registrations points and tasks JSON
-    const pointsDiff = task.mupoint || 0;
     const newMuPoints = (player.mu_points || 0) + pointsDiff;
 
     const patchRes = await fetch(`${supabaseUrl}/rest/v1/registrations?id=eq.${player.id}`, {

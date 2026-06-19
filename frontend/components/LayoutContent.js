@@ -28,7 +28,8 @@ export default function LayoutContent({ children }) {
     pathname.startsWith("/leaderboard") ||
     pathname.startsWith("/match") ||
     pathname.startsWith("/profile") ||
-    pathname.startsWith("/points-history");
+    pathname.startsWith("/points-history") ||
+    pathname.startsWith("/kuzhiundo");
 
   // Fetch player details if on an Arena route
   useEffect(() => {
@@ -127,6 +128,17 @@ export default function LayoutContent({ children }) {
             <circle cx="12" cy="8" r="6" />
             <path strokeLinecap="round" strokeLinejoin="round" d="M15.477 12.89L17 22l-5-3-5 3 1.523-9.11" />
           </svg>
+        ),
+      },
+      {
+        name: "Kuzhiundo",
+        href: "/kuzhiundo",
+        icon: (
+          <img
+            src="/kuzhiundo_logo.png"
+            alt="Kuzhiundo"
+            className="w-5.5 h-5.5 object-contain"
+          />
         ),
       },
     ];
