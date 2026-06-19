@@ -112,6 +112,14 @@ function EmailIcon() {
   );
 }
 
+function SearchTestIcon() {
+  return (
+    <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
+      <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.602 10.602zM10.5 7v7m-3.5-3.5h7" />
+    </svg>
+  );
+}
+
 function Sidebar({ admin, collapsed, setCollapsed }) {
   const pathname = usePathname();
 
@@ -123,7 +131,9 @@ function Sidebar({ admin, collapsed, setCollapsed }) {
     { name: "Create Task", href: "/admin/tasks/create", icon: <CreateTaskIcon /> },
     { name: "Test Stat", href: "/admin/test-stat", icon: <TestStatIcon /> },
     { name: "Send Email", href: "/admin/email", icon: <EmailIcon /> },
+    { name: "API Search Test", href: "/admin/external-test", icon: <SearchTestIcon /> },
   ];
+
 
   if (admin?.role === "superadmin") {
     links.push({ name: "Admins", href: "/admin/admins", icon: <ShieldIcon /> });
