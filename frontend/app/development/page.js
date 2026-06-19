@@ -1,31 +1,39 @@
 import React from "react";
-import Link from "next/link";
+import { getSEOMetadata } from "@/utils/seo";
 
-export const metadata = {
-  title: "Under Maintenance | µFifa '26",
+export const metadata = getSEOMetadata({
+  title: "Under Maintenance",
   description:
     "The site is currently undergoing scheduled maintenance and will be live tomorrow morning.",
-};
+  url: "/development",
+});
 
 export default function DevelopmentPage() {
   return (
-    <div className="min-h-screen bg-[#090A0F] text-slate-100 flex flex-col items-center justify-center p-4 relative overflow-hidden font-sans">
-      {/* Ambient glows */}
-      <div className="absolute top-[20%] left-[10%] w-[50vw] h-[50vw] bg-[radial-gradient(circle_at_center,_rgba(99,102,241,0.12)_0%,_transparent_60%)] pointer-events-none rounded-full blur-3xl animate-pulse" />
-      <div className="absolute bottom-[20%] right-[10%] w-[50vw] h-[50vw] bg-[radial-gradient(circle_at_center,_rgba(6,182,212,0.08)_0%,_transparent_60%)] pointer-events-none rounded-full blur-3xl" />
+    <div className="min-h-screen bg-[#030207] text-slate-100 flex flex-col items-center justify-center p-6 relative overflow-hidden font-sans">
+      {/* Renders a subtle stadium silhouette in the background */}
+      <div
+        className="fixed inset-0 z-0 bg-cover bg-center opacity-[0.05] pointer-events-none"
+        style={{ backgroundImage: `url('/stadium_bg_pruble.webp')` }}
+      />
 
-      {/* Main glassmorphism card */}
-      <div className="relative z-10 max-w-md w-full bg-white/5 border border-white/10 backdrop-blur-2xl rounded-3xl p-8 shadow-2xl flex flex-col items-center text-center gap-6">
-        {/* Pulsing indicator */}
-        <div className="flex items-center gap-2 px-3 py-1 bg-amber-500/10 border border-amber-500/25 rounded-full text-amber-400 text-[10px] font-black uppercase tracking-widest animate-pulse">
-          <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-ping" />
+      {/* Soft ambient glows behind the main container */}
+      <div className="absolute top-[25%] left-[15%] w-[40vw] h-[40vw] bg-[radial-gradient(circle_at_center,_rgba(99,102,241,0.06)_0%,_transparent_60%)] pointer-events-none rounded-full blur-3xl" />
+      <div className="absolute bottom-[25%] right-[15%] w-[40vw] h-[40vw] bg-[radial-gradient(circle_at_center,_rgba(6,182,212,0.04)_0%,_transparent_60%)] pointer-events-none rounded-full blur-3xl" />
+
+      {/* Centered container for the maintenance message */}
+      <div className="relative z-10 max-w-sm w-full flex flex-col items-center text-center gap-8">
+        {/* Active pulsing status badge */}
+        <div className="flex items-center gap-2 px-3 py-1 bg-white/5 border border-white/10 rounded-full text-slate-400 text-[9px] font-black uppercase tracking-widest">
+          <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-ping" />
           <span>Pitch Maintenance</span>
         </div>
 
-        {/* Big icon */}
-        <div className="w-20 h-20 bg-white/5 border border-white/10 rounded-full flex items-center justify-center shadow-lg my-2">
+        {/* Themed maintenance wrench icon */}
+        <div className="relative w-16 h-16 flex items-center justify-center">
+          <div className="absolute inset-0 bg-gradient-to-tr from-violet-600/10 to-cyan-500/10 rounded-2xl border border-white/5 shadow-inner" />
           <svg
-            className="w-10 h-10 text-slate-300"
+            className="w-7 h-7 text-slate-400 relative z-10"
             fill="none"
             stroke="currentColor"
             strokeWidth="1.5"
@@ -39,37 +47,23 @@ export default function DevelopmentPage() {
           </svg>
         </div>
 
-        <div className="flex flex-col gap-2">
-          <h1 className="text-2xl font-black uppercase tracking-wider text-white">
+        <div className="flex flex-col gap-3">
+          <h1 className="text-xl font-black uppercase tracking-wider text-white bg-gradient-to-r from-white to-slate-400 bg-clip-text text-transparent">
             Stadium Maintenance
           </h1>
-          <p className="text-xs text-slate-400 font-medium leading-relaxed mt-1">
+          <p className="text-[11px] text-slate-450 font-medium leading-relaxed max-w-[285px] mx-auto">
             We are currently tuning the pitch engines and updating the tactical
-            systems. The site will be fully live and ready tomorrow morning!
+            systems. The arena will be fully live tomorrow morning.
           </p>
         </div>
 
-        <div className="w-full h-px bg-white/5 my-2" />
+        {/* Visual divider */}
+        <div className="w-12 h-[1px] bg-white/10" />
 
-        {/* Link to Admin panel */}
-        {/* <div className="flex flex-col items-center gap-1.5">
-          <span className="text-[10px] uppercase tracking-widest text-slate-500 font-bold">
-            Administrative Access
-          </span>
-          <Link
-            href="/admin"
-            className="group flex items-center gap-2 text-xs font-semibold text-sky-400 hover:text-sky-300 transition-colors"
-          >
-            <span>Access Admin Control Panel</span>
-            <svg className="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" />
-            </svg>
-          </Link>
-        </div> */}
-      </div>
-
-      <div className="mt-8 text-[10px] text-slate-600 font-medium tracking-wider uppercase z-10">
-        © 2026 µFifa '26 • All Systems Normal
+        {/* Copyright and system status footer */}
+        <div className="text-[9px] text-slate-500 font-bold tracking-widest uppercase">
+          © 2026 µFifa '26 • All Systems Normal
+        </div>
       </div>
     </div>
   );

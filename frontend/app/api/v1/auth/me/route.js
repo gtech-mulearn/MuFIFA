@@ -35,15 +35,31 @@ export async function GET(request) {
       );
     }
 
-    // Re-query Supabase to get the latest points and data
+    // Re-query Supabase to get the latest points and data concurrently with predictions count
+    const headers = {
+      apikey: supabaseKey,
+      Authorization: `Bearer ${supabaseKey}`,
+    };
+
     const query = `${supabaseUrl}/rest/v1/registrations?id=eq.${decoded.id}&select=*&limit=1`;
-    const res = await fetch(query, {
-      method: "GET",
-      headers: {
-        apikey: supabaseKey,
-        Authorization: `Bearer ${supabaseKey}`,
-      },
-    });
+    const predQuery = `${supabaseUrl}/rest/v1/match_predictions?user_id=eq.${encodeURIComponent(decoded.user_id)}&limit=1`;
+
+    const [res, predRes] = await Promise.all([
+      fetch(query, {
+        method: "GET",
+        headers,
+      }),
+      fetch(predQuery, {
+        method: "GET",
+        headers: {
+          ...headers,
+          Prefer: "count=exact",
+        },
+      }).catch((err) => {
+        console.error("Failed to fetch player predictions count (async):", err);
+        return null;
+      }),
+    ]);
 
     if (!res.ok) {
       throw new Error(`Supabase query failed: ${await res.text()}`);
@@ -59,29 +75,16 @@ export async function GET(request) {
 
     const player = rows[0];
 
-    // Fetch user predictions count from Supabase
+    // Parse user predictions count from the resolved response
     let predictionsCount = 0;
-    try {
-      const predQuery = `${supabaseUrl}/rest/v1/match_predictions?user_id=eq.${encodeURIComponent(player.user_id)}&limit=1`;
-      const predRes = await fetch(predQuery, {
-        method: "GET",
-        headers: {
-          apikey: supabaseKey,
-          Authorization: `Bearer ${supabaseKey}`,
-          Prefer: "count=exact",
-        },
-      });
-      if (predRes.ok) {
-        const contentRange = predRes.headers.get("content-range");
-        if (contentRange) {
-          const parts = contentRange.split("/");
-          if (parts.length === 2) {
-            predictionsCount = parseInt(parts[1], 10);
-          }
+    if (predRes && predRes.ok) {
+      const contentRange = predRes.headers.get("content-range");
+      if (contentRange) {
+        const parts = contentRange.split("/");
+        if (parts.length === 2) {
+          predictionsCount = parseInt(parts[1], 10);
         }
       }
-    } catch (err) {
-      console.error("Failed to fetch player predictions count:", err);
     }
 
     return NextResponse.json({

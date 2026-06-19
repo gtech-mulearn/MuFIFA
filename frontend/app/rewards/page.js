@@ -31,11 +31,22 @@ export default function RewardsPage() {
     {
       id: 1,
       title: "Match Day Ticket",
-      description: "Redeem your points for official match entry passes and stadium seating.",
+      description:
+        "Redeem your points for official match entry passes and stadium seating.",
       cost: 100,
       icon: (
-        <svg className="w-8 h-8 text-amber-400" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 6v.75m0 3v.75m0 3v.75m0 3V18m-9-12h12c1.105 0 2 .895 2 2v8c0 1.105-.895 2-2 2H7.5a2 2 0 01-2-2V8a2 2 0 012-2z" />
+        <svg
+          className="w-8 h-8 text-amber-400"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2.5"
+          viewBox="0 0 24 24"
+        >
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            d="M16.5 6v.75m0 3v.75m0 3v.75m0 3V18m-9-12h12c1.105 0 2 .895 2 2v8c0 1.105-.895 2-2 2H7.5a2 2 0 01-2-2V8a2 2 0 012-2z"
+          />
         </svg>
       ),
       tag: "STADIUM ACCESS",
@@ -43,12 +54,23 @@ export default function RewardsPage() {
     {
       id: 2,
       title: "Avatar Glow Frame",
-      description: "Customize your profile card avatar with an exclusive animated neon ring.",
+      description:
+        "Customize your profile card avatar with an exclusive animated neon ring.",
       cost: 50,
       icon: (
-        <svg className="w-8 h-8 text-cyan-400" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+        <svg
+          className="w-8 h-8 text-cyan-400"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2.5"
+          viewBox="0 0 24 24"
+        >
           <circle cx="12" cy="12" r="9" />
-          <path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904L9 21l5-3 5 3-1.523-9.11" />
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            d="M9.813 15.904L9 21l5-3 5 3-1.523-9.11"
+          />
         </svg>
       ),
       tag: "PROFILE CUSTOMIZATION",
@@ -56,10 +78,15 @@ export default function RewardsPage() {
     {
       id: 3,
       title: "Discord Elite Role",
-      description: "Unlock the exclusive 'Elite Tactician' role and private channel access.",
+      description:
+        "Unlock the exclusive 'Elite Tactician' role and private channel access.",
       cost: 30,
       icon: (
-        <svg className="w-8 h-8 text-indigo-400" fill="currentColor" viewBox="0 0 24 24">
+        <svg
+          className="w-8 h-8 text-indigo-400"
+          fill="currentColor"
+          viewBox="0 0 24 24"
+        >
           <path d="M20.317 4.37a19.791 19.791 0 00-4.885-1.515.074.074 0 00-.079.037c-.21.375-.444.864-.608 1.25a18.27 18.27 0 00-5.487 0 12.64 12.64 0 00-.617-1.25.077.077 0 00-.079-.037A19.736 19.736 0 003.677 4.37a.07.07 0 00-.032.027C.533 9.046-.32 13.58.099 18.057a.082.082 0 00.031.057 19.9 19.9 0 005.993 3.03.078.078 0 00.084-.028c.462-.63.874-1.295 1.226-1.994a.076.076 0 00-.041-.106 13.107 13.107 0 01-1.873-.894.077.077 0 01-.008-.128c.126-.093.252-.19.372-.287a.075.075 0 01.077-.011c3.92 1.793 8.18 1.793 12.061 0a.073.073 0 01.078.009c.12.099.246.195.373.289a.077.077 0 01-.006.127 12.299 12.299 0 01-1.873.894.077.077 0 00-.041.107c.36.698.772 1.362 1.225 1.993a.076.076 0 00.084-.028 19.839 19.839 0 006.002-3.03.077.077 0 00.032-.054c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 00-.031-.03zM8.02 15.33c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.956-2.419 2.156-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.956 2.418-2.156 2.418zm7.975 0c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.955-2.419 2.156-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.946 2.418-2.156 2.418z" />
         </svg>
       ),
@@ -68,11 +95,22 @@ export default function RewardsPage() {
     {
       id: 4,
       title: "Gold Card Special",
-      description: "Upgrade your Player Card to a glowing metallic gold background design.",
+      description:
+        "Upgrade your Player Card to a glowing metallic gold background design.",
       cost: 40,
       icon: (
-        <svg className="w-8 h-8 text-fuchsia-400" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904L9 21l5-3 5 3-1.523-9.11M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+        <svg
+          className="w-8 h-8 text-fuchsia-400"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2.5"
+          viewBox="0 0 24 24"
+        >
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            d="M9.813 15.904L9 21l5-3 5 3-1.523-9.11M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+          />
         </svg>
       ),
       tag: "CARD STYLING",
@@ -92,7 +130,7 @@ export default function RewardsPage() {
       {/* Full-page stadium background */}
       <div
         className="fixed inset-0 z-0 bg-cover bg-center opacity-[0.28] pointer-events-none"
-        style={{ backgroundImage: `url('/stadium_bg_pruble.png')` }}
+        style={{ backgroundImage: `url('/stadium_bg_pruble.webp')` }}
       />
       <div className="fixed inset-0 z-0 bg-gradient-to-b from-[#030207]/60 via-[#030207]/40 to-[#030207]/80 pointer-events-none" />
 
@@ -104,7 +142,7 @@ export default function RewardsPage() {
       <div className="relative rounded-3xl overflow-hidden border border-white/5 p-6 md:p-8 flex flex-col gap-6 shadow-2xl bg-[#090715]/40 backdrop-blur-md z-10">
         <div
           className="absolute inset-0 z-0 bg-cover bg-center opacity-[0.30] pointer-events-none"
-          style={{ backgroundImage: `url('/bg_img.png')` }}
+          style={{ backgroundImage: `url('/bg_img.webp')` }}
         />
         <div className="absolute inset-0 bg-gradient-to-b from-transparent via-[#090715]/50 to-[#030207] z-0 pointer-events-none" />
 
@@ -156,7 +194,7 @@ export default function RewardsPage() {
                   <span className="text-xs font-black tracking-tight leading-none">
                     {reward.cost}
                   </span>
-                  <span className="text-[7.5px] font-black tracking-wider uppercase">
+                  <span className="text-[7.5px] font-black tracking-wider">
                     μPoints
                   </span>
                 </div>
@@ -165,8 +203,18 @@ export default function RewardsPage() {
               {/* Glassmorphic Coming Soon Center Overlay */}
               <div className="absolute inset-0 bg-[#090715]/50 backdrop-blur-[2px] flex flex-col items-center justify-center gap-1.5 z-10 select-none">
                 <div className="w-10 h-10 rounded-full bg-violet-500/10 border border-violet-500/35 flex items-center justify-center text-violet-400 shadow-[0_0_15px_rgba(139,92,246,0.15)] animate-pulse">
-                  <svg className="w-5.5 h-5.5" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                  <svg
+                    className="w-5.5 h-5.5"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2.5"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"
+                    />
                   </svg>
                 </div>
                 <span className="text-[9px] font-black uppercase tracking-[0.25em] text-violet-400 drop-shadow-[0_0_8px_rgba(139,92,246,0.5)]">

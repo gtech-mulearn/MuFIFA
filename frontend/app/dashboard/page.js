@@ -3,7 +3,9 @@
 import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import Image from "next/image";
 import { TEAM_FLAGS } from "@/utils/constants";
+import Header from "../tasks/components/Header/Header";
 
 const DOMAIN_STYLES = {
   Coder: "bg-cyan-500/10 border-cyan-500/35 text-cyan-400",
@@ -11,7 +13,6 @@ const DOMAIN_STYLES = {
   Strategist: "bg-amber-500/10 border-amber-500/35 text-amber-400",
   Maker: "bg-indigo-500/10 border-indigo-500/35 text-indigo-400",
 };
-
 
 // Animated "ACTIVE REWARD" badge
 function ActiveRewardSeal() {
@@ -149,154 +150,52 @@ export default function Dashboard() {
     : "";
 
   return (
-    <div className="w-full min-h-screen bg-[#090A0F] text-white flex flex-col font-sans relative select-none pb-16 pt-16 md:pt-20 overflow-hidden">
-      {/* Stadium Background Image */}
-      <div className="absolute inset-0 z-0 bg-[url('/stadium_bg.png')] bg-cover bg-center opacity-20 pointer-events-none" />
+    <div className="w-full relative flex flex-col gap-6 md:gap-8 pb-10">
+      {/* Full-page stadium background */}
+      <div
+        className="fixed inset-0 z-0 bg-cover bg-center opacity-[0.28] pointer-events-none"
+        style={{ backgroundImage: `url('/stadium_bg_pruble.webp')` }}
+      />
+      <div className="fixed inset-0 z-0 bg-gradient-to-b from-[#030207]/60 via-[#030207]/40 to-[#030207]/80 pointer-events-none" />
 
-      {/* Left Wavy Glow Path */}
-      <svg
-        className="absolute left-0 top-[20%] w-[250px] h-[500px] pointer-events-none opacity-20 hidden md:block"
-        viewBox="0 0 100 500"
-      >
-        <path
-          d="M 0 450 Q 50 350 20 250 T 80 50"
-          fill="none"
-          stroke="#06B6D4"
-          strokeWidth="1.5"
-          opacity="0.6"
+      {/* Ambient radial glows */}
+      <div className="absolute top-[10%] left-[5%] w-[45vw] h-[45vw] bg-[radial-gradient(circle_at_center,_rgba(99,102,241,0.08)_0%,_transparent_60%)] pointer-events-none rounded-full" />
+      <div className="absolute bottom-[10%] right-[5%] w-[45vw] h-[45vw] bg-[radial-gradient(circle_at_center,_rgba(6,182,212,0.06)_0%,_transparent_60%)] pointer-events-none rounded-full" />
+
+      {/* TOP N ARENA BANNER (with stadium background) */}
+      <div className="relative rounded-3xl overflow-hidden border border-white/5 p-6 md:p-8 flex flex-col gap-6 md:gap-8 shadow-2xl bg-[#090715]/40 backdrop-blur-md z-10">
+        {/* Stadium background overlay */}
+        <div
+          className="absolute inset-0 z-0 bg-cover bg-center opacity-[0.30] pointer-events-none"
+          style={{ backgroundImage: `url('/bg_img.webp')` }}
         />
-        <path
-          d="M 0 430 Q 40 340 10 240 T 70 40"
-          fill="none"
-          stroke="#4F46E5"
-          strokeWidth="1"
-          opacity="0.4"
-        />
-      </svg>
+        {/* Dark gradient overlay to fade at bottom */}
+        <div className="absolute inset-0 bg-gradient-to-b from-transparent via-[#090715]/50 to-[#030207] z-0 pointer-events-none" />
 
-      {/* Right Wavy Glow Path */}
-      <svg
-        className="absolute right-0 top-[15%] w-[250px] h-[500px] pointer-events-none opacity-20 hidden md:block"
-        viewBox="0 0 100 500"
-      >
-        <path
-          d="M 100 50 Q 50 150 80 250 T 20 450"
-          fill="none"
-          stroke="#06B6D4"
-          strokeWidth="1.5"
-          opacity="0.6"
-        />
-        <path
-          d="M 100 70 Q 60 160 90 260 T 30 430"
-          fill="none"
-          stroke="#4F46E5"
-          strokeWidth="1"
-          opacity="0.4"
-        />
-      </svg>
-
-      <div className="max-w-5xl mx-auto px-4 sm:px-6 w-full relative z-10 flex flex-col gap-8">
-        {/* Dashboard Header */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-white/5 pb-6">
-          <div>
-            <h1 className="text-2xl md:text-3xl font-extrabold tracking-wider bg-gradient-to-r from-white to-slate-400 bg-clip-text text-transparent uppercase">
-              Arena Profile
-            </h1>
-            <p className="text-xs text-slate-400 mt-1.5">
-              Welcome back. Monitor your performance, review squad metrics, and
-              complete active challenges.
-            </p>
-          </div>
-
-          <div className="flex items-center gap-3.5 self-start sm:self-center">
-            {/* Shield Profile Badge */}
-            <div className="relative group cursor-pointer">
-              <svg
-                viewBox="0 0 100 100"
-                className="w-11 h-11 select-none shrink-0 drop-shadow-[0_0_12px_rgba(79,70,229,0.35)] transition-all group-hover:scale-105 duration-300"
-              >
-                <defs>
-                  <linearGradient
-                    id="shield-grad"
-                    x1="0%"
-                    y1="0%"
-                    x2="100%"
-                    y2="100%"
-                  >
-                    <stop offset="0%" stopColor="#6366F1" />
-                    <stop offset="50%" stopColor="#4F46E5" />
-                    <stop offset="100%" stopColor="#312E81" />
-                  </linearGradient>
-                  <linearGradient
-                    id="silver-grad"
-                    x1="0%"
-                    y1="0%"
-                    x2="100%"
-                    y2="100%"
-                  >
-                    <stop offset="0%" stopColor="#FFFFFF" />
-                    <stop offset="100%" stopColor="#94A3B8" />
-                  </linearGradient>
-                </defs>
-                <circle
-                  cx="50"
-                  cy="50"
-                  r="46"
-                  fill="rgba(13, 17, 28, 0.9)"
-                  stroke="url(#shield-grad)"
-                  strokeWidth="2.5"
-                />
-                <path
-                  d="M 32 32 L 50 22 L 68 32 C 68 52, 50 68, 50 78 C 50 68, 32 52, 32 32 Z"
-                  fill="rgba(79, 70, 229, 0.25)"
-                  stroke="url(#silver-grad)"
-                  strokeWidth="2.5"
-                  strokeLinejoin="round"
-                />
-                <text
-                  x="50"
-                  y="52"
-                  fill="url(#silver-grad)"
-                  fontSize="24"
-                  fontWeight="bold"
-                  textAnchor="middle"
-                  alignmentBaseline="middle"
-                >
-                  A
-                </text>
-              </svg>
-            </div>
-
-            {/* View Profile Button */}
-            <Link
-              href={`/profile/${player?.user_id}`}
-              className="cursor-pointer px-5 py-2.5 text-xs font-bold rounded-xl border border-white/10 hover:border-white/20 bg-[#131927] hover:bg-white/5 active:bg-[#0d101d] transition-all flex items-center justify-center gap-2.5 text-slate-200 hover:text-white"
-            >
-              <svg
-                className="w-4 h-4 text-slate-300 animate-pulse"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2.5"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  d="M15 9h3.75M15 12h3.75M15 15h3.75M4.5 19.5h15a2.25 2.25 0 0 0 2.25-2.25V6.75A2.25 2.25 0 0 0 19.5 4.5h-15a2.25 2.25 0 0 0-2.25 2.25v10.5A2.25 2.25 0 0 0 4.5 19.5Zm6-10.125a1.875 1.875 0 1 1-3.75 0 1.875 1.875 0 0 1 3.75 0Zm1.294 6.336a6.721 6.721 0 0 1-3.17.789 6.721 6.721 0 0 1-3.168-.789 3.376 3.376 0 0 1 6.338 0Z"
-                />
-              </svg>
-              <span>View Profile</span>
-            </Link>
-          </div>
+        {/* HEADER */}
+        <div className="relative z-10">
+          <Header
+            title="ARENA"
+            highlightedTitle="PROFILE"
+            subtitle="Welcome back. Monitor your performance, review squad metrics, and complete active challenges."
+          />
         </div>
+      </div>
 
+      <div className="max-w-5xl mx-auto px-4 md:px-8 w-full relative z-10 flex-1 flex flex-col gap-8">
         {/* Player Stats Grid */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           {/* Card 1: Player Profile */}
-          <div className="bg-gradient-to-b from-[#131927]/90 to-[#0d101d]/90 border border-white/10 rounded-2xl p-6 backdrop-blur-md shadow-2xl flex flex-col justify-between min-h-[150px] relative overflow-hidden group hover:border-white/15 transition-all">
+          <Link
+            href={`/profile/${player?.user_id}`}
+            className="bg-gradient-to-b from-[#131927]/90 to-[#0d101d]/90 border border-white/10 rounded-2xl p-6 backdrop-blur-md shadow-2xl flex flex-col justify-between min-h-[150px] relative overflow-hidden group hover:border-white/15 transition-all cursor-pointer font-sans"
+          >
             <div className="flex flex-col gap-1">
-              <span className="text-[10px] uppercase tracking-wider text-cyan-400 font-extrabold">
-                Player Profile
+              <span className="text-[10px] uppercase tracking-wider text-cyan-400 font-extrabold flex items-center justify-between">
+                <span>Player Profile</span>
+                <span className="text-[9px] text-[#06B6D4] opacity-80 group-hover:opacity-100 group-hover:underline transition-all">
+                  View Card →
+                </span>
               </span>
               <h3 className="text-xl md:text-2xl font-bold text-white tracking-wide truncate mt-2">
                 {player?.name || "Adhwith A S"}
@@ -312,7 +211,7 @@ export default function Dashboard() {
             <span className="text-[10px] text-slate-500 font-medium mt-4">
               Profile ID: {player?.user_id || "12345353565770"}
             </span>
-          </div>
+          </Link>
 
           {/* Card 2: Current Team */}
           <div className="bg-gradient-to-b from-[#131927]/90 to-[#0d101d]/90 border border-white/10 rounded-2xl p-6 backdrop-blur-md shadow-2xl flex flex-col justify-between min-h-[150px] relative overflow-hidden hover:border-white/15 transition-all">
@@ -321,7 +220,7 @@ export default function Dashboard() {
               {player?.team ? (
                 <img
                   src={`/Jersey/${player.team === "Netherlands" ? "Netherland" : player.team}.svg`}
-                  alt=""
+                  alt="Team Jersey"
                   className="absolute left-[90px] top-1/2 -translate-y-1/2 h-[110%] w-auto object-contain object-left"
                 />
               ) : (
@@ -402,11 +301,14 @@ export default function Dashboard() {
             </div>
 
             {/* Greek letter μ with motion lines replaced with coin logo */}
-            <img
-              src="/mupoints.png"
-              alt="μPoints Logo"
-              className="w-14 h-14 md:w-16 md:h-16 object-contain shrink-0 select-none"
-            />
+            <div className="relative w-14 h-14 md:w-16 md:h-16 shrink-0">
+              <Image
+                src="/mupoints.webp"
+                alt="μPoints Logo"
+                fill
+                className="object-contain select-none"
+              />
+            </div>
           </div>
         </div>
 

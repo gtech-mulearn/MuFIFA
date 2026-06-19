@@ -1,7 +1,8 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback, useMemo } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { getBackendUrl } from "@/utils/api";
 import Header from "../tasks/components/Header/Header";
 
@@ -113,7 +114,7 @@ export default function LeaderboardPage() {
   }, []);
 
   // Fetch Individual Standings from API
-  const fetchPlayers = async (reset = false) => {
+  const fetchPlayers = useCallback(async (reset = false) => {
     setPlayersLoading(true);
     try {
       const currentOffset = reset ? 0 : playersOffset;
@@ -136,14 +137,22 @@ export default function LeaderboardPage() {
     } finally {
       setPlayersLoading(false);
     }
-  };
+  }, [playersOffset, playersSearchQuery, playersSortOrder]);
 
   // Load players on tab switch or sort order change
   useEffect(() => {
+    let active = true;
     if (activeTab === "individual") {
-      fetchPlayers(true);
+      Promise.resolve().then(() => {
+        if (active) {
+          fetchPlayers(true);
+        }
+      });
     }
-  }, [activeTab, playersSortOrder]);
+    return () => {
+      active = false;
+    };
+  }, [activeTab, playersSortOrder, fetchPlayers]);
 
   // Debounced search trigger for individual players
   useEffect(() => {
@@ -154,12 +163,14 @@ export default function LeaderboardPage() {
     }, 450);
 
     return () => clearTimeout(delayDebounceFn);
-  }, [playersSearchQuery]);
+  }, [playersSearchQuery, activeTab, fetchPlayers]);
 
   // Filter Squads Client-side
-  const filteredTeams = teamsData.filter((team) =>
-    team.name.toLowerCase().includes(searchQuery.toLowerCase()),
-  );
+  const filteredTeams = useMemo(() => {
+    return teamsData.filter((team) =>
+      team.name.toLowerCase().includes(searchQuery.toLowerCase())
+    );
+  }, [teamsData, searchQuery]);
 
   const getRankStyle = (rank) => {
     if (rank === 1)
@@ -178,11 +189,11 @@ export default function LeaderboardPage() {
   };
 
   return (
-    <div className="w-full relative flex flex-col gap-6 md:gap-8 pb-10 px-4 md:px-8 pt-6">
+    <div className="w-full relative flex flex-col gap-6 md:gap-8 pb-10">
       {/* Full-page stadium background */}
       <div
         className="fixed inset-0 z-0 bg-cover bg-center opacity-[0.28] pointer-events-none"
-        style={{ backgroundImage: `url('/stadium_bg_pruble.png')` }}
+        style={{ backgroundImage: `url('/stadium_bg_pruble.webp')` }}
       />
       <div className="fixed inset-0 z-0 bg-gradient-to-b from-[#030207]/60 via-[#030207]/40 to-[#030207]/80 pointer-events-none" />
 
@@ -195,22 +206,26 @@ export default function LeaderboardPage() {
         {/* Stadium background overlay */}
         <div
           className="absolute inset-0 z-0 bg-cover bg-center opacity-[0.30] pointer-events-none"
-          style={{ backgroundImage: `url('/bg_img.png')` }}
+          style={{ backgroundImage: `url('/bg_img.webp')` }}
         />
         {/* Dark gradient overlay to fade at bottom */}
         <div className="absolute inset-0 bg-gradient-to-b from-transparent via-[#090715]/50 to-[#030207] z-0 pointer-events-none" />
 
         {/* HEADER */}
         <div className="relative z-10">
-          <Header 
-            title={activeTab === "squad" ? "SQUAD" : "INDIVIDUAL"} 
-            highlightedTitle="STANDINGS" 
-            subtitle={activeTab === "squad" ? "Live squad points standings in the µFIFA World Cup 2026." : "Real-time player rankings and scorecards."} 
+          <Header
+            title={activeTab === "squad" ? "SQUAD" : "INDIVIDUAL"}
+            highlightedTitle="STANDINGS"
+            subtitle={
+              activeTab === "squad"
+                ? "Live squad points standings in the µFIFA World Cup 2026."
+                : "Real-time player rankings and scorecards."
+            }
           />
         </div>
       </div>
 
-      <div className="max-w-4xl mx-auto w-full relative z-10 flex-1 flex flex-col gap-6">
+      <div className="max-w-4xl mx-auto w-full relative z-10 flex-1 flex flex-col gap-6 px-4 md:px-8">
         {/* Tab Selection Row */}
         <div className="flex flex-col sm:flex-row items-center justify-between gap-4 no-print mt-2">
           <div className="flex bg-black/40 border border-white/5 p-1 rounded-xl w-full max-w-sm">
@@ -255,12 +270,6 @@ export default function LeaderboardPage() {
                 {dbStatus === "connected" ? "LIVE" : "SYNCING"}
               </span>
             </span>
-            <Link
-              href="/"
-              className="cursor-pointer bg-white/5 border border-white/10 hover:border-white/20 hover:bg-white/10 px-4 py-1.5 rounded-xl text-xs font-bold text-slate-300 hover:text-white transition-all text-center"
-            >
-              Back to lobby
-            </Link>
           </div>
         </div>
 
@@ -304,121 +313,122 @@ export default function LeaderboardPage() {
 
           {/* STANDINGS TABLE LIST */}
           <div className="flex flex-col">
-            {activeTab === "squad" && !searchQuery && teamsData.length >= 3 && (
-              <div className="px-1.5 sm:px-3 pb-8 pt-4 flex justify-center items-end gap-1.5 sm:gap-4 border-b border-white/5 bg-white/[0.01]">
-                {/* 2nd Place */}
-                <div className="flex-1 max-w-[110px] sm:max-w-[140px] md:max-w-[180px] flex flex-col items-center text-center group">
-                  <div className="relative mb-2 transition-transform duration-300 group-hover:-translate-y-1">
-                    <img
-                      src={getSquadPhoto(teamsData[1].name)}
-                      alt={`${teamsData[1].name} jersey`}
-                      className="w-20 h-20 sm:w-26 sm:h-26 md:w-48 md:h-48 object-contain drop-shadow-[0_8px_16px_rgba(255,255,255,0.05)]"
-                      onError={(e) => {
-                        e.target.onerror = null;
-                        e.target.src = "/players/portugal_front.svg";
-                      }}
-                    />
-                    <span className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-[#94A3B8] border border-white/20 text-black text-[10px] font-black flex items-center justify-center shadow-lg">
-                      2
-                    </span>
-                  </div>
-                  <div className="w-full bg-gradient-to-b from-slate-400/10 via-slate-500/[0.02] to-transparent border-t border-x border-slate-400/20 rounded-t-xl p-1.5 sm:p-2.5 flex flex-col items-center min-h-[90px] sm:min-h-[105px] md:min-h-[130px] justify-center">
-                    <span className="text-[9px] sm:text-xs md:text-sm font-bold text-slate-300 truncate max-w-full flex items-center justify-center gap-1">
-                      <span
-                        className={`fi fi-${teamsData[1].flag} rounded-sm shrink-0`}
-                        style={{ width: "12px", height: "9px" }}
+            {activeTab === "squad" &&
+              !searchQuery &&
+              dbStatus !== "connecting" &&
+              teamsData.length >= 3 && (
+                <div className="px-1.5 sm:px-3 pb-8 pt-4 flex justify-center items-end gap-1.5 sm:gap-4 border-b border-white/5 bg-white/[0.01]">
+                  {/* 2nd Place */}
+                  <div className="flex-1 max-w-[110px] sm:max-w-[140px] md:max-w-[180px] flex flex-col items-center text-center group">
+                    <div className="relative mb-2 transition-transform duration-300 group-hover:-translate-y-1 w-20 h-20 sm:w-26 sm:h-26 md:w-48 md:h-48">
+                      <Image
+                        src={getSquadPhoto(teamsData[1].name)}
+                        alt={`${teamsData[1].name} jersey`}
+                        fill
+                        className="object-contain drop-shadow-[0_8px_16px_rgba(255,255,255,0.05)]"
                       />
-                      <span className="truncate">{teamsData[1].name}</span>
-                    </span>
-                    <span className="text-xs sm:text-sm md:text-lg font-black text-white mt-1">
-                      {teamsData[1].points}{" "}
-                      <span className="text-[8px] sm:text-[9px] text-slate-500 font-semibold uppercase">
-                        pts
+                      <span className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-[#94A3B8] border border-white/20 text-black text-[10px] font-black flex items-center justify-center shadow-lg">
+                        2
                       </span>
-                    </span>
-                    <span className="text-[8px] sm:text-[9px] md:text-xs text-slate-500 font-semibold mt-0.5 uppercase tracking-wide truncate max-w-full">
-                      {teamsData[1].count} members
-                    </span>
+                    </div>
+                    <div className="w-full bg-gradient-to-b from-slate-400/10 via-slate-500/[0.02] to-transparent border-t border-x border-slate-400/20 rounded-t-xl p-1.5 sm:p-2.5 flex flex-col items-center min-h-[90px] sm:min-h-[105px] md:min-h-[130px] justify-center">
+                      <span className="text-[9px] sm:text-xs md:text-sm font-bold text-slate-300 truncate max-w-full flex items-center justify-center gap-1">
+                        <span
+                          className={`fi fi-${teamsData[1].flag} rounded-sm shrink-0`}
+                          style={{ width: "12px", height: "9px" }}
+                        />
+                        <span className="truncate">{teamsData[1].name}</span>
+                      </span>
+                      <span className="text-xs sm:text-sm md:text-lg font-black text-white mt-1">
+                        {teamsData[1].points}{" "}
+                        <span className="text-[8px] sm:text-[9px] text-slate-500 font-semibold uppercase">
+                          pts
+                        </span>
+                      </span>
+                      <span className="text-[8px] sm:text-[9px] md:text-xs text-slate-500 font-semibold mt-0.5 uppercase tracking-wide truncate max-w-full">
+                        {teamsData[1].count} members
+                      </span>
+                    </div>
                   </div>
-                </div>
 
-                {/* 1st Place */}
-                <div className="flex-1 max-w-[130px] sm:max-w-[160px] md:max-w-[210px] flex flex-col items-center text-center group z-10">
-                  <div className="relative mb-2 transition-transform duration-300 group-hover:-translate-y-1">
-                    <img
-                      src={getSquadPhoto(teamsData[0].name)}
-                      alt={`${teamsData[0].name} jersey`}
-                      className="w-24 h-24 sm:w-32 sm:h-32 md:w-56 md:h-56 object-contain drop-shadow-[0_10px_20px_rgba(251,191,36,0.15)]"
-                      onError={(e) => {
-                        e.target.onerror = null;
-                        e.target.src = "/players/brazil_front.svg";
-                      }}
-                    />
-                    <span className="absolute -top-1 -right-1 w-6 h-6 rounded-full bg-[#FBBF24] border border-white/20 text-black text-[11px] font-black flex items-center justify-center shadow-lg">
-                      1
-                    </span>
-                  </div>
-                  <div className="w-full bg-gradient-to-b from-[#FBBF24]/15 via-yellow-600/[0.02] to-transparent border-t border-x border-[#FBBF24]/30 rounded-t-xl p-2 sm:p-3 flex flex-col items-center min-h-[110px] sm:min-h-[130px] md:min-h-[160px] justify-center shadow-[0_-8px_24px_rgba(251,191,36,0.06)]">
-                    <span className="text-[10px] sm:text-sm md:text-base font-extrabold text-[#FBBF24] truncate max-w-full flex items-center justify-center gap-1.5">
-                      <span
-                        className={`fi fi-${teamsData[0].flag} rounded-sm shrink-0`}
-                        style={{ width: "14px", height: "10.5px" }}
+                  {/* 1st Place */}
+                  <div className="flex-1 max-w-[130px] sm:max-w-[160px] md:max-w-[210px] flex flex-col items-center text-center group z-10">
+                    <div className="relative mb-2 transition-transform duration-300 group-hover:-translate-y-1 w-24 h-24 sm:w-32 sm:h-32 md:w-56 md:h-56">
+                      <Image
+                        src={getSquadPhoto(teamsData[0].name)}
+                        alt={`${teamsData[0].name} jersey`}
+                        fill
+                        className="object-contain drop-shadow-[0_10px_20px_rgba(251,191,36,0.15)]"
                       />
-                      <span className="truncate">{teamsData[0].name}</span>
-                    </span>
-                    <span className="text-sm sm:text-base md:text-2xl font-black text-white mt-1">
-                      {teamsData[0].points}{" "}
-                      <span className="text-[9px] sm:text-[10px] text-[#FBBF24] font-semibold uppercase">
-                        pts
+                      <span className="absolute -top-1 -right-1 w-6 h-6 rounded-full bg-[#FBBF24] border border-white/20 text-black text-[11px] font-black flex items-center justify-center shadow-lg">
+                        1
                       </span>
-                    </span>
-                    <span className="text-[9px] sm:text-slate-400 md:text-xs font-semibold mt-0.5 uppercase tracking-wide truncate max-w-full">
-                      {teamsData[0].count} members
-                    </span>
+                    </div>
+                    <div className="w-full bg-gradient-to-b from-[#FBBF24]/15 via-yellow-600/[0.02] to-transparent border-t border-x border-[#FBBF24]/30 rounded-t-xl p-2 sm:p-3 flex flex-col items-center min-h-[110px] sm:min-h-[130px] md:min-h-[160px] justify-center shadow-[0_-8px_24px_rgba(251,191,36,0.06)]">
+                      <span className="text-[10px] sm:text-sm md:text-base font-extrabold text-[#FBBF24] truncate max-w-full flex items-center justify-center gap-1.5">
+                        <span
+                          className={`fi fi-${teamsData[0].flag} rounded-sm shrink-0`}
+                          style={{ width: "14px", height: "10.5px" }}
+                        />
+                        <span className="truncate">{teamsData[0].name}</span>
+                      </span>
+                      <span className="text-sm sm:text-base md:text-2xl font-black text-white mt-1">
+                        {teamsData[0].points}{" "}
+                        <span className="text-[9px] sm:text-[10px] text-[#FBBF24] font-semibold uppercase">
+                          pts
+                        </span>
+                      </span>
+                      <span className="text-[9px] sm:text-slate-400 md:text-xs font-semibold mt-0.5 uppercase tracking-wide truncate max-w-full">
+                        {teamsData[0].count} members
+                      </span>
+                    </div>
                   </div>
-                </div>
 
-                {/* 3rd Place */}
-                <div className="flex-1 max-w-[100px] sm:max-w-[130px] md:max-w-[160px] flex flex-col items-center text-center group">
-                  <div className="relative mb-2 transition-transform duration-300 group-hover:-translate-y-1">
-                    <img
-                      src={getSquadPhoto(teamsData[2].name)}
-                      alt={`${teamsData[2].name} jersey`}
-                      className="w-18 h-18 sm:w-22 sm:h-22 md:w-40 md:h-40 object-contain drop-shadow-[0_6px_12px_rgba(217,119,6,0.05)]"
-                      onError={(e) => {
-                        e.target.onerror = null;
-                        e.target.src = "/players/argentina_front.svg";
-                      }}
-                    />
-                    <span className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-[#D97706] border border-white/20 text-black text-[10px] font-black flex items-center justify-center shadow-lg">
-                      3
-                    </span>
-                  </div>
-                  <div className="w-full bg-gradient-to-b from-amber-700/10 via-amber-800/[0.02] to-transparent border-t border-x border-amber-700/20 rounded-t-xl p-1.5 sm:p-2.5 flex flex-col items-center min-h-[75px] sm:min-h-[90px] md:min-h-[110px] justify-center">
-                    <span className="text-[9px] sm:text-xs md:text-sm font-bold text-amber-500 truncate max-w-full flex items-center justify-center gap-1">
-                      <span
-                        className={`fi fi-${teamsData[2].flag} rounded-sm shrink-0`}
-                        style={{ width: "12px", height: "9px" }}
+                  {/* 3rd Place */}
+                  <div className="flex-1 max-w-[100px] sm:max-w-[130px] md:max-w-[160px] flex flex-col items-center text-center group">
+                    <div className="relative mb-2 transition-transform duration-300 group-hover:-translate-y-1 w-18 h-18 sm:w-22 sm:h-22 md:w-40 md:h-40">
+                      <Image
+                        src={getSquadPhoto(teamsData[2].name)}
+                        alt={`${teamsData[2].name} jersey`}
+                        fill
+                        className="object-contain drop-shadow-[0_6px_12px_rgba(217,119,6,0.05)]"
                       />
-                      <span className="truncate">{teamsData[2].name}</span>
-                    </span>
-                    <span className="text-xs sm:text-sm md:text-lg font-black text-white mt-1">
-                      {teamsData[2].points}{" "}
-                      <span className="text-[8px] sm:text-[9px] text-slate-500 font-semibold uppercase">
-                        pts
+                      <span className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-[#D97706] border border-white/20 text-black text-[10px] font-black flex items-center justify-center shadow-lg">
+                        3
                       </span>
-                    </span>
-                    <span className="text-[8px] sm:text-[9px] md:text-xs text-slate-500 font-semibold mt-0.5 uppercase tracking-wide truncate max-w-full">
-                      {teamsData[2].count} members
-                    </span>
+                    </div>
+                    <div className="w-full bg-gradient-to-b from-amber-700/10 via-amber-800/[0.02] to-transparent border-t border-x border-amber-700/20 rounded-t-xl p-1.5 sm:p-2.5 flex flex-col items-center min-h-[75px] sm:min-h-[90px] md:min-h-[110px] justify-center">
+                      <span className="text-[9px] sm:text-xs md:text-sm font-bold text-amber-500 truncate max-w-full flex items-center justify-center gap-1">
+                        <span
+                          className={`fi fi-${teamsData[2].flag} rounded-sm shrink-0`}
+                          style={{ width: "12px", height: "9px" }}
+                        />
+                        <span className="truncate">{teamsData[2].name}</span>
+                      </span>
+                      <span className="text-xs sm:text-sm md:text-lg font-black text-white mt-1">
+                        {teamsData[2].points}{" "}
+                        <span className="text-[8px] sm:text-[9px] text-slate-500 font-semibold uppercase">
+                          pts
+                        </span>
+                      </span>
+                      <span className="text-[8px] sm:text-[9px] md:text-xs text-slate-500 font-semibold mt-0.5 uppercase tracking-wide truncate max-w-full">
+                        {teamsData[2].count} members
+                      </span>
+                    </div>
                   </div>
                 </div>
-              </div>
-            )}
+              )}
 
             {activeTab === "squad" ? (
               /* SQUAD LIST */
-              filteredTeams.length > 0 ? (
+              dbStatus === "connecting" ? (
+                <div className="py-16 flex flex-col items-center justify-center gap-3">
+                  <div className="w-6 h-6 rounded-full border-2 border-[#4F46E5] border-t-transparent animate-spin" />
+                  <span className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">
+                    Loading Squads...
+                  </span>
+                </div>
+              ) : filteredTeams.length > 0 ? (
                 (searchQuery ? filteredTeams : filteredTeams.slice(3)).map(
                   (team) => (
                     <div
@@ -527,12 +537,13 @@ export default function LeaderboardPage() {
                         </span>
 
                         {/* Avatar */}
-                        <div className="w-7 h-7 rounded-full bg-slate-800 border border-white/5 overflow-hidden flex items-center justify-center shrink-0">
+                        <div className="relative w-7 h-7 rounded-full bg-slate-800 border border-white/5 overflow-hidden flex items-center justify-center shrink-0">
                           {player.avatar_url ? (
-                            <img
+                            <Image
                               src={player.avatar_url}
-                              alt={player.name}
-                              className="w-full h-full object-cover"
+                              alt={player.name || "Player Avatar"}
+                              fill
+                              className="object-cover"
                             />
                           ) : (
                             <span className="text-[9px] font-bold text-slate-400">

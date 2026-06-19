@@ -192,7 +192,7 @@ export default function AdminUserDetailPage({ params }) {
   const totalPredictionsPages = Math.ceil(predictions.length / 10);
   const displayedPredictions = predictions.slice(
     (predictionsPage - 1) * 10,
-    predictionsPage * 10
+    predictionsPage * 10,
   );
 
   if (loading) {
@@ -430,7 +430,7 @@ export default function AdminUserDetailPage({ params }) {
                   </div>
 
                   <div className="flex flex-col gap-1">
-                    <span className="text-[10px] font-black uppercase tracking-wider text-slate-400">
+                    <span className="text-[10px] font-black tracking-wider text-slate-400">
                       μPoints (Total Score)
                     </span>
                     <span className="text-sm font-mono font-bold text-sky-700">

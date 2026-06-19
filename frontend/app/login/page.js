@@ -8,13 +8,14 @@ import BackgroundVideo from "@/components/BackgroundVideo";
 export default function LoginPage() {
   const router = useRouter();
   const [identifier, setIdentifier] = useState("");
+  // The 'phone' state stores the password credentials, mapping to the backend schema's phone field authentication.
   const [phone, setPhone] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [checkingAuth, setCheckingAuth] = useState(true);
   const [showPassword, setShowPassword] = useState(false);
 
-  // Check if player is already logged in
+  // Check if the user is already authenticated and redirect to dashboard.
   useEffect(() => {
     async function checkAuth() {
       try {
@@ -86,19 +87,19 @@ export default function LoginPage() {
 
   return (
     <div className="w-full min-h-screen bg-[#090A0F] text-white flex flex-col font-sans relative select-none pb-16 pt-8 md:pt-12">
-      {/* Background Stadium Video */}
+      {/* Stadium backdrop video layout. */}
       <div className="no-print">
         <BackgroundVideo />
       </div>
 
-      {/* Retro Theme Overlay and accent glows */}
+      {/* Decorative ambient color spheres and overlay grids. */}
       <div className="absolute inset-0 z-0 bg-[radial-gradient(circle_at_center,rgba(255,255,255,0.02)_25%,#090A0F_95%)] opacity-85 pointer-events-none no-print" />
       <div className="absolute inset-0 z-0 bg-gradient-to-tr from-[rgba(148,163,184,0.05)] via-transparent to-[rgba(6,182,212,0.03)] pointer-events-none no-print" />
       <div className="absolute top-[30%] right-[10%] w-[45vw] h-[45vw] indigo-accent-glow pointer-events-none rounded-full opacity-20 no-print" />
       <div className="absolute bottom-[20%] left-[-15%] w-[45vw] h-[45vw] cyan-accent-glow pointer-events-none rounded-full opacity-20 no-print" />
 
       <div className="max-w-4xl mx-auto px-4 sm:px-6 w-full relative z-10 flex-1 flex flex-col justify-center items-center">
-        {/* LOGIN FORM CARD */}
+        {/* Access pass login card wrapper. */}
         <div className="w-full max-w-lg bg-glass-card rounded-2xl p-5 sm:p-6 md:p-8 border border-white/10 backdrop-blur-md shadow-2xl flex flex-col gap-5 sm:gap-6 bg-[linear-gradient(115deg,rgba(255,255,255,0.02),rgba(79,70,229,0.015))]">
           <div className="text-center flex flex-col gap-1.5">
             <h1 className="text-2xl md:text-3xl font-extrabold tracking-wider bg-gradient-to-r from-white to-slate-400 bg-clip-text text-transparent uppercase">

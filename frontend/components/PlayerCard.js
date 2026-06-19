@@ -231,7 +231,7 @@ export default function PlayerCard({
         {/* Header Section */}
         <div className="pc-header">
           <img
-            src="/trophy.png"
+            src="/trophy.webp"
             className="pc-header-trophy-left"
             alt="Trophy"
           />
@@ -241,7 +241,11 @@ export default function PlayerCard({
             </div>
             <div className="pc-header-year">★ 2026 ★</div>
           </div>
-          <img src="/logo.png" alt="logo" className="pc-header-shield-logo" />
+          <img
+            src="/Logos/logo.png"
+            alt="logo"
+            className="pc-header-shield-logo"
+          />
         </div>
 
         {/* Team Banner */}
@@ -383,7 +387,7 @@ export default function PlayerCard({
         <div className="pc-bottom-stats">
           <div className="pc-bottom-stat pc-stat-locked">
             <img
-              src="/playerCard/football.png"
+              src="/playerCard/football.webp"
               alt="Goals"
               className="pc-bottom-stat-icon"
             />
@@ -462,7 +466,7 @@ export default function PlayerCard({
           <div className="pc-bottom-stat-divider" />
           <div className="pc-bottom-stat">
             <img
-              src="/trophy.png"
+              src="/trophy.webp"
               alt="Challenges"
               className="pc-bottom-stat-icon"
             />
@@ -557,7 +561,7 @@ export default function PlayerCard({
           </div>
           <div className="pc-footer-ball-wrapper">
             <img
-              src="/playerCard/football.png"
+              src="/playerCard/football.webp"
               alt="football"
               className="pc-footer-ball"
             />

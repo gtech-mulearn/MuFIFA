@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
+import Image from "next/image";
 
 export default function Sidebar({ player, handleLogout }) {
   const pathname = usePathname();
@@ -137,10 +138,12 @@ export default function Sidebar({ player, handleLogout }) {
       name: "Kuzhiundo",
       href: "/kuzhiundo",
       icon: (
-        <img
-          src="/kuzhiundo_logo.png"
+        <Image
+          src="/challenges/kuzhiundo/kuzhiundo_logo.png"
           alt="Kuzhiundo"
-          className="w-5 h-5 object-contain"
+          width={20}
+          height={20}
+          className="rounded-full p-1 bg-white/90 "
         />
       ),
     });
@@ -152,13 +155,15 @@ export default function Sidebar({ player, handleLogout }) {
         {/* ARENA LOGO */}
         <Link
           href="/"
-          className="flex items-center justify-center group mt-2 w-full"
+          className="flex items-center justify-center group mt-1 w-full"
         >
           <div className="relative w-full h-16 flex items-center justify-center group-hover:scale-105 transition-transform duration-300">
-            <img
-              src="/logo.png"
+            <Image
+              src="/Logos/logo.png"
               alt="Logo"
-              className="max-w-full max-h-full object-contain"
+              fill
+              className="object-contain"
+              priority
             />
           </div>
         </Link>
@@ -206,10 +211,12 @@ export default function Sidebar({ player, handleLogout }) {
           </span>
           <div className="flex items-center gap-2 mt-2">
             <span className="text-2xl font-black text-white">{points}</span>
-            <img
-              src="/mupoints.png"
+            <Image
+              src="/mupoints.webp"
               alt="μPoints"
-              className="w-8.5 h-8.5 object-contain"
+              width={34}
+              height={34}
+              className="object-contain"
             />
           </div>
           <Link
@@ -237,10 +244,19 @@ export default function Sidebar({ player, handleLogout }) {
         <div className="flex flex-col gap-4 pt-4 border-t border-white/5">
           <div className="flex items-center gap-3">
             {/* Avatar Shield */}
-            <div className="w-10 h-10 rounded-full border border-white/10 bg-slate-900/60 overflow-hidden flex items-center justify-center shrink-0">
-              <span className="text-sm font-black text-slate-300">
-                {player?.name ? player.name[0].toUpperCase() : "P"}
-              </span>
+            <div className="relative w-10 h-10 rounded-full border border-white/10 bg-slate-900/60 overflow-hidden flex items-center justify-center shrink-0">
+              {player?.avatar_url ? (
+                <Image
+                  src={player.avatar_url}
+                  alt={player.name || "Avatar"}
+                  fill
+                  className="object-cover"
+                />
+              ) : (
+                <span className="text-sm font-black text-slate-300">
+                  {player?.name ? player.name[0].toUpperCase() : "P"}
+                </span>
+              )}
             </div>
 
             <div className="flex flex-col min-w-0">

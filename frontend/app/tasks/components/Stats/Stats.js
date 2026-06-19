@@ -15,7 +15,7 @@ export default function Stats({ activeTier, completedCount, totalCount }) {
           <div className="absolute -inset-0.5 rounded-full bg-violet-600/20 blur opacity-75" />
           <div className="relative z-10 flex items-center justify-center">
             <Image
-              src="/playerCard/trophy.png"
+              src="/playerCard/trophy.webp"
               alt="Trophy"
               width={54}
               height={54}
@@ -55,7 +55,7 @@ export default function Stats({ activeTier, completedCount, totalCount }) {
       <div className="lg:col-span-2 hidden lg:flex items-center justify-center relative select-none">
         <div className="absolute w-24 h-24 bg-violet-600/15 rounded-full blur-xl pointer-events-none" />
 
-        <Image src="/trophy.png" alt="Trophy" width={44} height={44} />
+        <Image src="/trophy.webp" alt="Trophy" width={44} height={44} />
       </div>
 
       {/* ACHIEVEMENTS CARD */}

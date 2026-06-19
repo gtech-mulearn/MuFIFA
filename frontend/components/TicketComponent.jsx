@@ -28,7 +28,7 @@ export default function TicketComponent({
         position: 'relative',
         width: '2128px',
         height: '1177px',
-        backgroundImage: 'url(/ticket.png)',
+        backgroundImage: 'url(/ticket.webp)',
         backgroundSize: 'cover',
         backgroundPosition: 'center',
         fontFamily: 'Arial, sans-serif',

@@ -16,7 +16,7 @@ export default function MetagameSection() {
         <div className="flex items-center justify-center gap-3 w-full lg:w-auto pt-4 lg:pt-0">
           <Link href="https://mulearn.org">
             <Image
-              src="/mulearnFoundation.png"
+              src="/Logos/mulearnFoundation.png"
               alt="μLearn Foundation Logo"
               width={135}
               height={135}
@@ -25,9 +25,9 @@ export default function MetagameSection() {
             />
           </Link>
           <div className="text-slate-200 text-xs font-bold px-1">×</div>
-          <Link href="https://mu.org">
+          <Link href="https://mulearnmce.adhwaithas.dev/">
             <Image
-              src="/mulearnMce.png"
+              src="/Logos/mulearnMce.png"
               alt="μLearn MCE Logo"
               width={135}
               height={135}

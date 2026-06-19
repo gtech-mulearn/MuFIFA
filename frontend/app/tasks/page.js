@@ -407,7 +407,7 @@ export default function TasksPage() {
       {/* Full-page stadium background */}
       <div
         className="fixed inset-0 z-0 bg-cover bg-center opacity-[0.28] pointer-events-none"
-        style={{ backgroundImage: `url('/stadium_bg_pruble.png')` }}
+        style={{ backgroundImage: `url('/stadium_bg_pruble.webp')` }}
       />
       <div className="fixed inset-0 z-0 bg-gradient-to-b from-[#030207]/60 via-[#030207]/40 to-[#030207]/80 pointer-events-none" />
 
@@ -420,7 +420,7 @@ export default function TasksPage() {
         {/* Stadium background overlay */}
         <div
           className="absolute inset-0 z-0 bg-cover bg-center opacity-[0.30] pointer-events-none"
-          style={{ backgroundImage: `url('/bg_img.png')` }}
+          style={{ backgroundImage: `url('/bg_img.webp')` }}
         />
         {/* Dark gradient overlay to fade at bottom */}
         <div className="absolute inset-0 bg-gradient-to-b from-transparent via-[#090715]/50 to-[#030207] z-0 pointer-events-none" />

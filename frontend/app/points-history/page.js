@@ -233,7 +233,7 @@ export default function PointsHistoryPage() {
       {/* Full-page stadium background */}
       <div
         className="fixed inset-0 z-0 bg-cover bg-center opacity-[0.28] pointer-events-none"
-        style={{ backgroundImage: `url('/stadium_bg_pruble.png')` }}
+        style={{ backgroundImage: `url('/stadium_bg_pruble.webp')` }}
       />
       <div className="fixed inset-0 z-0 bg-gradient-to-b from-[#030207]/60 via-[#030207]/40 to-[#030207]/80 pointer-events-none" />
 
@@ -245,7 +245,7 @@ export default function PointsHistoryPage() {
       <div className="relative rounded-3xl overflow-hidden border border-white/5 p-6 md:p-8 flex flex-col gap-6 shadow-2xl bg-[#090715]/40 backdrop-blur-md z-10">
         <div
           className="absolute inset-0 z-0 bg-cover bg-center opacity-[0.30] pointer-events-none"
-          style={{ backgroundImage: `url('/bg_img.png')` }}
+          style={{ backgroundImage: `url('/bg_img.webp')` }}
         />
         <div className="absolute inset-0 bg-gradient-to-b from-transparent via-[#090715]/50 to-[#030207] z-0 pointer-events-none" />
 

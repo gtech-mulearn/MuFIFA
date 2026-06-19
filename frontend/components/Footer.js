@@ -16,14 +16,14 @@ export default function Footer() {
               className="flex items-center gap-1.5 cursor-pointer group"
             >
               <Image
-                src="/trophy.png"
+                src="/trophy.webp"
                 alt="World Cup Trophy"
                 width={15}
                 height={40}
                 className="h-8 md:h-10 w-auto object-contain filter drop-shadow-[0_0_8px_rgba(6, 182, 212,0.45)] group-hover:scale-110 transition-transform duration-300"
               />
               <Image
-                src="/logo.png"
+                src="/Logos/logo.png"
                 alt="μLearn Logo"
                 width={189}
                 height={60}
@@ -192,14 +192,14 @@ export default function Footer() {
           </p>
           <div className="flex items-center gap-5">
             <Image
-              src="/gtech.png"
+              src="/Logos/gtech.png"
               alt="GTech Logo"
               width={90}
               height={28}
               className="h-7 w-auto object-contain opacity-60 hover:opacity-100 transition-opacity duration-300"
             />
             <Image
-              src="/mulearnFoundation.png"
+              src="/Logos/mulearnFoundation.png"
               alt="μLearn Foundation Logo"
               width={90}
               height={28}
@@ -215,7 +215,7 @@ export default function Footer() {
       >
         <div className="relative w-44 h-44 flex items-center justify-center animate-[spin_25s_linear_infinite]">
           <Image
-            src="/football.png"
+            src="/football.webp"
             alt="Revolving Football"
             width={96}
             height={96}

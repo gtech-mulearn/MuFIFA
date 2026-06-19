@@ -4,6 +4,7 @@ import "./globals.css";
 import "flag-icons/css/flag-icons.min.css";
 import Script from "next/script";
 import LayoutContent from "@/components/LayoutContent";
+import { getSEOMetadata } from "@/utils/seo";
 
 const outfit = Outfit({
   variable: "--font-outfit",
@@ -11,83 +12,13 @@ const outfit = Outfit({
   weight: ["300", "400", "500", "600", "700", "800"],
 });
 
-export const metadata = {
-  metadataBase: new URL("https://mufifa.mulearn.org"),
+export const metadata = getSEOMetadata({
   title: {
-    default: "µFifa '26",
-    template: "%s | µFifa '26",
+    default: "µFIFA '26",
+    template: "%s | µFIFA '26",
   },
-  description:
-    "Build. Compete. Conquer. A gamified experience by µLearn Foundation & µLearn MCE. Complete technical drills, wager μPoints, and lead your squad to the top of the standings.",
-  keywords: [
-    "µFifa",
-    "mulearn",
-    "gamified",
-    "football",
-    "fifa",
-    "coding",
-    "challenges",
-    "MCE",
-    "sports",
-    "tech",
-    "squads",
-  ],
-  authors: [{ name: "µLearn MCE", url: "https://mulearn.org" }],
-  creator: "µLearn Foundation & µLearn MCE",
-  publisher: "µLearn MCE",
-  icons: {
-    icon: [
-      { url: "/favicon.ico" },
-      { url: "/favicon-16x16.png", sizes: "16x16", type: "image/png" },
-      { url: "/favicon-32x32.png", sizes: "32x32", type: "image/png" },
-    ],
-    apple: [
-      { url: "/apple-touch-icon.png", sizes: "180x180", type: "image/png" },
-    ],
-  },
-  manifest: "/site.webmanifest",
-  formatDetection: {
-    email: false,
-    address: false,
-    telephone: false,
-  },
-  openGraph: {
-    title: "µFifa '26 | Build. Compete. Conquer.",
-    description:
-      "Build. Compete. Conquer. A gamified experience by µLearn Foundation & µLearn MCE. Complete technical drills, wager μPoints, and lead your squad to the top of the standings.",
-    url: "https://mufifa.mulearn.org",
-    siteName: "µFifa '26",
-    locale: "en_US",
-    type: "website",
-    images: [
-      {
-        url: "/MMP_Banner.webp",
-        width: 800,
-        height: 600,
-        alt: "µFifa '26",
-      },
-    ],
-  },
-  twitter: {
-    card: "summary_large_image",
-    title: "µFifa '26",
-    description:
-      "Build. Compete. Conquer. A gamified experience by µLearn Foundation & µLearn MCE. Complete technical drills, wager μPoints, and lead your squad to the top of the standings.",
-    images: ["/MMP_Banner.webp"],
-    creator: "@mulearn",
-  },
-  robots: {
-    index: true,
-    follow: true,
-    googleBot: {
-      index: true,
-      follow: true,
-      "max-video-preview": -1,
-      "max-image-preview": "large",
-      "max-snippet": -1,
-    },
-  },
-};
+  url: "/",
+});
 
 export const viewport = {
   themeColor: "#090A0F",

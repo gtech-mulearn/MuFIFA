@@ -153,7 +153,7 @@ export default function ChallengeCard({ task, onViewDetails, dbTasks }) {
 
   // Border and accent styling based on state
   const borderClass = isCompleted
-    ? "border-emerald-500/35 hover:border-emerald-500/50 shadow-[0_0_20px_rgba(16,185,129,0.05)]"
+    ? "border-white-100/50 hover:border-emerald-500/50 shadow-[0_0_20px_rgba(16,185,129,0.05)]"
     : isLocked
       ? "border-white/5 opacity-55 select-none"
       : "border-violet-500/35 hover:border-violet-500/50 shadow-[0_0_20px_rgba(139,92,246,0.05)]";
@@ -270,7 +270,7 @@ export default function ChallengeCard({ task, onViewDetails, dbTasks }) {
         <div
           className={`border ${
             isCompleted
-              ? "border-emerald-500/25 bg-emerald-500/5 text-emerald-400 shadow-[0_0_15px_rgba(16,185,129,0.05)]"
+              ? "border-emerald-500/25 bg-emerald-500/5 text-white shadow-[0_0_15px_rgba(16,185,129,0.05)]"
               : isLocked
                 ? "border-slate-800 bg-slate-900/10 text-slate-600"
                 : "border-violet-500/25 bg-violet-500/5 text-violet-400 shadow-[0_0_15px_rgba(139,92,246,0.05)]"
@@ -292,7 +292,7 @@ export default function ChallengeCard({ task, onViewDetails, dbTasks }) {
             onClick={() => onViewDetails(task)}
             className={`w-full py-3.5 text-[9px] font-black tracking-widest uppercase rounded-xl border transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
               isCompleted
-                ? "bg-[#0b2b1a] border-emerald-500/35 hover:bg-emerald-500/20 text-emerald-400"
+                ? "bg-[#0b2b1a] border-white/35 hover:bg-emerald-500/20 text-white-400"
                 : "bg-gradient-to-r from-violet-600 to-indigo-600 border-transparent text-white shadow-md hover:from-violet-500 hover:to-indigo-500"
             }`}
           >

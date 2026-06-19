@@ -3,11 +3,11 @@
 import { useState, useEffect } from "react";
 import { usePathname, useSearchParams } from "next/navigation";
 import Link from "next/link";
+import Image from "next/image";
 import Navbar from "@/components/Navbar";
 import Ticker from "@/components/Ticker";
 import Footer from "@/components/Footer";
 import Sidebar from "@/app/tasks/components/Sidebar/Sidebar";
-
 
 export default function LayoutContent({ children }) {
   const pathname = usePathname();
@@ -68,7 +68,6 @@ export default function LayoutContent({ children }) {
     }
   };
 
-
   if (isAdmin || pathname === "/development") {
     // Admin and development routes render their own layout — no public chrome
     return <>{children}</>;
@@ -88,8 +87,18 @@ export default function LayoutContent({ children }) {
         name: "Overview",
         href: "/dashboard",
         icon: (
-          <svg className="w-5.5 h-5.5" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+          <svg
+            className="w-5.5 h-5.5"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2.5"
+            viewBox="0 0 24 24"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"
+            />
           </svg>
         ),
       },
@@ -97,17 +106,39 @@ export default function LayoutContent({ children }) {
         name: "Challenges",
         href: "/tasks",
         icon: (
-          <svg className="w-5.5 h-5.5" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+          <svg
+            className="w-5.5 h-5.5"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2.5"
+            viewBox="0 0 24 24"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"
+            />
           </svg>
         ),
       },
       {
-        name: "Rewards",
-        href: "/rewards",
+        name: "μPredict",
+        href: "/match",
         icon: (
-          <svg className="w-5.5 h-5.5" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v13m0-13V6a2 2 0 112 2h-2zm0 0V5.5A2.5 2.5 0 109.5 8H12zm-7 4h14M5 12a2 2 0 110-4h14a2 2 0 110 4M5 12v7a2 2 0 002 2h10a2 2 0 002-2v-7" />
+          <svg
+            className="w-5.5 h-5.5"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2.5"
+            viewBox="0 0 24 24"
+          >
+            <circle cx="12" cy="12" r="10" />
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              d="M12 2a15.3 15.3 0 014 10 15.3 15.3 0 01-4 10 15.3 15.3 0 01-4-10 15.3 15.3 0 014-10z"
+            />
+            <path strokeLinecap="round" strokeLinejoin="round" d="M2 12h20" />
           </svg>
         ),
       },
@@ -115,18 +146,37 @@ export default function LayoutContent({ children }) {
         name: "Leaderboard",
         href: "/leaderboard",
         icon: (
-          <svg className="w-5.5 h-5.5" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2m0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+          <svg
+            className="w-5.5 h-5.5"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2.5"
+            viewBox="0 0 24 24"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2m0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"
+            />
           </svg>
         ),
       },
       {
-        name: "Badges",
-        href: `/profile/${player.user_id}?tab=badges`,
+        name: "Profile",
+        href: `/profile/${player.user_id}`,
         icon: (
-          <svg className="w-5.5 h-5.5" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
-            <circle cx="12" cy="8" r="6" />
-            <path strokeLinecap="round" strokeLinejoin="round" d="M15.477 12.89L17 22l-5-3-5 3 1.523-9.11" />
+          <svg
+            className="w-5.5 h-5.5"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2.5"
+            viewBox="0 0 24 24"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
+            />
           </svg>
         ),
       },
@@ -134,10 +184,12 @@ export default function LayoutContent({ children }) {
         name: "Kuzhiundo",
         href: "/kuzhiundo",
         icon: (
-          <img
-            src="/kuzhiundo_logo.png"
+          <Image
+            src="/challenges/kuzhiundo/kuzhiundo_logo.png"
             alt="Kuzhiundo"
-            className="w-5.5 h-5.5 object-contain"
+            width={22}
+            height={22}
+            className="object-contain"
           />
         ),
       },
@@ -147,9 +199,11 @@ export default function LayoutContent({ children }) {
     return (
       <div className="min-h-screen bg-[#030207] text-white flex font-sans relative overflow-hidden w-full">
         {/* LEFT SIDEBAR (Fixed & Collapsible - Desktop only) */}
-        <div className={`hidden md:block fixed top-0 left-0 h-screen w-64 z-40 transition-transform duration-300 ${
-          sidebarCollapsed ? "md:-translate-x-full" : "md:translate-x-0"
-        }`}>
+        <div
+          className={`hidden md:block fixed top-0 left-0 h-screen w-64 z-40 transition-transform duration-300 ${
+            sidebarCollapsed ? "md:-translate-x-full" : "md:translate-x-0"
+          }`}
+        >
           <Sidebar player={player} handleLogout={handleLogout} />
 
           {/* Floating Sidebar Toggle Button inside the sidebar */}
@@ -158,27 +212,48 @@ export default function LayoutContent({ children }) {
             className="hidden md:flex absolute top-6 left-full -translate-x-1/2 z-50 p-2.5 border border-white/5 hover:border-white/10 bg-slate-900/80 hover:bg-white/5 rounded-xl text-slate-400 hover:text-white transition-all cursor-pointer items-center justify-center shrink-0 shadow-lg shadow-black/40"
             title={sidebarCollapsed ? "Expand Sidebar" : "Collapse Sidebar"}
           >
-            <svg className={`w-4 h-4 transition-transform duration-300 ${sidebarCollapsed ? "" : "rotate-180"}`} fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" />
+            <svg
+              className={`w-4 h-4 transition-transform duration-300 ${sidebarCollapsed ? "" : "rotate-180"}`}
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2.5"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3"
+              />
             </svg>
           </button>
         </div>
 
         {/* RIGHT MAIN CONTAINER */}
-        <div className={`flex-1 min-w-0 overflow-y-auto flex flex-col relative z-10 transition-all duration-300 pb-20 md:pb-0 ${
-          sidebarCollapsed ? "md:ml-0" : "md:ml-64"
-        }`}>
+        <div
+          className={`flex-1 min-w-0 overflow-y-auto flex flex-col relative z-10 transition-all duration-300 pb-[calc(5rem+env(safe-area-inset-bottom,0px))] md:pb-0 ${
+            sidebarCollapsed ? "md:ml-0" : "md:ml-64"
+          }`}
+        >
           {/* MOBILE NAVBAR WITH PROFILE AVATAR */}
           <div className="md:hidden flex items-center justify-between bg-[#0b0916]/85 border-b border-white/5 p-4 backdrop-blur-md sticky top-0 z-40">
             <Link href="/" className="h-8 flex items-center justify-center">
-              <img src="/logo.png" alt="Logo" className="h-full w-auto object-contain" />
+              <Image
+                src="/Logos/logo.png"
+                alt="Logo"
+                width={120}
+                height={32}
+                className="h-full w-auto object-contain"
+                priority
+              />
             </Link>
 
             {/* Profile Avatar & XP Badge on Right Side */}
             <div className="flex items-center gap-3">
               {/* XP Badge */}
               <div className="bg-[#1c1646]/60 border border-violet-500/20 px-3 py-1.5 rounded-xl flex items-center gap-1 shadow-inner select-none">
-                <span className="text-[9px] font-black text-violet-400 uppercase tracking-wider">XP</span>
+                <span className="text-[9px] font-black text-violet-400 uppercase tracking-wider">
+                  XP
+                </span>
                 <span className="text-xs font-black text-white">
                   {(player.mu_points || 0) * 100}
                 </span>
@@ -190,41 +265,51 @@ export default function LayoutContent({ children }) {
                 title="View Profile"
               >
                 {player.avatar_url ? (
-                  <img src={player.avatar_url} alt="Profile" className="w-full h-full object-cover" />
+                  <Image
+                    src={player.avatar_url}
+                    alt="Profile"
+                    width={36}
+                    height={36}
+                    className="w-full h-full object-cover"
+                  />
                 ) : (
                   <div className="w-full h-full flex items-center justify-center text-[10px] font-black text-violet-400 bg-violet-500/10">
-                    {player.name ? player.name.trim().substring(0, 2).toUpperCase() : "ME"}
+                    {player.name
+                      ? player.name.trim().substring(0, 2).toUpperCase()
+                      : "ME"}
                   </div>
                 )}
               </Link>
             </div>
           </div>
 
-          <main className="flex-1 w-full relative">
-            {children}
-          </main>
+          <main className="flex-1 w-full relative">{children}</main>
 
           <Footer />
         </div>
 
         {/* MOBILE BOTTOM NAVIGATION BAR */}
-        <nav className="md:hidden fixed bottom-0 left-0 right-0 h-16 bg-[#0c0a18]/90 border-t border-white/5 flex items-center justify-around z-40 backdrop-blur-md pb-safe">
+        <nav className="md:hidden fixed bottom-0 left-0 right-0 h-[calc(4rem+env(safe-area-inset-bottom,0px))] bg-[#0c0a18]/90 border-t border-white/5 flex items-center justify-around z-40 backdrop-blur-md pb-[env(safe-area-inset-bottom,0px)]">
           {mobileTabs.map((item) => {
             const isActive =
-              item.name === "Badges"
-                ? pathname.startsWith("/profile") && currentTab === "badges"
+              item.name === "Profile"
+                ? pathname.startsWith("/profile")
                 : pathname === item.href;
 
             return (
               <Link
                 key={item.name}
                 href={item.href}
-                className={`flex flex-col items-center justify-center gap-1 py-1 px-3 rounded-xl transition-all ${
-                  isActive ? "text-violet-400" : "text-slate-400 hover:text-slate-200"
+                className={`flex-1 min-w-0 flex flex-col items-center justify-center gap-1 py-1.5 px-0.5 rounded-xl transition-all ${
+                  isActive
+                    ? "text-violet-400"
+                    : "text-slate-400 hover:text-slate-200"
                 }`}
               >
                 {item.icon}
-                <span className="text-[9px] font-black uppercase tracking-wider">{item.name}</span>
+                <span className="text-[8.5px] font-black uppercase tracking-wider truncate w-full text-center">
+                  {item.name}
+                </span>
               </Link>
             );
           })}

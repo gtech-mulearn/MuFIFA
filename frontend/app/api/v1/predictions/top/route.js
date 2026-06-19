@@ -43,43 +43,48 @@ export async function GET(request) {
 
     // Refresh cache if expired or empty
     if (!cache.data || now > cache.expiresAt) {
-      // 1. Fetch all registrations (with institution and domain)
-      const registrationsRes = await fetch(
-        `${supabaseUrl}/rest/v1/registrations?select=user_id,name,team,avatar_url,institution,domain&limit=5000`,
-        {
-          method: "GET",
-          headers: supabaseHeaders,
-          next: { revalidate: 0 },
-        }
-      );
+      // 1. Fetch all registrations and predictions concurrently (with 5-minute Next.js caching)
+      const [registrationsRes, predictionsRes] = await Promise.all([
+        fetch(
+          `${supabaseUrl}/rest/v1/registrations?select=user_id,name,team,avatar_url,institution,domain&limit=5000`,
+          {
+            method: "GET",
+            headers: supabaseHeaders,
+            next: { revalidate: 300 },
+          }
+        ),
+        fetch(
+          `${supabaseUrl}/rest/v1/match_predictions?select=user_id,outcome&limit=10000`,
+          {
+            method: "GET",
+            headers: supabaseHeaders,
+            next: { revalidate: 300 },
+          }
+        ),
+      ]);
 
       if (!registrationsRes.ok) {
-        throw new Error(`Failed to fetch registrations: ${await registrationsRes.text()}`);
+        throw new Error(
+          `Failed to fetch registrations: ${await registrationsRes.text()}`
+        );
+      }
+      if (!predictionsRes.ok) {
+        throw new Error(
+          `Failed to fetch predictions: ${await predictionsRes.text()}`
+        );
       }
 
-      const registrations = await registrationsRes.json();
+      const [registrations, predictions] = await Promise.all([
+        registrationsRes.json(),
+        predictionsRes.json(),
+      ]);
+
       const usersMap = {};
       registrations.forEach((r) => {
         if (r.user_id) {
           usersMap[r.user_id] = r;
         }
       });
-
-      // 2. Fetch all predictions
-      const predictionsRes = await fetch(
-        `${supabaseUrl}/rest/v1/match_predictions?select=user_id,outcome&limit=10000`,
-        {
-          method: "GET",
-          headers: supabaseHeaders,
-          next: { revalidate: 0 },
-        }
-      );
-
-      if (!predictionsRes.ok) {
-        throw new Error(`Failed to fetch predictions: ${await predictionsRes.text()}`);
-      }
-
-      const predictions = await predictionsRes.json();
 
       // 3. Aggregate predictions by user
       const statsMap = {};

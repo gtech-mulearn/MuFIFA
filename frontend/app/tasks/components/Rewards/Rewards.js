@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 
 export default function Rewards({ activeTier }) {
   return (
@@ -36,10 +37,12 @@ export default function Rewards({ activeTier }) {
       <div className="grid grid-cols-1 md:grid-cols-12 gap-5 items-stretch mt-2">
         {/* REWARD 1: μPoints */}
         <div className="md:col-span-4 bg-[#110e20]/60 border border-white/5 rounded-2xl p-4 flex items-center gap-4 shadow-md">
-          <img
-            src="/mupoints.png"
+          <Image
+            src="/mupoints.webp"
             alt="μPoints"
-            className="w-12 h-12 object-contain shrink-0"
+            width={48}
+            height={48}
+            className="object-contain shrink-0"
           />
           <div className="flex flex-col">
             <span className="text-xl font-black text-white leading-none">

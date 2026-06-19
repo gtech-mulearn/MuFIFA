@@ -203,7 +203,7 @@ export default function Ticker() {
             <div className="absolute left-0 top-0 h-full w-[3px] bg-gradient-to-b from-[#06B6D4] to-[#4F46E5]" />
             <div className="flex-1 pl-2">
               <span className="text-[9px] tracking-wider text-[#06B6D4] uppercase block mb-0.5">
-                // Overtaking Alert //
+                {"// Overtaking Alert //"}
               </span>
               <p className="text-slate-100 font-semibold flex items-center gap-1.5 flex-wrap">
                 <svg className="w-4 h-4 text-amber-500 fill-current animate-pulse shrink-0" viewBox="0 0 24 24" aria-hidden="true">

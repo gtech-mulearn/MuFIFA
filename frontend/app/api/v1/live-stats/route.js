@@ -1,5 +1,8 @@
 import { NextResponse } from "next/server";
 
+export const revalidate = 30;
+
+
 export async function GET(request) {
   try {
     const supabaseUrl = process.env.SUPABASE_URL;
@@ -27,7 +30,7 @@ export async function GET(request) {
         apikey: supabaseKey,
         Authorization: `Bearer ${supabaseKey}`,
       },
-      next: { revalidate: 0 },
+      next: { revalidate: 30 },
     });
 
     if (!res.ok) {
@@ -44,7 +47,7 @@ export async function GET(request) {
         apikey: supabaseKey,
         Authorization: `Bearer ${supabaseKey}`,
       },
-      next: { revalidate: 0 },
+      next: { revalidate: 30 },
     });
 
     const squadNames = [];

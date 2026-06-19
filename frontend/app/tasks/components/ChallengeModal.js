@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
+import Image from "next/image";
 
 export default function ChallengeModal({
   isOpen,
@@ -97,7 +98,7 @@ export default function ChallengeModal({
         {/* Stadium BG pattern */}
         <div
           className="absolute inset-0 z-0 bg-cover bg-center opacity-[0.15] pointer-events-none"
-          style={{ backgroundImage: `url('/bg_imge.png')` }}
+          style={{ backgroundImage: `url('/bg_img.webp')` }}
         />
         {/* Glow */}
         <div className="absolute w-64 h-64 bg-violet-600/10 rounded-full blur-3xl pointer-events-none z-0" />
@@ -111,11 +112,14 @@ export default function ChallengeModal({
           <div className="relative w-24 h-24 md:w-36 md:h-36 shrink-0 flex items-center justify-center">
             <div className="absolute -inset-1 md:-inset-1.5 rounded-full bg-gradient-to-br from-violet-500 to-indigo-600 blur opacity-45 animate-pulse" />
             <div className="w-20 h-20 md:w-32 md:h-32 rounded-full bg-[#121021] border border-violet-500/30 flex items-center justify-center shadow-2xl relative z-10">
-              <img
-                src={getTaskLogo(task.id)}
-                alt="Logo Badge"
-                className="w-12 h-12 md:w-18 md:h-18 object-contain drop-shadow-[0_0_15px_rgba(139,92,246,0.6)]"
-              />
+              <div className="relative w-12 h-12 md:w-18 md:h-18">
+                <Image
+                  src={getTaskLogo(task.id)}
+                  alt="Logo Badge"
+                  fill
+                  className="object-contain drop-shadow-[0_0_15px_rgba(139,92,246,0.6)]"
+                />
+              </div>
             </div>
           </div>
 

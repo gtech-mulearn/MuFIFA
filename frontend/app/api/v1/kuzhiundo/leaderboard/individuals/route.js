@@ -10,15 +10,16 @@ export async function GET(request) {
     const period = searchParams.get("period");
     const q = searchParams.get("q");
 
-    let url = "https://kuzhiundo.com/api/leaderboard/individuals";
-    const params = [];
-    if (period) params.push(`period=${encodeURIComponent(period)}`);
-    if (q) params.push(`q=${encodeURIComponent(q)}`);
-    if (params.length > 0) {
-      url += `?${params.join("&")}`;
+    // Construct target endpoint URL using URL object to handle query parameter encoding robustly.
+    const endpointUrl = new URL("https://kuzhiundo.com/api/leaderboard/individuals");
+    if (period) {
+      endpointUrl.searchParams.set("period", period);
+    }
+    if (q) {
+      endpointUrl.searchParams.set("q", q);
     }
 
-    const res = await fetch(url, { cache: "no-store" });
+    const res = await fetch(endpointUrl.toString(), { next: { revalidate: 30 } });
     if (!res.ok) {
       throw new Error(`Kuzhiundo API returned status ${res.status}`);
     }
@@ -26,10 +27,10 @@ export async function GET(request) {
     const json = await res.json();
     const users = json.users || [];
 
+    // Map the external API users structure to our frontend mapper format.
     const mappersList = users.map((u) => {
       const reports = parseInt(u.reports || "0", 10);
-      const points =
-        KUZHIUNDO_BASE_POINTS + reports * KUZHIUNDO_PER_SUBMISSION;
+      const points = KUZHIUNDO_BASE_POINTS + reports * KUZHIUNDO_PER_SUBMISSION;
 
       return {
         id: u.id,

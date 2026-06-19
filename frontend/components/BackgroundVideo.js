@@ -38,7 +38,7 @@ const BackgroundVideo = memo(() => {
         autoPlay
         muted
         playsInline
-        preload="auto"
+        preload="none"
         tabIndex="-1"
         aria-hidden="true"
         className="w-full h-full object-cover object-center"

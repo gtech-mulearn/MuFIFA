@@ -182,7 +182,15 @@ export default function MatchCard({ match, player, onPredictionSaved, compact, i
   }, [match.id]);
 
   useEffect(() => {
-    fetchOdds();
+    let active = true;
+    Promise.resolve().then(() => {
+      if (active) {
+        fetchOdds();
+      }
+    });
+    return () => {
+      active = false;
+    };
   }, [fetchOdds]);
 
   const handlePredictionSaved = async (prediction) => {

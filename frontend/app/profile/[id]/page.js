@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, Suspense } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { useRouter, useSearchParams } from "next/navigation";
 import PlayerCard from "@/components/PlayerCard";
 import { TEAM_FLAGS, TEAM_WHATSAPP_LINKS } from "@/utils/constants";
@@ -146,7 +147,8 @@ function ProfilePageContent({ params }) {
   const [uploading, setUploading] = useState(false);
   const [uploadError, setUploadError] = useState("");
   const searchParams = useSearchParams();
-  const activeTab = searchParams && searchParams.get("tab") === "badges" ? "badges" : "profile";
+  const activeTab =
+    searchParams && searchParams.get("tab") === "badges" ? "badges" : "profile";
 
   // Edit details form state
   const [editForm, setEditForm] = useState({
@@ -400,10 +402,11 @@ function ProfilePageContent({ params }) {
         <div className="relative group">
           <div className="relative w-16 h-16 rounded-full bg-gradient-to-tr from-[#4F46E5] to-[#06B6D4] p-[2.5px] shadow-[0_0_15px_rgba(6,182,212,0.25)] overflow-hidden">
             {player.avatar_url ? (
-              <img
+              <Image
                 src={player.avatar_url}
-                alt={player.name}
-                className="w-full h-full rounded-full object-cover"
+                alt={player.name || "Player Avatar"}
+                fill
+                className="rounded-full object-cover"
               />
             ) : (
               <div className="w-full h-full rounded-full bg-[#131927] flex items-center justify-center font-extrabold text-lg text-slate-100 uppercase tracking-wider">
@@ -473,7 +476,7 @@ function ProfilePageContent({ params }) {
       {/* Points Overview */}
       <div className="grid grid-cols-3 gap-3">
         <div className="bg-[#0f1a2e]/80 border border-white/8 rounded-xl p-3 flex flex-col items-center gap-1">
-          <span className="text-[8px] font-black uppercase tracking-wider text-slate-500">
+          <span className="text-[8px] font-black tracking-wider text-slate-500">
             μPoints
           </span>
           <span className="text-lg font-black text-[#06B6D4]">
@@ -707,10 +710,11 @@ function ProfilePageContent({ params }) {
           <div className="flex items-center gap-4">
             <div className="relative w-16 h-16 rounded-full bg-gradient-to-tr from-[#4F46E5] to-[#06B6D4] p-[2.5px] shadow-[0_0_15px_rgba(6,182,212,0.25)] overflow-hidden shrink-0">
               {player.avatar_url ? (
-                <img
+                <Image
                   src={player.avatar_url}
-                  alt={player.name}
-                  className="w-full h-full rounded-full object-cover"
+                  alt={player.name || "Player Avatar"}
+                  fill
+                  className="rounded-full object-cover"
                 />
               ) : (
                 <div className="w-full h-full rounded-full bg-[#131927] flex items-center justify-center font-extrabold text-lg text-slate-100 uppercase tracking-wider">
@@ -1166,11 +1170,14 @@ function ProfilePageContent({ params }) {
             className={`flex items-center gap-3 p-3 rounded-xl border border-white/8 bg-[#0f1a2e]/80 hover:border-[#4F46E5]/30 transition-all ${!badge.earned ? "opacity-50 grayscale" : ""}`}
           >
             <div className="w-10 h-10 rounded-lg flex items-center justify-center overflow-hidden shrink-0 bg-[#4F46E5]/10 border border-[#4F46E5]/20">
-              <img
-                src={badge.icon}
-                alt={badge.name}
-                className="w-6 h-6 object-contain"
-              />
+              <div className="relative w-6 h-6">
+                <Image
+                  src={badge.icon}
+                  alt={badge.name}
+                  fill
+                  className="object-contain"
+                />
+              </div>
             </div>
             <div className="flex flex-col flex-1 min-w-0">
               <div className="flex items-center gap-2">
@@ -1242,11 +1249,11 @@ function ProfilePageContent({ params }) {
   };
 
   return (
-    <div className="w-full relative flex flex-col gap-6 md:gap-8 pb-10 px-4 md:px-8 pt-6">
+    <div className="w-full relative flex flex-col gap-6 md:gap-8 pb-10">
       {/* Full-page stadium background */}
       <div
         className="fixed inset-0 z-0 bg-cover bg-center opacity-[0.28] pointer-events-none"
-        style={{ backgroundImage: `url('/stadium_bg_pruble.png')` }}
+        style={{ backgroundImage: `url('/stadium_bg_pruble.webp')` }}
       />
       <div className="fixed inset-0 z-0 bg-gradient-to-b from-[#030207]/60 via-[#030207]/40 to-[#030207]/80 pointer-events-none" />
 
@@ -1259,19 +1266,23 @@ function ProfilePageContent({ params }) {
         {/* Stadium background overlay */}
         <div
           className="absolute inset-0 z-0 bg-cover bg-center opacity-[0.30] pointer-events-none"
-          style={{ backgroundImage: `url('/bg_img.png')` }}
+          style={{ backgroundImage: `url('/bg_img.webp')` }}
         />
         {/* Dark gradient overlay to fade at bottom */}
         <div className="absolute inset-0 bg-gradient-to-b from-transparent via-[#090715]/50 to-[#030207] z-0 pointer-events-none" />
 
         {/* HEADER */}
         <div className="relative z-10">
-          <Header title="PLAYER" highlightedTitle="SCORECARD" subtitle="View player stats, verify social integrations and manage profile settings." />
+          <Header
+            title="PLAYER"
+            highlightedTitle="SCORECARD"
+            subtitle="View player stats, verify social integrations and manage profile settings."
+          />
         </div>
       </div>
 
       {/* Main Content — 3-Column Layout */}
-      <div className="relative z-10 flex-1 w-full max-w-[1680px] mx-auto px-4 sm:px-6">
+      <div className="relative z-10 flex-1 w-full max-w-[1680px] mx-auto px-4 sm:px-6 md:px-8">
         {error || !player ? (
           /* ERROR / NOT FOUND */
           <div className="flex items-center justify-center min-h-[60vh]">
@@ -1306,12 +1317,6 @@ function ProfilePageContent({ params }) {
                   className="flex-1 text-center py-2.5 rounded-xl border border-white/10 hover:border-white/30 text-xs font-bold uppercase tracking-wider transition-colors bg-white/5"
                 >
                   Leaderboard
-                </Link>
-                <Link
-                  href="/"
-                  className="flex-1 text-center py-2.5 rounded-xl bg-white text-black hover:bg-white/90 text-xs font-bold uppercase tracking-wider transition-colors"
-                >
-                  Back to Lobby
                 </Link>
               </div>
             </div>
@@ -1389,11 +1394,13 @@ function ProfilePageContent({ params }) {
 
 export default function ProfilePage({ params }) {
   return (
-    <Suspense fallback={
-      <div className="w-full min-h-screen bg-[#090A0F] flex items-center justify-center">
-        <div className="w-8 h-8 rounded-full border-2 border-violet-500 border-t-transparent animate-spin" />
-      </div>
-    }>
+    <Suspense
+      fallback={
+        <div className="w-full min-h-screen bg-[#090A0F] flex items-center justify-center">
+          <div className="w-8 h-8 rounded-full border-2 border-violet-500 border-t-transparent animate-spin" />
+        </div>
+      }
+    >
       <ProfilePageContent params={params} />
     </Suspense>
   );

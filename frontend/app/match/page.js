@@ -1,7 +1,8 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import MatchCard from "@/components/match/MatchCard";
 import CorrectPredictorsModal from "@/components/match/CorrectPredictorsModal";
 import Header from "../tasks/components/Header/Header";
@@ -96,12 +97,13 @@ function TopPredictorsList({
       <div className={`flex-1 flex flex-col items-center text-center group ${config.containerClass}`}>
         {/* Avatar Container */}
         <div className="relative mb-2 transition-transform duration-300 group-hover:-translate-y-1">
-          <div className={`rounded-full bg-slate-800 overflow-hidden flex items-center justify-center shrink-0 ${config.avatarSize} ${config.borderClass}`}>
+          <div className={`relative rounded-full bg-slate-800 overflow-hidden flex items-center justify-center shrink-0 ${config.avatarSize} ${config.borderClass}`}>
             {pred.avatar_url ? (
-              <img
+              <Image
                 src={pred.avatar_url}
-                alt={pred.name}
-                className="w-full h-full object-cover"
+                alt={pred.name || "Predictor Avatar"}
+                fill
+                className="object-cover"
               />
             ) : (
               <span className="text-[10px] sm:text-xs font-bold text-slate-400">
@@ -212,12 +214,13 @@ function TopPredictorsList({
                     {rank}
                   </span>
 
-                  <div className="w-7 h-7 rounded-full bg-slate-800 border border-white/5 overflow-hidden flex items-center justify-center shrink-0">
+                  <div className="relative w-7 h-7 rounded-full bg-slate-800 border border-white/5 overflow-hidden flex items-center justify-center shrink-0">
                     {pred.avatar_url ? (
-                      <img
+                      <Image
                         src={pred.avatar_url}
-                        alt={pred.name}
-                        className="w-full h-full object-cover"
+                        alt={pred.name || "Predictor Avatar"}
+                        fill
+                        className="object-cover"
                       />
                     ) : (
                       <span className="text-[9px] font-bold text-slate-400">
@@ -326,6 +329,9 @@ export default function MatchPage() {
   const [orderedMatchIds, setOrderedMatchIds] = useState([]);
   const [selectedMatchForPredictors, setSelectedMatchForPredictors] = useState(null);
 
+  // Stable client-side mount time to keep calculations pure during render
+  const [nowTime] = useState(() => Date.now());
+
   // Top Predictors Tab State
   const [predictors, setPredictors] = useState([]);
   const [predictorsLoading, setPredictorsLoading] = useState(false);
@@ -334,7 +340,7 @@ export default function MatchPage() {
   const [predictorsOffset, setPredictorsOffset] = useState(0);
   const [hasMorePredictors, setHasMorePredictors] = useState(false);
 
-  const fetchTopPredictors = async (reset = false) => {
+  const fetchTopPredictors = useCallback(async (reset = false) => {
     setPredictorsLoading(true);
     setPredictorsError(null);
     try {
@@ -362,14 +368,22 @@ export default function MatchPage() {
     } finally {
       setPredictorsLoading(false);
     }
-  };
+  }, [predictorsOffset, predictorsSearchQuery]);
 
   // Load predictors on tab switch
   useEffect(() => {
+    let active = true;
     if (activeTab === "top_predictors") {
-      fetchTopPredictors(true);
+      Promise.resolve().then(() => {
+        if (active) {
+          fetchTopPredictors(true);
+        }
+      });
     }
-  }, [activeTab]);
+    return () => {
+      active = false;
+    };
+  }, [activeTab, fetchTopPredictors]);
 
   // Debounced search trigger for predictors
   useEffect(() => {
@@ -380,7 +394,7 @@ export default function MatchPage() {
     }, 450);
 
     return () => clearTimeout(delayDebounceFn);
-  }, [predictorsSearchQuery]);
+  }, [predictorsSearchQuery, activeTab, fetchTopPredictors]);
 
   // Silently check auth — match page is public, no redirect
   useEffect(() => {
@@ -415,24 +429,30 @@ export default function MatchPage() {
   };
 
   useEffect(() => {
-    fetchMatches();
+    let active = true;
+    Promise.resolve().then(() => {
+      if (active) {
+        fetchMatches();
+      }
+    });
+    return () => {
+      active = false;
+    };
   }, []);
 
   // Filter matches for the active tab
-  const allFiltered = matches.filter((match) => {
-    if (EXCLUDED_STATUSES.has(match.status)) return false;
-    return TAB_STATUSES[activeTab]?.has(match.status) ?? false;
-  });
+  const { filteredMatches, totalFilteredCount } = useMemo(() => {
+    const allFiltered = matches.filter((match) => {
+      if (EXCLUDED_STATUSES.has(match.status)) return false;
+      return TAB_STATUSES[activeTab]?.has(match.status) ?? false;
+    });
 
-  // For the matches tab, show live matches and upcoming matches in the next 24 hours
-  // For results, paginate newest-first
-  const filteredMatches =
-    activeTab === "matches"
+    const result = activeTab === "matches"
       ? allFiltered
           .filter((m) => {
             if (m.status === "IN_PLAY" || m.status === "PAUSED") return true;
             const matchTime = new Date(m.utcDate).getTime();
-            const diffMs = matchTime - Date.now();
+            const diffMs = matchTime - nowTime;
             return diffMs <= 24 * 60 * 60 * 1000;
           })
           .sort((a, b) => new Date(a.utcDate) - new Date(b.utcDate))
@@ -443,28 +463,45 @@ export default function MatchPage() {
             .slice(0, resultsVisible)
         : allFiltered;
 
+    return {
+      filteredMatches: result,
+      totalFilteredCount: allFiltered.length,
+    };
+  }, [matches, activeTab, resultsVisible, nowTime]);
+
   // Next 4 matches in 24 hours for matches tab layout
-  const top4Matches =
-    activeTab === "matches" ? filteredMatches.slice(0, 4) : [];
-  const top4Ids = top4Matches.map((m) => String(m.id));
-  const top4IdsKey = top4Ids.join(",");
+  const top4Matches = useMemo(() => {
+    return activeTab === "matches" ? filteredMatches.slice(0, 4) : [];
+  }, [activeTab, filteredMatches]);
+
+  const top4Ids = useMemo(() => {
+    return top4Matches.map((m) => String(m.id));
+  }, [top4Matches]);
 
   useEffect(() => {
-    if (top4Ids.length > 0) {
-      setOrderedMatchIds((prev) => {
-        const prevSet = new Set(prev);
-        const isMatch =
-          top4Ids.length === prev.length &&
-          top4Ids.every((id) => prevSet.has(id));
-        if (!isMatch) {
-          return top4Ids;
+    let active = true;
+    Promise.resolve().then(() => {
+      if (active) {
+        if (top4Ids.length > 0) {
+          setOrderedMatchIds((prev) => {
+            const prevSet = new Set(prev);
+            const isMatch =
+              top4Ids.length === prev.length &&
+              top4Ids.every((id) => prevSet.has(id));
+            if (!isMatch) {
+              return top4Ids;
+            }
+            return prev;
+          });
+        } else {
+          setOrderedMatchIds([]);
         }
-        return prev;
-      });
-    } else {
-      setOrderedMatchIds([]);
-    }
-  }, [top4IdsKey]);
+      }
+    });
+    return () => {
+      active = false;
+    };
+  }, [top4Ids]);
 
   // Derived main and row matches
   const mainMatch =
@@ -500,11 +537,11 @@ export default function MatchPage() {
   ).length;
 
   return (
-    <div className="w-full relative flex flex-col gap-6 md:gap-8 pb-10 px-4 md:px-8 pt-6">
+    <div className="w-full relative flex flex-col gap-6 md:gap-8 pb-10">
       {/* Full-page stadium background */}
       <div
         className="fixed inset-0 z-0 bg-cover bg-center opacity-[0.28] pointer-events-none"
-        style={{ backgroundImage: `url('/stadium_bg_pruble.png')` }}
+        style={{ backgroundImage: `url('/stadium_bg_pruble.webp')` }}
       />
       <div className="fixed inset-0 z-0 bg-gradient-to-b from-[#030207]/60 via-[#030207]/40 to-[#030207]/80 pointer-events-none" />
 
@@ -517,7 +554,7 @@ export default function MatchPage() {
         {/* Stadium background overlay */}
         <div
           className="absolute inset-0 z-0 bg-cover bg-center opacity-[0.30] pointer-events-none"
-          style={{ backgroundImage: `url('/bg_img.png')` }}
+          style={{ backgroundImage: `url('/bg_img.webp')` }}
         />
         {/* Dark gradient overlay to fade at bottom */}
         <div className="absolute inset-0 bg-gradient-to-b from-transparent via-[#090715]/50 to-[#030207] z-0 pointer-events-none" />
@@ -528,7 +565,7 @@ export default function MatchPage() {
         </div>
       </div>
 
-      <div className="max-w-7xl mx-auto w-full relative z-10 flex-1 flex flex-col gap-6">
+      <div className="max-w-7xl mx-auto w-full relative z-10 flex-1 flex flex-col gap-6 px-4 md:px-8">
 
         {/* Main Content Area: Grid layout for desktop column and sidebar */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start w-full">
@@ -692,7 +729,7 @@ export default function MatchPage() {
                         />
                       ))}
                     </div>
-                    {resultsVisible < allFiltered.length && (
+                    {resultsVisible < totalFilteredCount && (
                       <button
                         onClick={() => setResultsVisible((v) => v + 2)}
                         className="mx-auto px-6 py-2 rounded-xl bg-white/5 border border-white/10 hover:border-white/20 text-xs font-bold uppercase tracking-wider text-slate-300 hover:text-white transition-all cursor-pointer"

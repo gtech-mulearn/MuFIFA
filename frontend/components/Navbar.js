@@ -60,7 +60,7 @@ export default function Navbar() {
           className="flex items-center gap-1.5 cursor-pointer group"
         >
           <Image
-            src="/trophy.png"
+            src="/trophy.webp"
             alt="World Cup Trophy"
             width={15}
             height={40}
@@ -68,7 +68,7 @@ export default function Navbar() {
             className="h-8 md:h-10 w-auto object-contain filter drop-shadow-[0_0_8px_rgba(0,229,255,0.45)] hover:scale-110 transition-transform duration-300"
           />
           <Image
-            src="/logo.png"
+            src="/Logos/logo.png"
             alt="μLearn Logo"
             width={89}
             height={40}

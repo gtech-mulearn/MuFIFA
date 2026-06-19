@@ -42,6 +42,7 @@ export async function GET(request) {
         Authorization: `Bearer ${supabaseKey}`,
         Prefer: "count=exact",
       },
+      next: { revalidate: 15 },
     });
 
     if (!res.ok) {
