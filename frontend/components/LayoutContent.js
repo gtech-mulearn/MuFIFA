@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { usePathname, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
@@ -8,6 +8,7 @@ import Navbar from "@/components/Navbar";
 import Ticker from "@/components/Ticker";
 import Footer from "@/components/Footer";
 import Sidebar from "@/app/tasks/components/Sidebar/Sidebar";
+import { PlayerProvider, usePlayer } from "@/components/PlayerContext";
 
 export default function LayoutContent({ children }) {
   const pathname = usePathname();
@@ -17,8 +18,6 @@ export default function LayoutContent({ children }) {
 
   // State for Arena layout shell
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
-  const [player, setPlayer] = useState(null);
-  const [checkingAuth, setCheckingAuth] = useState(true);
 
   // Identify all routes that should render within the Arena Layout
   const isArenaRoute =
@@ -31,36 +30,48 @@ export default function LayoutContent({ children }) {
     pathname.startsWith("/points-history") ||
     pathname.startsWith("/kuzhiundo");
 
-  // Fetch player details if on an Arena route
-  useEffect(() => {
-    async function checkAuth() {
-      try {
-        const res = await fetch("/api/v1/auth/me");
-        const data = await res.json();
-        if (res.ok && data.success) {
-          setPlayer(data.data);
-        } else {
-          setPlayer(null);
-        }
-      } catch (err) {
-        console.error("Arena layout auth fetch error:", err);
-        setPlayer(null);
-      } finally {
-        setCheckingAuth(false);
-      }
-    }
-    if (isArenaRoute) {
-      checkAuth();
-    } else {
-      setCheckingAuth(false);
-    }
-  }, [pathname, isArenaRoute]);
+  if (isAdmin || pathname === "/development") {
+    // Admin and development routes render their own layout — no public chrome
+    return <>{children}</>;
+  }
+
+  if (isArenaRoute) {
+    return (
+      <PlayerProvider>
+        <ArenaLayout
+          sidebarCollapsed={sidebarCollapsed}
+          setSidebarCollapsed={setSidebarCollapsed}
+          pathname={pathname}
+        >
+          {children}
+        </ArenaLayout>
+      </PlayerProvider>
+    );
+  }
+
+  // Standard public layout (Landing pages, Login/Register)
+  return (
+    <PlayerProvider>
+      <Navbar />
+      <Ticker />
+      <main className="flex-1 flex flex-col w-full relative">{children}</main>
+      <Footer />
+    </PlayerProvider>
+  );
+}
+
+function ArenaLayout({
+  sidebarCollapsed,
+  setSidebarCollapsed,
+  pathname,
+  children,
+}) {
+  const { player, loading } = usePlayer();
 
   const handleLogout = async () => {
     try {
       const res = await fetch("/api/v1/auth/logout", { method: "POST" });
       if (res.ok) {
-        setPlayer(null);
         window.location.href = "/login";
       }
     } catch (err) {
@@ -68,12 +79,7 @@ export default function LayoutContent({ children }) {
     }
   };
 
-  if (isAdmin || pathname === "/development") {
-    // Admin and development routes render their own layout — no public chrome
-    return <>{children}</>;
-  }
-
-  if (isArenaRoute && checkingAuth) {
+  if (loading) {
     return (
       <div className="w-full min-h-screen bg-[#090A0F] flex items-center justify-center">
         <div className="w-8 h-8 rounded-full border-2 border-[#4F46E5] border-t-transparent animate-spin" />
@@ -81,250 +87,247 @@ export default function LayoutContent({ children }) {
     );
   }
 
-  if (isArenaRoute && player) {
-    const mobileTabs = [
-      {
-        name: "Overview",
-        href: "/dashboard",
-        icon: (
-          <svg
-            className="w-5.5 h-5.5"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2.5"
-            viewBox="0 0 24 24"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"
-            />
-          </svg>
-        ),
-      },
-      {
-        name: "Challenges",
-        href: "/tasks",
-        icon: (
-          <svg
-            className="w-5.5 h-5.5"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2.5"
-            viewBox="0 0 24 24"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"
-            />
-          </svg>
-        ),
-      },
-      {
-        name: "μPredict",
-        href: "/match",
-        icon: (
-          <svg
-            className="w-5.5 h-5.5"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2.5"
-            viewBox="0 0 24 24"
-          >
-            <circle cx="12" cy="12" r="10" />
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              d="M12 2a15.3 15.3 0 014 10 15.3 15.3 0 01-4 10 15.3 15.3 0 01-4-10 15.3 15.3 0 014-10z"
-            />
-            <path strokeLinecap="round" strokeLinejoin="round" d="M2 12h20" />
-          </svg>
-        ),
-      },
-      {
-        name: "Leaderboard",
-        href: "/leaderboard",
-        icon: (
-          <svg
-            className="w-5.5 h-5.5"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2.5"
-            viewBox="0 0 24 24"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2m0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"
-            />
-          </svg>
-        ),
-      },
-      {
-        name: "Profile",
-        href: `/profile/${player.user_id}`,
-        icon: (
-          <svg
-            className="w-5.5 h-5.5"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2.5"
-            viewBox="0 0 24 24"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
-            />
-          </svg>
-        ),
-      },
-      {
-        name: "Kuzhiundo",
-        href: "/kuzhiundo",
-        icon: (
-          <Image
-            src="/challenges/kuzhiundo/kuzhiundo_logo.png"
-            alt="Kuzhiundo"
-            width={22}
-            height={22}
-            className="object-contain"
-          />
-        ),
-      },
-    ];
-
-    // Return immersive Arena dashboard shell with collapsible fixed sidebar
+  if (!player) {
+    // Not authenticated — middleware should have caught this, but fallback
     return (
-      <div className="min-h-screen bg-[#030207] text-white flex font-sans relative overflow-hidden w-full">
-        {/* LEFT SIDEBAR (Fixed & Collapsible - Desktop only) */}
-        <div
-          className={`hidden md:block fixed top-0 left-0 h-screen w-64 z-40 transition-transform duration-300 ${
-            sidebarCollapsed ? "md:-translate-x-full" : "md:translate-x-0"
-          }`}
-        >
-          <Sidebar player={player} handleLogout={handleLogout} />
-
-          {/* Floating Sidebar Toggle Button inside the sidebar */}
-          <button
-            onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
-            className="hidden md:flex absolute top-6 left-full -translate-x-1/2 z-50 p-2.5 border border-white/5 hover:border-white/10 bg-slate-900/80 hover:bg-white/5 rounded-xl text-slate-400 hover:text-white transition-all cursor-pointer items-center justify-center shrink-0 shadow-lg shadow-black/40"
-            title={sidebarCollapsed ? "Expand Sidebar" : "Collapse Sidebar"}
-          >
-            <svg
-              className={`w-4 h-4 transition-transform duration-300 ${sidebarCollapsed ? "" : "rotate-180"}`}
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2.5"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3"
-              />
-            </svg>
-          </button>
-        </div>
-
-        {/* RIGHT MAIN CONTAINER */}
-        <div
-          className={`flex-1 min-w-0 overflow-y-auto flex flex-col relative z-10 transition-all duration-300 pb-[calc(5rem+env(safe-area-inset-bottom,0px))] md:pb-0 ${
-            sidebarCollapsed ? "md:ml-0" : "md:ml-64"
-          }`}
-        >
-          {/* MOBILE NAVBAR WITH PROFILE AVATAR */}
-          <div className="md:hidden flex items-center justify-between bg-[#0b0916]/85 border-b border-white/5 p-4 backdrop-blur-md sticky top-0 z-40">
-            <Link href="/" className="h-8 flex items-center justify-center">
-              <Image
-                src="/Logos/logo.png"
-                alt="Logo"
-                width={120}
-                height={32}
-                className="h-full w-auto object-contain"
-                priority
-              />
-            </Link>
-
-            {/* Profile Avatar & XP Badge on Right Side */}
-            <div className="flex items-center gap-3">
-              {/* XP Badge */}
-              <div className="bg-[#1c1646]/60 border border-violet-500/20 px-3 py-1.5 rounded-xl flex items-center gap-1 shadow-inner select-none">
-                <span className="text-[9px] font-black text-violet-400 uppercase tracking-wider">
-                  XP
-                </span>
-                <span className="text-xs font-black text-white">
-                  {(player.mu_points || 0) * 100}
-                </span>
-              </div>
-
-              <Link
-                href={`/profile/${player.user_id}`}
-                className="w-9 h-9 rounded-full overflow-hidden border border-violet-500/30 hover:border-violet-500/60 flex items-center justify-center bg-[#121021] hover:scale-105 active:scale-95 transition-all select-none shadow-md"
-                title="View Profile"
-              >
-                {player.avatar_url ? (
-                  <Image
-                    src={player.avatar_url}
-                    alt="Profile"
-                    width={36}
-                    height={36}
-                    className="w-full h-full object-cover"
-                  />
-                ) : (
-                  <div className="w-full h-full flex items-center justify-center text-[10px] font-black text-violet-400 bg-violet-500/10">
-                    {player.name
-                      ? player.name.trim().substring(0, 2).toUpperCase()
-                      : "ME"}
-                  </div>
-                )}
-              </Link>
-            </div>
-          </div>
-
-          <main className="flex-1 w-full relative">{children}</main>
-
-          <Footer />
-        </div>
-
-        {/* MOBILE BOTTOM NAVIGATION BAR */}
-        <nav className="md:hidden fixed bottom-0 left-0 right-0 h-[calc(4rem+env(safe-area-inset-bottom,0px))] bg-[#0c0a18]/90 border-t border-white/5 flex items-center justify-around z-40 backdrop-blur-md pb-[env(safe-area-inset-bottom,0px)]">
-          {mobileTabs.map((item) => {
-            const isActive =
-              item.name === "Profile"
-                ? pathname.startsWith("/profile")
-                : pathname === item.href;
-
-            return (
-              <Link
-                key={item.name}
-                href={item.href}
-                className={`flex-1 min-w-0 flex flex-col items-center justify-center gap-1 py-1.5 px-0.5 rounded-xl transition-all ${
-                  isActive
-                    ? "text-violet-400"
-                    : "text-slate-400 hover:text-slate-200"
-                }`}
-              >
-                {item.icon}
-                <span className="text-[8.5px] font-black uppercase tracking-wider truncate w-full text-center">
-                  {item.name}
-                </span>
-              </Link>
-            );
-          })}
-        </nav>
+      <div className="w-full min-h-screen bg-[#090A0F] flex items-center justify-center">
+        <div className="w-8 h-8 rounded-full border-2 border-[#4F46E5] border-t-transparent animate-spin" />
       </div>
     );
   }
 
-  // Standard public layout (Landing pages, Login/Register)
+  const mobileTabs = [
+    {
+      name: "Overview",
+      href: "/dashboard",
+      icon: (
+        <svg
+          className="w-5.5 h-5.5"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2.5"
+          viewBox="0 0 24 24"
+        >
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"
+          />
+        </svg>
+      ),
+    },
+    {
+      name: "Challenges",
+      href: "/tasks",
+      icon: (
+        <svg
+          className="w-5.5 h-5.5"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2.5"
+          viewBox="0 0 24 24"
+        >
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"
+          />
+        </svg>
+      ),
+    },
+    {
+      name: "μPredict",
+      href: "/match",
+      icon: (
+        <svg
+          className="w-5.5 h-5.5"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2.5"
+          viewBox="0 0 24 24"
+        >
+          <circle cx="12" cy="12" r="10" />
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            d="M12 2a15.3 15.3 0 014 10 15.3 15.3 0 01-4 10 15.3 15.3 0 01-4-10 15.3 15.3 0 014-10z"
+          />
+          <path strokeLinecap="round" strokeLinejoin="round" d="M2 12h20" />
+        </svg>
+      ),
+    },
+    {
+      name: "Leaderboard",
+      href: "/leaderboard",
+      icon: (
+        <svg
+          className="w-5.5 h-5.5"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2.5"
+          viewBox="0 0 24 24"
+        >
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2m0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"
+          />
+        </svg>
+      ),
+    },
+    {
+      name: "Profile",
+      href: `/profile/${player.user_id}`,
+      icon: (
+        <svg
+          className="w-5.5 h-5.5"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2.5"
+          viewBox="0 0 24 24"
+        >
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
+          />
+        </svg>
+      ),
+    },
+    {
+      name: "Kuzhiundo",
+      href: "/kuzhiundo",
+      icon: (
+        <Image
+          src="/challenges/kuzhiundo/kuzhiundo_logo.png"
+          alt="Kuzhiundo"
+          width={22}
+          height={22}
+          className="object-contain"
+        />
+      ),
+    },
+  ];
+
+  // Return immersive Arena dashboard shell with collapsible fixed sidebar
   return (
-    <>
-      <Navbar />
-      <Ticker />
-      <main className="flex-1 flex flex-col w-full relative">{children}</main>
-      <Footer />
-    </>
+    <div className="min-h-screen bg-[#030207] text-white flex font-sans relative overflow-hidden w-full">
+      {/* LEFT SIDEBAR (Fixed & Collapsible - Desktop only) */}
+      <div
+        className={`hidden md:block fixed top-0 left-0 h-screen w-64 z-40 transition-transform duration-300 ${
+          sidebarCollapsed ? "md:-translate-x-full" : "md:translate-x-0"
+        }`}
+      >
+        <Sidebar player={player} handleLogout={handleLogout} />
+
+        {/* Floating Sidebar Toggle Button inside the sidebar */}
+        <button
+          onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
+          className="hidden md:flex absolute top-6 left-full -translate-x-1/2 z-50 p-2.5 border border-white/5 hover:border-white/10 bg-slate-900/80 hover:bg-white/5 rounded-xl text-slate-400 hover:text-white transition-all cursor-pointer items-center justify-center shrink-0 shadow-lg shadow-black/40"
+          title={sidebarCollapsed ? "Expand Sidebar" : "Collapse Sidebar"}
+        >
+          <svg
+            className={`w-4 h-4 transition-transform duration-300 ${sidebarCollapsed ? "" : "rotate-180"}`}
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2.5"
+            viewBox="0 0 24 24"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3"
+            />
+          </svg>
+        </button>
+      </div>
+
+      {/* RIGHT MAIN CONTAINER */}
+      <div
+        className={`flex-1 min-w-0 overflow-y-auto flex flex-col relative z-10 transition-all duration-300 pb-[calc(5rem+env(safe-area-inset-bottom,0px))] md:pb-0 ${
+          sidebarCollapsed ? "md:ml-0" : "md:ml-64"
+        }`}
+      >
+        {/* MOBILE NAVBAR WITH PROFILE AVATAR */}
+        <div className="md:hidden flex items-center justify-between bg-[#0b0916]/85 border-b border-white/5 p-4 backdrop-blur-md sticky top-0 z-40">
+          <Link href="/" className="h-8 flex items-center justify-center">
+            <Image
+              src="/Logos/logo.png"
+              alt="Logo"
+              width={120}
+              height={32}
+              className="h-full w-auto object-contain"
+              priority
+            />
+          </Link>
+
+          {/* Profile Avatar & XP Badge on Right Side */}
+          <div className="flex items-center gap-3">
+            {/* XP Badge */}
+            <div className="bg-[#1c1646]/60 border border-violet-500/20 px-3 py-1.5 rounded-xl flex items-center gap-1 shadow-inner select-none">
+              <span className="text-[9px] font-black text-violet-400 uppercase tracking-wider">
+                XP
+              </span>
+              <span className="text-xs font-black text-white">
+                {(player.mu_points || 0) * 100}
+              </span>
+            </div>
+
+            <Link
+              href={`/profile/${player.user_id}`}
+              className="w-9 h-9 rounded-full overflow-hidden border border-violet-500/30 hover:border-violet-500/60 flex items-center justify-center bg-[#121021] hover:scale-105 active:scale-95 transition-all select-none shadow-md"
+              title="View Profile"
+            >
+              {player.avatar_url ? (
+                <Image
+                  src={player.avatar_url}
+                  alt="Profile"
+                  width={36}
+                  height={36}
+                  className="w-full h-full object-cover"
+                />
+              ) : (
+                <div className="w-full h-full flex items-center justify-center text-[10px] font-black text-violet-400 bg-violet-500/10">
+                  {player.name
+                    ? player.name.trim().substring(0, 2).toUpperCase()
+                    : "ME"}
+                </div>
+              )}
+            </Link>
+          </div>
+        </div>
+
+        <main className="flex-1 w-full relative">{children}</main>
+
+        <Footer />
+      </div>
+
+      {/* MOBILE BOTTOM NAVIGATION BAR */}
+      <nav className="md:hidden fixed bottom-0 left-0 right-0 h-[calc(4rem+env(safe-area-inset-bottom,0px))] bg-[#0c0a18]/90 border-t border-white/5 flex items-center justify-around z-40 backdrop-blur-md pb-[env(safe-area-inset-bottom,0px)]">
+        {mobileTabs.map((item) => {
+          const isActive =
+            item.name === "Profile"
+              ? pathname.startsWith("/profile")
+              : pathname === item.href;
+
+          return (
+            <Link
+              key={item.name}
+              href={item.href}
+              className={`flex-1 min-w-0 flex flex-col items-center justify-center gap-1 py-1.5 px-0.5 rounded-xl transition-all ${
+                isActive
+                  ? "text-violet-400"
+                  : "text-slate-400 hover:text-slate-200"
+              }`}
+            >
+              {item.icon}
+              <span className="text-[8.5px] font-black uppercase tracking-wider truncate w-full text-center">
+                {item.name}
+              </span>
+            </Link>
+          );
+        })}
+      </nav>
+    </div>
   );
 }

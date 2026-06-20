@@ -1,8 +1,8 @@
 "use client";
 
 import React, { useState, useEffect, useRef } from "react";
-import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { usePlayer } from "@/components/PlayerContext";
 
 // Redesigned components
 import Header from "./components/Header/Header";
@@ -15,7 +15,7 @@ import ComingSoonCard from "./components/ComingSoonCard";
 import VideoOverlay from "./components/VideoOverlay";
 
 export default function TasksPage() {
-  const router = useRouter();
+  const { player: contextPlayer, loading: authLoading } = usePlayer();
   const [player, setPlayer] = useState(null);
   const [loading, setLoading] = useState(true);
   const [referrals, setReferrals] = useState([]);
@@ -55,40 +55,19 @@ export default function TasksPage() {
     }
   }
 
+  // Use player from context instead of fetching /api/v1/auth/me
   useEffect(() => {
-    async function checkAuth() {
-      try {
-        const res = await fetch("/api/v1/auth/me");
-        const data = await res.json();
-        if (res.ok && data.success) {
-          setPlayer(data.data);
-
-          // Wait for referrals and database tasks to load
-          await Promise.all([fetchReferrals(), fetchDbTasks()]);
-
-          // Auto-select Tier 2 if already unlocked
-          const userTasks = (() => {
-            const rawTasks = data.data.tasks;
-            if (!rawTasks) return {};
-            if (typeof rawTasks === "object") return rawTasks;
-            try {
-              return JSON.parse(rawTasks);
-            } catch {
-              return {};
-            }
-          })();
-        } else {
-          router.push("/login");
-        }
-      } catch (err) {
-        console.error("Tasks auth check error:", err);
-        router.push("/login");
-      } finally {
+    if (authLoading) return;
+    if (contextPlayer) {
+      setPlayer(contextPlayer);
+      // Load page-specific data
+      Promise.all([fetchReferrals(), fetchDbTasks()]).finally(() => {
         setLoading(false);
-      }
+      });
+    } else {
+      setLoading(false);
     }
-    checkAuth();
-  }, [router]);
+  }, [contextPlayer, authLoading]);
 
   // Helper to extract JSON tasks object
   const dbTasks = (() => {

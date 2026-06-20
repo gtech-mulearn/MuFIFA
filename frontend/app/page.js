@@ -8,23 +8,17 @@ import MetagameSection from "@/components/MetagameSection";
 // import BiddingBoard from "@/components/BiddingBoard";
 import Leaderboard from "@/components/Leaderboard";
 
+import { usePlayer } from "@/components/PlayerContext";
+
 export default function Home() {
   const router = useRouter();
+  const { player, loading } = usePlayer();
 
   React.useEffect(() => {
-    async function checkAuth() {
-      try {
-        const res = await fetch("/api/v1/auth/me");
-        const data = await res.json();
-        if (res.ok && data.success) {
-          router.replace("/dashboard");
-        }
-      } catch (err) {
-        console.error("Auth check failed on client:", err);
-      }
+    if (!loading && player) {
+      router.replace("/dashboard");
     }
-    checkAuth();
-  }, [router]);
+  }, [player, loading, router]);
   return (
     <div className="w-full bg-[#090A0F] text-white flex flex-col font-sans relative select-none">
       <BackgroundVideo />

@@ -4,12 +4,19 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import Image from "next/image";
+import { usePlayer } from "@/components/PlayerContext";
 
 export default function Navbar() {
   const pathname = usePathname();
   const router = useRouter();
+  const { player: contextPlayer } = usePlayer();
   const [menuOpen, setMenuOpen] = useState(false);
   const [player, setPlayer] = useState(null);
+
+  useEffect(() => {
+    setPlayer(contextPlayer);
+  }, [contextPlayer]);
+
   const isArenaActive = pathname?.startsWith("/dashboard");
 
   const handleLogout = async () => {
@@ -26,23 +33,7 @@ export default function Navbar() {
     }
   };
 
-  useEffect(() => {
-    async function checkAuth() {
-      try {
-        const res = await fetch("/api/v1/auth/me");
-        const data = await res.json();
-        if (res.ok && data.success) {
-          setPlayer(data.data);
-        } else {
-          setPlayer(null);
-        }
-      } catch (err) {
-        console.error("Navbar auth check error:", err);
-        setPlayer(null);
-      }
-    }
-    checkAuth();
-  }, [pathname]);
+  // Auth state is synchronized from contextPlayer above
 
   const navItems = [
     { name: "Home", href: "/" },

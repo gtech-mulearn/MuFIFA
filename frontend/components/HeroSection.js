@@ -4,6 +4,7 @@ import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import dynamic from "next/dynamic";
 import { CountdownSkeleton } from "./CountdownSection";
+import { usePlayer } from "@/components/PlayerContext";
 
 const CountdownSection = dynamic(() => import("./CountdownSection"), {
   ssr: false,
@@ -11,22 +12,7 @@ const CountdownSection = dynamic(() => import("./CountdownSection"), {
 });
 
 export default function HeroSection() {
-  const [player, setPlayer] = useState(null);
-
-  useEffect(() => {
-    async function checkAuth() {
-      try {
-        const res = await fetch("/api/v1/auth/me");
-        const data = await res.json();
-        if (res.ok && data.success) {
-          setPlayer(data.data);
-        }
-      } catch (err) {
-        console.error("Hero auth check error:", err);
-      }
-    }
-    checkAuth();
-  }, []);
+  const { player } = usePlayer();
 
   return (
     <>

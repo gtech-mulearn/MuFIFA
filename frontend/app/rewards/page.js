@@ -1,32 +1,11 @@
 "use client";
-import React, { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+import React from "react";
 import Link from "next/link";
 import Header from "@/app/tasks/components/Header/Header";
+import { usePlayer } from "@/components/PlayerContext";
 
 export default function RewardsPage() {
-  const router = useRouter();
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    async function checkAuth() {
-      try {
-        const res = await fetch("/api/v1/auth/me");
-        const data = await res.json();
-        if (res.ok && data.success) {
-          // Authenticated successfully
-        } else {
-          router.push("/login");
-        }
-      } catch (err) {
-        console.error("Rewards page auth error:", err);
-        router.push("/login");
-      } finally {
-        setLoading(false);
-      }
-    }
-    checkAuth();
-  }, [router]);
+  const { loading } = usePlayer();
   const rewardsList = [
     {
       id: 1,

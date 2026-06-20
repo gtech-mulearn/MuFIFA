@@ -7,6 +7,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import PlayerCard from "@/components/PlayerCard";
 import { TEAM_FLAGS, TEAM_WHATSAPP_LINKS } from "@/utils/constants";
 import Header from "@/app/tasks/components/Header/Header";
+import { usePlayer } from "@/components/PlayerContext";
 
 const DOMAIN_STYLES = {
   Coder: "bg-blue-500/10 border-blue-500/30 text-blue-400",
@@ -139,10 +140,15 @@ function ProfilePageContent({ params }) {
   const router = useRouter();
   const unwrappedParams = React.use(params);
   const id = unwrappedParams.id;
+  const { player: contextPlayer } = usePlayer();
 
   const [player, setPlayer] = useState(null);
   const [currentUser, setCurrentUser] = useState(null);
   const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    setCurrentUser(contextPlayer);
+  }, [contextPlayer]);
   const [error, setError] = useState("");
   const [uploading, setUploading] = useState(false);
   const [uploadError, setUploadError] = useState("");
@@ -197,7 +203,7 @@ function ProfilePageContent({ params }) {
   useEffect(() => {
     if (!id) return;
 
-    async function fetchProfileAndAuth() {
+    async function fetchProfile() {
       try {
         const profileRes = await fetch(
           `/api/v1/profile/${encodeURIComponent(id)}`,
@@ -230,21 +236,15 @@ function ProfilePageContent({ params }) {
             medium: socialsObj.medium || "",
           },
         });
-
-        const authRes = await fetch("/api/v1/auth/me");
-        const authData = await authRes.json();
-        if (authRes.ok && authData.success) {
-          setCurrentUser(authData.data);
-        }
       } catch (err) {
-        console.error("Error fetching player profile/auth:", err);
+        console.error("Error fetching player profile:", err);
         setError("Unable to load profile. Please try again.");
       } finally {
         setLoading(false);
       }
     }
 
-    fetchProfileAndAuth();
+    fetchProfile();
   }, [id]);
 
   const handleAvatarChange = async (e) => {

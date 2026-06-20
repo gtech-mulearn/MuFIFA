@@ -330,25 +330,21 @@ export default function AdminLayout({ children }) {
     async function checkAuth() {
       try {
         const res = await fetch("/api/v1/admin/auth/me");
-        if (!res.ok) {
-          router.push("/admin/login");
-          return;
+        if (res.ok) {
+          const data = await res.json();
+          if (data.success && data.admin) {
+            setAdmin(data.admin);
+          }
         }
-        const data = await res.json();
-        if (data.success && data.admin) {
-          setAdmin(data.admin);
-        } else {
-          router.push("/admin/login");
-        }
-      } catch {
-        router.push("/admin/login");
+      } catch (err) {
+        console.error("Admin auth check error:", err);
       } finally {
         setLoading(false);
       }
     }
 
     checkAuth();
-  }, [isLoginPage, router]);
+  }, [isLoginPage]);
 
   if (isLoginPage) {
     return (

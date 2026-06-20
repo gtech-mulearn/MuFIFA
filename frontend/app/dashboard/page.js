@@ -1,11 +1,11 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
+import React, { useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { TEAM_FLAGS } from "@/utils/constants";
 import Header from "../tasks/components/Header/Header";
+import { usePlayer } from "@/components/PlayerContext";
 
 const DOMAIN_STYLES = {
   Coder: "bg-cyan-500/10 border-cyan-500/35 text-cyan-400",
@@ -78,32 +78,18 @@ function ActiveRewardSeal() {
 }
 
 export default function Dashboard() {
-  const router = useRouter();
+  const { player: contextPlayer, loading } = usePlayer();
   const [player, setPlayer] = useState(null);
-  const [loading, setLoading] = useState(true);
   const [generatingReferral, setGeneratingReferral] = useState(false);
   const [copied, setCopied] = useState(false);
   const [error, setError] = useState("");
 
-  useEffect(() => {
-    async function checkAuth() {
-      try {
-        const res = await fetch("/api/v1/auth/me");
-        const data = await res.json();
-        if (res.ok && data.success) {
-          setPlayer(data.data);
-        } else {
-          router.push("/login");
-        }
-      } catch (err) {
-        console.error("Dashboard auth check error:", err);
-        router.push("/login");
-      } finally {
-        setLoading(false);
-      }
+  // Sync context player to local state (needed for referral update)
+  React.useEffect(() => {
+    if (contextPlayer) {
+      setPlayer(contextPlayer);
     }
-    checkAuth();
-  }, [router]);
+  }, [contextPlayer]);
 
   const handleCreateReferral = async () => {
     setGeneratingReferral(true);

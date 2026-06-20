@@ -4,6 +4,7 @@ import "./globals.css";
 import "flag-icons/css/flag-icons.min.css";
 import Script from "next/script";
 import LayoutContent from "@/components/LayoutContent";
+import RouteChangeLoader from "@/components/RouteChangeLoader";
 import { getSEOMetadata } from "@/utils/seo";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 const outfit = Outfit({
@@ -84,6 +85,9 @@ function LayoutShell({ children }) {
             })(window, document, "clarity", "script", "x70gvmvnxk");
           `}
         </Script>
+        <Suspense fallback={null}>
+          <RouteChangeLoader />
+        </Suspense>
         {children}
       </body>
     </html>

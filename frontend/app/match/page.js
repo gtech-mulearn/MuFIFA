@@ -6,6 +6,7 @@ import Image from "next/image";
 import MatchCard from "@/components/match/MatchCard";
 import CorrectPredictorsModal from "@/components/match/CorrectPredictorsModal";
 import Header from "../tasks/components/Header/Header";
+import { usePlayer } from "@/components/PlayerContext";
 
 const EXCLUDED_STATUSES = new Set(["POSTPONED", "CANCELLED", "SUSPENDED"]);
 
@@ -320,11 +321,16 @@ function TopPredictorsList({
 }
 
 export default function MatchPage() {
+  const { player: contextPlayer } = usePlayer();
   const [matches, setMatches] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [activeTab, setActiveTab] = useState("matches");
   const [player, setPlayer] = useState(null);
+
+  useEffect(() => {
+    setPlayer(contextPlayer);
+  }, [contextPlayer]);
   const [resultsVisible, setResultsVisible] = useState(2);
   const [orderedMatchIds, setOrderedMatchIds] = useState([]);
   const [selectedMatchForPredictors, setSelectedMatchForPredictors] = useState(null);
@@ -396,19 +402,7 @@ export default function MatchPage() {
     return () => clearTimeout(delayDebounceFn);
   }, [predictorsSearchQuery, activeTab, fetchTopPredictors]);
 
-  // Silently check auth — match page is public, no redirect
-  useEffect(() => {
-    fetch("/api/v1/auth/me")
-      .then((res) => res.json())
-      .then((data) => {
-        if (data?.success && data?.data) {
-          setPlayer(data.data);
-        }
-      })
-      .catch(() => {
-        // Not authenticated — leave player null
-      });
-  }, []);
+  // Player is now handled by PlayerContext/usePlayer
 
   const fetchMatches = async () => {
     setLoading(true);

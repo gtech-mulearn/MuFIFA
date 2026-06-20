@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
 import { TEAM_FLAGS } from "@/utils/constants";
+import { usePlayer } from "@/components/PlayerContext";
 
 // Helper function to resolve the background flag image path
 const getPodiumFlagBg = (teamName) => {
@@ -215,8 +216,8 @@ function PodiumCard({
 
 export default function KuzhiundoLeaderboard() {
   const router = useRouter();
+  const { player: contextPlayer, loading } = usePlayer();
   const [player, setPlayer] = useState(null);
-  const [loading, setLoading] = useState(true);
 
   // View mode: "mappers" or "teams"
   const [viewMode, setViewMode] = useState("teams");
@@ -249,26 +250,12 @@ export default function KuzhiundoLeaderboard() {
     }
   };
 
-  // Authenticate user client-side (matches other pages in the app)
+  // Use player from context instead of fetching /api/v1/auth/me
   useEffect(() => {
-    async function checkAuth() {
-      try {
-        const res = await fetch("/api/v1/auth/me");
-        const data = await res.json();
-        if (res.ok && data.success) {
-          setPlayer(data.data);
-        } else {
-          router.push("/login");
-        }
-      } catch (err) {
-        console.error("Kuzhiundo auth check error:", err);
-        router.push("/login");
-      } finally {
-        setLoading(false);
-      }
+    if (!loading && contextPlayer) {
+      setPlayer(contextPlayer);
     }
-    checkAuth();
-  }, [router]);
+  }, [contextPlayer, loading]);
 
   useEffect(() => {
     if (player) {
