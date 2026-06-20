@@ -35,28 +35,47 @@ export default function LayoutContent({ children }) {
     return <>{children}</>;
   }
 
+  return (
+    <PlayerProvider>
+      <LayoutInner
+        isArenaRoute={isArenaRoute}
+        sidebarCollapsed={sidebarCollapsed}
+        setSidebarCollapsed={setSidebarCollapsed}
+        pathname={pathname}
+      >
+        {children}
+      </LayoutInner>
+    </PlayerProvider>
+  );
+}
+
+function LayoutInner({
+  isArenaRoute,
+  sidebarCollapsed,
+  setSidebarCollapsed,
+  pathname,
+  children,
+}) {
   if (isArenaRoute) {
     return (
-      <PlayerProvider>
-        <ArenaLayout
-          sidebarCollapsed={sidebarCollapsed}
-          setSidebarCollapsed={setSidebarCollapsed}
-          pathname={pathname}
-        >
-          {children}
-        </ArenaLayout>
-      </PlayerProvider>
+      <ArenaLayout
+        sidebarCollapsed={sidebarCollapsed}
+        setSidebarCollapsed={setSidebarCollapsed}
+        pathname={pathname}
+      >
+        {children}
+      </ArenaLayout>
     );
   }
 
   // Standard public layout (Landing pages, Login/Register)
   return (
-    <PlayerProvider>
+    <>
       <Navbar />
       <Ticker />
       <main className="flex-1 flex flex-col w-full relative">{children}</main>
       <Footer />
-    </PlayerProvider>
+    </>
   );
 }
 

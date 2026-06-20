@@ -35,15 +35,31 @@ export async function middleware(request) {
     return NextResponse.next();
   }
 
-  try {
-    const flagVal = await underMaintenanceFlag();
-    const isUnderMaintenance = flagVal?.under_maintainence === true;
-    if (isUnderMaintenance) {
-      const devUrl = new URL("/development", request.url);
-      return NextResponse.redirect(devUrl);
+  let isUnderMaintenance = false;
+  const hasVercelEnv = !!(
+    process.env.EDGE_CONFIG ||
+    process.env.VERCEL_PROJECT_ID ||
+    process.env.VERCEL_ENV
+  );
+
+  if (hasVercelEnv) {
+    try {
+      // Race the flag check with a 150ms timeout to avoid blocking page loads on slow API responses
+      const flagVal = await Promise.race([
+        underMaintenanceFlag(),
+        new Promise((resolve) =>
+          setTimeout(() => resolve({ under_maintainence: false }), 150)
+        ),
+      ]);
+      isUnderMaintenance = flagVal?.under_maintainence === true;
+    } catch (err) {
+      console.error("Failed to check UnderMaintenance flag in middleware:", err);
     }
-  } catch (err) {
-    console.error("Failed to check UnderMaintenance flag in middleware:", err);
+  }
+
+  if (isUnderMaintenance) {
+    const devUrl = new URL("/development", request.url);
+    return NextResponse.redirect(devUrl);
   }
 
   // Handle Admin routes

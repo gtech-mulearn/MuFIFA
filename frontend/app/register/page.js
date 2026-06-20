@@ -421,6 +421,10 @@ function RegisterForm() {
           resendAvailableAt: 0,
           expiresAt: 0,
         });
+        // Store player in localStorage for instant rendering
+        if (typeof window !== "undefined") {
+          localStorage.setItem("player", JSON.stringify(data.data));
+        }
         router.push("/dashboard");
       } else {
         setOtpModal((prev) => ({

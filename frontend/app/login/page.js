@@ -67,6 +67,10 @@ export default function LoginPage() {
         return;
       }
 
+      // Store player in localStorage for instant rendering
+      if (typeof window !== "undefined") {
+        localStorage.setItem("player", JSON.stringify(data.data));
+      }
       // Redirect to dashboard on success
       router.push(`/dashboard`);
     } catch (err) {
