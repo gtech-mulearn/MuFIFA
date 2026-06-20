@@ -56,7 +56,19 @@ function LayoutInner({
   pathname,
   children,
 }) {
-  if (isArenaRoute) {
+  const { player, loading } = usePlayer();
+
+  if (loading) {
+    return (
+      <div className="w-full min-h-screen bg-[#090A0F] flex items-center justify-center">
+        <div className="w-8 h-8 rounded-full border-2 border-[#4F46E5] border-t-transparent animate-spin" />
+      </div>
+    );
+  }
+
+  const shouldRenderPublic = !player && pathname.startsWith("/leaderboard");
+
+  if (isArenaRoute && !shouldRenderPublic) {
     return (
       <ArenaLayout
         sidebarCollapsed={sidebarCollapsed}
