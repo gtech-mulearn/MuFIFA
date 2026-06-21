@@ -21,8 +21,8 @@ export async function GET(request) {
       Authorization: `Bearer ${supabaseKey}`,
     };
 
-    // 2. Fetch all registrations (id, user_id, name, team, referred_by, mu_points, tasks, socials)
-    const regRes = await fetch(`${supabaseUrl}/rest/v1/registrations?select=id,user_id,name,team,referred_by,mu_points,tasks,socials&limit=5000`, {
+    // 2. Fetch all registrations (id, user_id, name, team, referred_by, mu_points, tasks)
+    const regRes = await fetch(`${supabaseUrl}/rest/v1/registrations?select=id,user_id,name,team,referred_by,mu_points,tasks&limit=5000`, {
       method: "GET",
       headers,
       next: { revalidate: 0 }
@@ -30,8 +30,8 @@ export async function GET(request) {
     if (!regRes.ok) throw new Error(`Failed to fetch registrations: ${await regRes.text()}`);
     const registrations = await regRes.json();
 
-    // 3. Fetch all task completions (user_id, task_id, points_awarded)
-    const completionsRes = await fetch(`${supabaseUrl}/rest/v1/user_completed_tasks?select=user_id,task_id,points_awarded&limit=5000`, {
+    // 3. Fetch all task completions (user_id, task_id, points_awarded, xp_execution)
+    const completionsRes = await fetch(`${supabaseUrl}/rest/v1/user_completed_tasks?select=user_id,task_id,points_awarded,xp_execution&limit=5000`, {
       method: "GET",
       headers,
       next: { revalidate: 0 }
@@ -129,11 +129,19 @@ export async function GET(request) {
     // Calculate per-user task points and Kuzhiundo points
     const userTaskPoints = {};
     const userKuzhiundoPoints = {};
+    const userKuzhiundoSubmissions = {};
+    const userTask4Completed = {};
     completions.forEach((c) => {
       const taskId = Number(c.task_id);
       const points = Number(c.points_awarded) || 0;
       if (taskId === 4 || taskId === 100) {
         userKuzhiundoPoints[c.user_id] = (userKuzhiundoPoints[c.user_id] || 0) + points;
+        if (taskId === 4) {
+          userTask4Completed[c.user_id] = true;
+        }
+        if (taskId === 100) {
+          userKuzhiundoSubmissions[c.user_id] = Number(c.xp_execution) || 0;
+        }
       } else {
         userTaskPoints[c.user_id] = (userTaskPoints[c.user_id] || 0) + points;
       }
@@ -212,17 +220,9 @@ export async function GET(request) {
       const userPredsVal = userPredictionPoints[r.user_id] || 0;
       stats.predictionPoints += userPredsVal;
 
-      const socialsObj = (() => {
-        if (!r.socials) return {};
-        if (typeof r.socials === "object") return r.socials;
-        try {
-          return JSON.parse(r.socials);
-        } catch {
-          return {};
-        }
-      })();
-
-      const kuzhiDbCount = parseInt(socialsObj.kuzhiundo_submissions || "0", 10);
+      const kuzhiDbCount = userKuzhiundoSubmissions[r.user_id] !== undefined
+        ? userKuzhiundoSubmissions[r.user_id]
+        : (userTask4Completed[r.user_id] ? 1 : 0);
       const kuzhiApiCount = kuzhiundoApiReports[r.id] || 0;
 
       stats.kuzhiDbSubmissions += kuzhiDbCount;
@@ -239,7 +239,7 @@ export async function GET(request) {
         referralPoints: referrals * 5,
         taskPoints: userTasksVal,
         kuzhiundoPoints: userKuzhiVal,
-        kuzhiundoUuid: socialsObj.kuzhiundo_uuid || null,
+        kuzhiundoUuid: r.id,
         kuzhiundoSubmissions: kuzhiDbCount,
         kuzhiDbSubmissions: kuzhiDbCount,
         kuzhiApiSubmissions: kuzhiApiCount,

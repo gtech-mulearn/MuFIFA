@@ -55,10 +55,18 @@ export default function LeaderboardPage() {
   // Individual Standings State
   const [playersData, setPlayersData] = useState([]);
   const [playersSearchQuery, setPlayersSearchQuery] = useState("");
+  const [debouncedSearchQuery, setDebouncedSearchQuery] = useState("");
   const [playersSortOrder, setPlayersSortOrder] = useState("desc"); // "desc" | "asc"
   const [playersLoading, setPlayersLoading] = useState(false);
-  const [playersOffset, setPlayersOffset] = useState(0);
   const [hasMorePlayers, setHasMorePlayers] = useState(false);
+
+  // Debounce search query to reduce Supabase queries
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearchQuery(playersSearchQuery);
+    }, 450);
+    return () => clearTimeout(timer);
+  }, [playersSearchQuery]);
 
   // Fetch Squad Stats
   useEffect(() => {
@@ -114,21 +122,18 @@ export default function LeaderboardPage() {
   }, []);
 
   // Fetch Individual Standings from API
-  const fetchPlayers = useCallback(async (reset = false) => {
+  const fetchPlayers = useCallback(async (offset, reset = false) => {
     setPlayersLoading(true);
     try {
-      const currentOffset = reset ? 0 : playersOffset;
       const res = await fetch(
-        `/api/v1/leaderboard/individuals?limit=12&offset=${currentOffset}&search=${encodeURIComponent(playersSearchQuery)}&sort=${playersSortOrder}`,
+        `/api/v1/leaderboard/individuals?limit=12&offset=${offset}&search=${encodeURIComponent(debouncedSearchQuery)}&sort=${playersSortOrder}`,
       );
       const data = await res.json();
       if (res.ok && data.success) {
         if (reset) {
           setPlayersData(data.data);
-          setPlayersOffset(data.data.length);
         } else {
           setPlayersData((prev) => [...prev, ...data.data]);
-          setPlayersOffset((prev) => prev + data.data.length);
         }
         setHasMorePlayers(data.pagination.hasMore);
       }
@@ -137,33 +142,22 @@ export default function LeaderboardPage() {
     } finally {
       setPlayersLoading(false);
     }
-  }, [playersOffset, playersSearchQuery, playersSortOrder]);
+  }, [debouncedSearchQuery, playersSortOrder]);
 
-  // Load players on tab switch or sort order change
+  // Load players on tab switch, sort order change, or query change
   useEffect(() => {
     let active = true;
     if (activeTab === "individual") {
       Promise.resolve().then(() => {
         if (active) {
-          fetchPlayers(true);
+          fetchPlayers(0, true);
         }
       });
     }
     return () => {
       active = false;
     };
-  }, [activeTab, playersSortOrder, fetchPlayers]);
-
-  // Debounced search trigger for individual players
-  useEffect(() => {
-    if (activeTab !== "individual") return;
-
-    const delayDebounceFn = setTimeout(() => {
-      fetchPlayers(true);
-    }, 450);
-
-    return () => clearTimeout(delayDebounceFn);
-  }, [playersSearchQuery, activeTab, fetchPlayers]);
+  }, [activeTab, fetchPlayers]);
 
   // Filter Squads Client-side
   const filteredTeams = useMemo(() => {
@@ -246,6 +240,7 @@ export default function LeaderboardPage() {
               onClick={() => {
                 setActiveTab("individual");
                 setPlayersSearchQuery("");
+                setDebouncedSearchQuery("");
               }}
               className={`flex-1 text-center py-2 text-xs font-bold uppercase tracking-wider rounded-lg transition-all cursor-pointer ${
                 activeTab === "individual"
@@ -522,7 +517,7 @@ export default function LeaderboardPage() {
             ) : playersData.length > 0 ? (
               <>
                 {playersData.map((player, idx) => {
-                  const rank = idx + 1;
+                  const rank = player.rank || (idx + 1);
                   return (
                     <div
                       key={player.id}
@@ -600,7 +595,7 @@ export default function LeaderboardPage() {
                 {hasMorePlayers && (
                   <div className="pt-4 pb-2 text-center no-print border-t border-white/5">
                     <button
-                      onClick={() => fetchPlayers(false)}
+                      onClick={() => fetchPlayers(playersData.length, false)}
                       disabled={playersLoading}
                       className="px-6 py-2 rounded-xl bg-white/5 border border-white/10 hover:border-white/20 text-xs font-bold uppercase tracking-wider text-slate-300 hover:text-white transition-all cursor-pointer disabled:opacity-50 flex items-center justify-center gap-2 mx-auto"
                     >

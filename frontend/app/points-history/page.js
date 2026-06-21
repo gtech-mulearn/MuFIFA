@@ -429,15 +429,23 @@ export default function PointsHistoryPage() {
 
                   {/* Points */}
                   <div className="flex items-center gap-1.5 shrink-0">
-                    <span
-                      className={`text-sm font-black ${entry.points >= 0 ? "text-emerald-400" : "text-red-400"}`}
-                    >
-                      {entry.points >= 0 ? "+" : ""}
-                      {entry.points}
-                    </span>
-                    <span className="text-[9px] font-bold text-slate-500 uppercase">
-                      pts
-                    </span>
+                    {entry.points === null ? (
+                      <span className="text-[10px] md:text-xs font-bold text-slate-400 italic">
+                        Points will be credited
+                      </span>
+                    ) : (
+                      <>
+                        <span
+                          className={`text-sm font-black ${entry.points >= 0 ? "text-emerald-400" : "text-red-400"}`}
+                        >
+                          {entry.points >= 0 ? "+" : ""}
+                          {entry.points}
+                        </span>
+                        <span className="text-[9px] font-bold text-slate-500 uppercase">
+                          pts
+                        </span>
+                      </>
+                    )}
                   </div>
                 </div>
               ))

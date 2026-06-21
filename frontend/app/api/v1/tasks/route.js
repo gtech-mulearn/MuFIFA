@@ -3,6 +3,11 @@ import { verifyToken, requireRole } from "@/utils/auth";
 
 const PLAYER_COOKIE = "player_token";
 
+// In-memory cache for static tasks list
+let cachedTasks = null;
+let cacheExpiry = 0;
+const CACHE_DURATION = 60 * 1000; // 60 seconds
+
 export async function GET(request) {
   try {
     const supabaseUrl = process.env.SUPABASE_URL;
@@ -23,37 +28,36 @@ export async function GET(request) {
       }
     }
 
-    // 2. Fetch tasks (paginated if params present)
+    // 2. Parse query parameters
     const { searchParams } = new URL(request.url);
     const limitParam = searchParams.get("limit");
     const pageParam = searchParams.get("page") || "1";
+    const categoryParam = searchParams.get("category") || "All";
 
-    let url = `${supabaseUrl}/rest/v1/tasks?select=*&tier=gt.0&order=id.asc`;
-    const headers = {
-      apikey: supabaseKey,
-      Authorization: `Bearer ${supabaseKey}`,
-    };
+    // Fetch all tasks from Supabase (or use in-memory cache) to filter and paginate programmatically
+    let tasks = null;
+    const now = Date.now();
+    if (cachedTasks && now < cacheExpiry) {
+      tasks = cachedTasks;
+    } else {
+      const url = `${supabaseUrl}/rest/v1/tasks?select=*&tier=gt.0&order=id.asc`;
+      const headers = {
+        apikey: supabaseKey,
+        Authorization: `Bearer ${supabaseKey}`,
+      };
 
-    if (limitParam) {
-      const limit = parseInt(limitParam, 10);
-      const page = parseInt(pageParam, 10);
-      const offset = (page - 1) * limit;
-      url += `&offset=${offset}&limit=${limit}`;
-      headers["Prefer"] = "count=exact";
+      const tasksRes = await fetch(url, {
+        headers,
+        next: { revalidate: 0 },
+      });
+
+      if (!tasksRes.ok) {
+        throw new Error(`Failed to fetch tasks: ${await tasksRes.text()}`);
+      }
+      tasks = await tasksRes.json();
+      cachedTasks = tasks;
+      cacheExpiry = now + CACHE_DURATION;
     }
-
-    const tasksRes = await fetch(url, {
-      headers,
-      next: { revalidate: 0 },
-    });
-
-    if (!tasksRes.ok) {
-      throw new Error(`Failed to fetch tasks: ${await tasksRes.text()}`);
-    }
-    const tasks = await tasksRes.json();
-    const totalCount = limitParam
-      ? parseInt(tasksRes.headers.get("content-range")?.split("/")[1] || "0", 10)
-      : tasks.length;
 
     // 3. Fetch user completions if logged in
     let completionsMap = {};
@@ -90,7 +94,56 @@ export async function GET(request) {
       };
     });
 
-    const responseData = { success: true, data: processedTasks };
+    // Helper to categorize tasks dynamically based on content attributes
+    const getTaskCategory = (task) => {
+      const title = (task.title || "").toLowerCase();
+      const desc = (task.short_desc || task.description || "").toLowerCase();
+      
+      if (title.includes("uiux") || title.includes("ui/ux") || title.includes("ui") || title.includes("ux") || title.includes("design") || desc.includes("design") || desc.includes("ui/ux") || desc.includes("uiux")) return "UIUX";
+      if (title.includes("cyber") || title.includes("security") || title.includes("kuzhi") || title.includes("pothole")) return "Cyber";
+      if (title.includes("web") || title.includes("website") || title.includes("frontend") || title.includes("backend") || title.includes("nextjs") || title.includes("api") || desc.includes("web")) return "Web";
+      if (title.includes("social") || title.includes("discord") || title.includes("referral") || title.includes("invite") || title.includes("git") || title.includes("profile")) return "Social";
+      if (title.includes("iot") || title.includes("hardware") || title.includes("sensor")) return "IoT";
+      if (title.includes("dsa") || title.includes("leetcode") || title.includes("algorithm") || title.includes("data structure") || title.includes("codeforces") || title.includes("coding")) return "DSA";
+      
+      return "Other";
+    };
+
+    // 5. Filter by category
+    let filteredTasks = processedTasks;
+    if (categoryParam !== "All") {
+      filteredTasks = processedTasks.filter(t => {
+        if (t.category && typeof t.category === "string") {
+          const categories = t.category.split(",").map(c => c.trim().toLowerCase());
+          return categories.includes(categoryParam.toLowerCase());
+        }
+        // Fallback to title/description heuristic if no explicit database category is set
+        return getTaskCategory(t) === categoryParam;
+      });
+    }
+
+    // 6. Paginate
+    const totalCount = filteredTasks.length;
+    let paginatedTasks = filteredTasks;
+
+    if (limitParam) {
+      const limit = parseInt(limitParam, 10);
+      const page = parseInt(pageParam, 10);
+      const offset = (page - 1) * limit;
+      paginatedTasks = filteredTasks.slice(offset, offset + limit);
+    }
+
+    const overallTotalTasks = processedTasks.length;
+    const overallCompletedTasks = processedTasks.filter(t => t.completed).length;
+
+    const responseData = { 
+      success: true, 
+      data: paginatedTasks,
+      overallStats: {
+        totalTasks: overallTotalTasks,
+        completedTasks: overallCompletedTasks
+      }
+    };
     if (limitParam) {
       responseData.pagination = {
         page: parseInt(pageParam, 10),
@@ -137,6 +190,7 @@ export async function POST(request) {
       xp_teamwork,
       xp_execution,
       tier,
+      category,
     } = body;
 
     if (!id || !title || !description) {
@@ -167,6 +221,7 @@ export async function POST(request) {
         xp_teamwork: parseInt(xp_teamwork || 0, 10),
         xp_execution: parseInt(xp_execution || 0, 10),
         tier: parseInt(tier || 1, 10),
+        category: category ? category.split(",").map(c => c.trim()).filter(Boolean).join(",") : "",
       }),
     });
 
@@ -175,6 +230,11 @@ export async function POST(request) {
     }
 
     const savedTasks = await insertRes.json();
+    
+    // Invalidate in-memory tasks cache
+    cachedTasks = null;
+    cacheExpiry = 0;
+
     return NextResponse.json({ success: true, data: savedTasks[0] });
   } catch (error) {
     console.error("POST task error:", error);

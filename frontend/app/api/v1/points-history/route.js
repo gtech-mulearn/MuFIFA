@@ -160,7 +160,7 @@ export async function GET(request) {
       const predictions = await predictionsRes.json();
       predictionEntries = predictions.map((p) => {
         const match = matchesMap[String(p.match_id)];
-        let points = 0;
+        let points = null;
         if (p.outcome === "exact") {
           points = 25;
         } else if (p.outcome === "correct_outcome") {
@@ -237,13 +237,13 @@ export async function GET(request) {
             (e) => e.details?.is_rewarded,
           ).length,
           referrals_made: referralEntries.length,
-          task_points: taskEntries.reduce((sum, e) => sum + e.points, 0),
+          task_points: taskEntries.reduce((sum, e) => sum + (e.points ?? 0), 0),
           prediction_points: predictionEntries.reduce(
-            (sum, e) => sum + e.points,
+            (sum, e) => sum + (e.points ?? 0),
             0,
           ),
           referral_points: referralEntries.reduce(
-            (sum, e) => sum + e.points,
+            (sum, e) => sum + (e.points ?? 0),
             0,
           ),
         },

@@ -268,17 +268,8 @@ export default function KuzhiundoLeaderboard() {
     async function syncKuzhiundo() {
       if (!player) return;
 
-      const socials = (() => {
-        if (!player.socials) return {};
-        if (typeof player.socials === "object") return player.socials;
-        try {
-          return JSON.parse(player.socials);
-        } catch {
-          return {};
-        }
-      })();
-
-      if (socials.kuzhiundo_uuid) {
+      if (player.id) {
+        console.log(player.id);
         try {
           const syncRes = await fetch("/api/v1/kuzhiundo/sync", {
             method: "POST",
@@ -398,8 +389,8 @@ export default function KuzhiundoLeaderboard() {
           </h1>
           <p className="text-xs text-slate-400 mt-1.5 leading-relaxed max-w-3xl">
             Map the pits, safeguard the roads. Kerala's premier crowd-sourced
-            pothole tracking mission. Earn recognition and µPoints by
-            reporting road hazards.
+            pothole tracking mission. Earn recognition and µPoints by reporting
+            road hazards.
           </p>
         </div>
       </div>

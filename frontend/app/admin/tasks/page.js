@@ -415,6 +415,15 @@ export default function AdminTasksPage() {
                         <td className="px-4 py-3 whitespace-nowrap">
                           <div className="font-semibold text-slate-800">{task.title}</div>
                           <div className="text-[10px] text-slate-400 max-w-xs truncate">{task.description}</div>
+                          {task.category && (
+                            <div className="mt-1 flex gap-1 flex-wrap">
+                              {task.category.split(",").map((c) => (
+                                <span key={c} className="bg-sky-100 text-sky-800 text-[8px] font-bold px-1.5 py-0.5 rounded-md uppercase">
+                                  {c.trim()}
+                                </span>
+                              ))}
+                            </div>
+                          )}
                         </td>
                         <td className="px-4 py-3 text-slate-600">Tier {task.tier}</td>
                         <td className="px-4 py-3 font-mono font-semibold text-sky-700">+{task.mupoint}</td>

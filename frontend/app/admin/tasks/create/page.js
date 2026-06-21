@@ -29,6 +29,7 @@ export default function AdminCreateTaskPage() {
     xp_teamwork: 0,
     xp_execution: 0,
     tier: 1,
+    category: "",
   });
   const [creatingTask, setCreatingTask] = useState(false);
 
@@ -97,6 +98,7 @@ export default function AdminCreateTaskPage() {
           xp_teamwork: 0,
           xp_execution: 0,
           tier: 1,
+          category: "",
         });
         setIsEditing(false);
         setEditingTaskId(null);
@@ -131,6 +133,7 @@ export default function AdminCreateTaskPage() {
       xp_teamwork: task.xp_teamwork || 0,
       xp_execution: task.xp_execution || 0,
       tier: task.tier || 1,
+      category: task.category || "",
     });
     
     // Smooth scroll to form
@@ -160,6 +163,7 @@ export default function AdminCreateTaskPage() {
       xp_teamwork: 0,
       xp_execution: 0,
       tier: 1,
+      category: "",
     });
   };
 
@@ -265,6 +269,19 @@ export default function AdminCreateTaskPage() {
                   value={taskForm.short_desc}
                   onChange={(e) => setTaskForm({ ...taskForm, short_desc: e.target.value })}
                   placeholder="Summarized challenge card statement..."
+                  className={`rounded-xl px-4 py-2.5 focus:outline-none ${THEME.input}`}
+                />
+              </div>
+
+              <div className="flex flex-col gap-1.5">
+                <label className="text-[10px] font-black uppercase tracking-wider text-slate-500">
+                  Categories (comma-separated, e.g. UI/UX, Cyber, GitHub)
+                </label>
+                <input
+                  type="text"
+                  value={taskForm.category}
+                  onChange={(e) => setTaskForm({ ...taskForm, category: e.target.value })}
+                  placeholder="e.g. UI/UX, Cyber"
                   className={`rounded-xl px-4 py-2.5 focus:outline-none ${THEME.input}`}
                 />
               </div>
@@ -427,6 +444,15 @@ export default function AdminCreateTaskPage() {
                         <td className="px-4 py-3 whitespace-nowrap">
                           <div className="font-semibold text-slate-800">{task.title}</div>
                           <div className="text-[10px] text-slate-400 max-w-xs truncate">{task.description}</div>
+                          {task.category && (
+                            <div className="mt-1 flex gap-1 flex-wrap">
+                              {task.category.split(",").map((c) => (
+                                <span key={c} className="bg-sky-100 text-sky-800 text-[8px] font-bold px-1.5 py-0.5 rounded-md uppercase">
+                                  {c.trim()}
+                                </span>
+                              ))}
+                            </div>
+                          )}
                         </td>
                         <td className="px-4 py-3 text-slate-600">Tier {task.tier}</td>
                         <td className="px-4 py-3 font-mono font-semibold text-sky-700">+{task.mupoint}</td>

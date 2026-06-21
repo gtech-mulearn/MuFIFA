@@ -25,7 +25,7 @@ export default function Stats({ activeTier, completedCount, totalCount }) {
 
         <div className="flex-1 flex flex-col gap-1.5 min-w-0">
           <span className="text-[10px] font-black uppercase tracking-[0.25em] text-violet-400">
-            {activeTier === 1 ? "TIER 1 CHAMPION" : "TIER 2 ELITE"}
+            µFIFA CAMPAIGN PROGRESSION
           </span>
           <div className="flex justify-between items-center text-[10px] text-slate-400 font-bold uppercase tracking-wider mt-1.5">
             <span>Level Progress</span>
@@ -44,7 +44,7 @@ export default function Stats({ activeTier, completedCount, totalCount }) {
             <span>
               {completedCount} / {totalCount} Challenges Completed
             </span>
-            <span className="text-emerald-400">
+            <span className="text-amber-400">
               +{pointsEarned} μPoints Earned
             </span>
           </div>

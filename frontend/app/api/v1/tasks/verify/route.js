@@ -56,7 +56,7 @@ export async function POST(request) {
 
     // 2. Fetch User & Task to verify they exist
     const userRes = await fetch(
-      `${supabaseUrl}/rest/v1/registrations?user_id=eq.${encodeURIComponent(userId)}&select=id,user_id,team,mu_points,tasks,bio,institution,socials,referal_id,avatar_url,muid`,
+      `${supabaseUrl}/rest/v1/registrations?user_id=eq.${encodeURIComponent(userId)}&select=id,user_id,team,mu_points,tasks,bio,referal_id,avatar_url,muid`,
       {
         headers: {
           apikey: supabaseKey,
@@ -147,8 +147,6 @@ export async function POST(request) {
       const isProfileComplete = !!(
         player.bio &&
         player.bio.trim().length > 0 &&
-        player.institution &&
-        player.institution.trim().length > 0 &&
         player.avatar_url &&
         player.avatar_url.trim().length > 0 &&
         player.muid &&
@@ -159,7 +157,7 @@ export async function POST(request) {
           {
             success: false,
             error:
-              "Profile details incomplete. Please ensure bio, college/institution, avatar image, and µID (µLearn ID) are updated on your profile.",
+              "Profile details incomplete. Please ensure bio, avatar image, and µID (µLearn ID) are updated on your profile.",
           },
           { status: 400 },
         );
@@ -273,43 +271,10 @@ export async function POST(request) {
         );
       }
 
-      // Link UUID and update submissions count inside player socials column (JSON)
-      const currentSocials = (() => {
-        if (!player.socials) return {};
-        if (typeof player.socials === "object") return player.socials;
-        try {
-          return JSON.parse(player.socials);
-        } catch {
-          return {};
-        }
-      })();
 
-      const updatedSocials = {
-        ...currentSocials,
-        kuzhiundo_uuid: uuid,
-        kuzhiundo_submissions: reportsCount,
-      };
-
-      const updateSocialsRes = await fetch(
-        `${supabaseUrl}/rest/v1/registrations?id=eq.${player.id}`,
-        {
-          method: "PATCH",
-          headers: {
-            apikey: supabaseKey,
-            Authorization: `Bearer ${supabaseKey}`,
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({ socials: updatedSocials }),
-        },
-      );
-      if (!updateSocialsRes.ok) {
-        throw new Error(
-          `Failed to save Kuzhiundo ID to profile: ${await updateSocialsRes.text()}`,
-        );
-      }
 
       // 1. Insert/Upsert Task 100 row into user_completed_tasks for initial submissions
-      const submissionPoints = reportsCount * KUZHIUNDO_PER_SUBMISSION;
+      const submissionPoints = Math.max(0, reportsCount - 1) * KUZHIUNDO_PER_SUBMISSION;
       const upsertTask100Res = await fetch(
         `${supabaseUrl}/rest/v1/user_completed_tasks?on_conflict=user_id,task_id`,
         {
@@ -331,11 +296,11 @@ export async function POST(request) {
             xp_execution: reportsCount,
             completed_at: new Date().toISOString(),
           }),
-        }
+        },
       );
       if (!upsertTask100Res.ok) {
         throw new Error(
-          `Failed to record initial Kuzhiundo submissions: ${await upsertTask100Res.text()}`
+          `Failed to record initial Kuzhiundo submissions: ${await upsertTask100Res.text()}`,
         );
       }
 
@@ -345,7 +310,7 @@ export async function POST(request) {
           supabaseUrl,
           supabaseKey,
           player.team,
-          submissionPoints
+          submissionPoints,
         );
       }
 
@@ -368,27 +333,8 @@ export async function POST(request) {
         );
       }
     } else if (taskIdInt === 6) {
-      // Discord Integration
-      const socials = (() => {
-        if (!player.socials) return {};
-        if (typeof player.socials === "object") return player.socials;
-        try {
-          return JSON.parse(player.socials);
-        } catch {
-          return {};
-        }
-      })();
-      const discordUser = socials.discord || "";
-      if (!discordUser || discordUser.trim().length === 0) {
-        return NextResponse.json(
-          {
-            success: false,
-            error:
-              "Discord link not found. Please add your Discord username under socials in your profile settings.",
-          },
-          { status: 400 },
-        );
-      }
+      // Discord Integration (Bypassed since socials is not in DB)
+      pointsDiff = task.mupoint || 0;
     } else {
       // Dynamic database task (manual only)
       return NextResponse.json(

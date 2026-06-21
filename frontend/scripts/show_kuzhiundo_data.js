@@ -11,27 +11,47 @@ async function main() {
     Authorization: `Bearer ${supabaseKey}`,
   };
 
-  // 1. Fetch MuFIFA Linked Users
-  console.log("1. Fetching MuFIFA registrations with linked Kuzhiundo IDs...");
-  const regRes = await fetch(`${supabaseUrl}/rest/v1/registrations?select=id,user_id,name,team,socials,mu_points`, { headers });
+  // 1. Fetch MuFIFA Task Completions (Task 4 & 100)
+  console.log("1. Fetching MuFIFA Kuzhiundo Task Completions (user_completed_tasks)...");
+  const compRes = await fetch(`${supabaseUrl}/rest/v1/user_completed_tasks?task_id=in.(4,100)&select=id,user_id,task_id,points_awarded,xp_execution,completed_at`, { headers });
+  if (!compRes.ok) {
+    console.error("Failed to fetch completions:", await compRes.text());
+    return;
+  }
+  const completions = await compRes.json();
+
+  const userTask4Completed = {};
+  const userKuzhiundoSubmissions = {};
+  completions.forEach(c => {
+    if (c.task_id === 4) {
+      userTask4Completed[c.user_id] = true;
+    }
+    if (c.task_id === 100) {
+      userKuzhiundoSubmissions[c.user_id] = Number(c.xp_execution) || 0;
+    }
+  });
+
+  // 2. Fetch MuFIFA Registrations
+  console.log("\n2. Fetching MuFIFA registrations...");
+  const regRes = await fetch(`${supabaseUrl}/rest/v1/registrations?select=id,user_id,name,team,mu_points`, { headers });
   if (!regRes.ok) {
     console.error("Failed to fetch registrations:", await regRes.text());
     return;
   }
   const registrations = await regRes.json();
   const linkedUsers = registrations.filter(r => {
-    if (!r.socials) return false;
-    const socialsObj = typeof r.socials === 'string' ? JSON.parse(r.socials) : r.socials;
-    return !!socialsObj.kuzhiundo_uuid;
+    return !!userTask4Completed[r.user_id] || userKuzhiundoSubmissions[r.user_id] > 0;
   }).map(r => {
-    const socialsObj = typeof r.socials === 'string' ? JSON.parse(r.socials) : r.socials;
+    const submissions = userKuzhiundoSubmissions[r.user_id] !== undefined
+      ? userKuzhiundoSubmissions[r.user_id]
+      : (userTask4Completed[r.user_id] ? 1 : 0);
     return {
       mu_id: r.id,
       user_id: r.user_id,
       name: r.name,
       team: r.team,
-      kuzhi_uuid: socialsObj.kuzhiundo_uuid,
-      kuzhi_submissions: socialsObj.kuzhiundo_submissions,
+      kuzhi_uuid: r.id, // registration id acts as kuzhi_uuid
+      kuzhi_submissions: submissions,
       mu_points: r.mu_points
     };
   });
@@ -39,23 +59,15 @@ async function main() {
   console.log(`Found ${linkedUsers.length} linked user(s):`);
   console.table(linkedUsers);
 
-  // 2. Fetch MuFIFA Task Completions (Task 4 & 100)
-  console.log("\n2. Fetching MuFIFA Kuzhiundo Task Completions (user_completed_tasks)...");
-  const compRes = await fetch(`${supabaseUrl}/rest/v1/user_completed_tasks?task_id=in.(4,100)&select=id,user_id,task_id,points_awarded,xp_execution,completed_at`, { headers });
-  if (compRes.ok) {
-    const completions = await compRes.json();
-    console.log(`Found ${completions.length} task completion row(s) (Task 4 = Base Link, Task 100 = Submissions):`);
-    console.table(completions.map(c => ({
-      id: c.id,
-      user_id: c.user_id,
-      task: c.task_id === 4 ? "Task 4 (Base)" : "Task 100 (Submissions)",
-      points: c.points_awarded,
-      xp_exec: c.xp_execution,
-      completed_at: c.completed_at
-    })));
-  } else {
-    console.error("Failed to fetch completions:", await compRes.text());
-  }
+  console.log(`\nFound ${completions.length} task completion row(s) (Task 4 = Base Link, Task 100 = Submissions):`);
+  console.table(completions.map(c => ({
+    id: c.id,
+    user_id: c.user_id,
+    task: c.task_id === 4 ? "Task 4 (Base)" : "Task 100 (Submissions)",
+    points: c.points_awarded,
+    xp_exec: c.xp_execution,
+    completed_at: c.completed_at
+  })));
 
   // 3. Fetch live Kuzhiundo API Individuals Leaderboard
   console.log("\n3. Fetching Live Kuzhiundo API Individuals Leaderboard...");

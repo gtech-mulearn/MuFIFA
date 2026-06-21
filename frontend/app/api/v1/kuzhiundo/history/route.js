@@ -11,19 +11,19 @@ export async function GET(request) {
     if (!supabaseUrl || !supabaseKey) {
       return NextResponse.json(
         { success: false, error: "Database not configured." },
-        { status: 503 }
+        { status: 503 },
       );
     }
 
     // 1. Authenticate Player
     const cookieHeader = request.headers.get("cookie") || "";
     const cookieMatch = cookieHeader.match(
-      new RegExp(`(?:^|;\\s*)${PLAYER_COOKIE}=([^;]*)`)
+      new RegExp(`(?:^|;\\s*)${PLAYER_COOKIE}=([^;]*)`),
     );
     if (!cookieMatch) {
       return NextResponse.json(
         { success: false, error: "Authentication required." },
-        { status: 401 }
+        { status: 401 },
       );
     }
 
@@ -31,20 +31,20 @@ export async function GET(request) {
     if (!decoded || decoded.role !== "player") {
       return NextResponse.json(
         { success: false, error: "Invalid session." },
-        { status: 401 }
+        { status: 401 },
       );
     }
     const userId = decoded.user_id;
 
     // 2. Fetch User Registration (to get their UUID/ID)
     const userRes = await fetch(
-      `${supabaseUrl}/rest/v1/registrations?user_id=eq.${encodeURIComponent(userId)}&select=id,socials`,
+      `${supabaseUrl}/rest/v1/registrations?user_id=eq.${encodeURIComponent(userId)}&select=id`,
       {
         headers: {
           apikey: supabaseKey,
           Authorization: `Bearer ${supabaseKey}`,
         },
-      }
+      },
     );
     if (!userRes.ok) {
       throw new Error(`Fetch user failed: ${await userRes.text()}`);
@@ -53,30 +53,12 @@ export async function GET(request) {
     if (users.length === 0) {
       return NextResponse.json(
         { success: false, error: "Player not found." },
-        { status: 404 }
+        { status: 404 },
       );
     }
     const player = users[0];
 
-    // Check if UUID linked
-    const socials = (() => {
-      if (!player.socials) return {};
-      if (typeof player.socials === "object") return player.socials;
-      try {
-        return JSON.parse(player.socials);
-      } catch {
-        return {};
-      }
-    })();
-
-    const uuid = socials.kuzhiundo_uuid;
-    if (!uuid) {
-      return NextResponse.json({
-        success: true,
-        linked: false,
-        reports: [],
-      });
-    }
+    const uuid = player.id;
 
     // 3. Fetch history from Kuzhiundo
     const kuzhiRes = await fetch(
@@ -85,7 +67,7 @@ export async function GET(request) {
         method: "GET",
         headers: { Accept: "application/json" },
         cache: "no-store",
-      }
+      },
     );
     if (!kuzhiRes.ok) {
       return NextResponse.json(
@@ -93,7 +75,7 @@ export async function GET(request) {
           success: false,
           error: "Failed to fetch history from Kuzhiundo.",
         },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -107,7 +89,7 @@ export async function GET(request) {
     console.error("Kuzhiundo history proxy error:", error);
     return NextResponse.json(
       { success: false, error: "Internal server error." },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

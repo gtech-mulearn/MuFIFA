@@ -2,6 +2,10 @@ import { NextResponse } from "next/server";
 
 export const revalidate = 30;
 
+// In-memory cache to avoid hitting Supabase and processing the entire table on every request.
+// TTL is set to 30 seconds to align with the client-side poll interval.
+let _liveStatsCache = null; // { stats: any, ts: number }
+const LIVE_STATS_TTL_MS = 30_000;
 
 export async function GET(request) {
   try {
@@ -20,6 +24,18 @@ export async function GET(request) {
           },
         },
         { status: 503 },
+      );
+    }
+
+    const now = Date.now();
+    if (_liveStatsCache && now - _liveStatsCache.ts < LIVE_STATS_TTL_MS) {
+      return NextResponse.json(
+        {
+          success: true,
+          response: _liveStatsCache.stats,
+          data: _liveStatsCache.stats,
+        },
+        { status: 200 },
       );
     }
 
@@ -123,6 +139,8 @@ export async function GET(request) {
       squad_points,
     };
 
+    _liveStatsCache = { stats: statsPayload, ts: now };
+
     return NextResponse.json(
       {
         success: true,
@@ -133,6 +151,17 @@ export async function GET(request) {
     );
   } catch (error) {
     console.error("Next.js live-stats API error:", error);
+    // Return stale cache as fallback if it exists
+    if (_liveStatsCache) {
+      return NextResponse.json(
+        {
+          success: true,
+          response: _liveStatsCache.stats,
+          data: _liveStatsCache.stats,
+        },
+        { status: 200 },
+      );
+    }
     return NextResponse.json(
       {
         success: false,

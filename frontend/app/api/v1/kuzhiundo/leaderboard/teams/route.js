@@ -5,6 +5,8 @@ import {
 } from "@/utils/kuzhiundo";
 import { TEAM_FLAGS } from "@/utils/constants";
 
+export const dynamic = "force-dynamic";
+
 export async function GET(request) {
   try {
     const { searchParams } = new URL(request.url);
@@ -20,7 +22,7 @@ export async function GET(request) {
       endpointUrl.searchParams.set("q", q);
     }
 
-    const res = await fetch(endpointUrl.toString(), { next: { revalidate: 30 } });
+    const res = await fetch(endpointUrl.toString(), { next: { revalidate: 60 } });
     if (!res.ok) {
       throw new Error(`Kuzhiundo API returned status ${res.status}`);
     }

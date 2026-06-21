@@ -4,6 +4,8 @@ import {
   KUZHIUNDO_PER_SUBMISSION,
 } from "@/utils/kuzhiundo";
 
+export const dynamic = "force-dynamic";
+
 export async function GET(request) {
   try {
     const { searchParams } = new URL(request.url);
@@ -11,7 +13,9 @@ export async function GET(request) {
     const q = searchParams.get("q");
 
     // Construct target endpoint URL using URL object to handle query parameter encoding robustly.
-    const endpointUrl = new URL("https://kuzhiundo.com/api/leaderboard/individuals");
+    const endpointUrl = new URL(
+      "https://kuzhiundo.com/api/leaderboard/individuals",
+    );
     if (period) {
       endpointUrl.searchParams.set("period", period);
     }
@@ -19,7 +23,9 @@ export async function GET(request) {
       endpointUrl.searchParams.set("q", q);
     }
 
-    const res = await fetch(endpointUrl.toString(), { next: { revalidate: 30 } });
+    const res = await fetch(endpointUrl.toString(), {
+      next: { revalidate: 60 },
+    });
     if (!res.ok) {
       throw new Error(`Kuzhiundo API returned status ${res.status}`);
     }

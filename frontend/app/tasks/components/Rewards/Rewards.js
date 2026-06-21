@@ -1,21 +1,21 @@
 import Link from "next/link";
 import Image from "next/image";
 
-export default function Rewards({ activeTier }) {
+export default function Rewards() {
   return (
     <div className="flex flex-col gap-4 mt-6">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div className="flex flex-col gap-1.5">
           <h3 className="text-xs font-black uppercase tracking-[0.25em] text-white">
-            {activeTier === 1 ? "TIER 1 REWARDS" : "TIER 2 REWARDS"}
+            CHALLENGE REWARDS
           </h3>
           <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider leading-none">
-            Complete all challenges to claim these rewards
+            Complete challenges to earn μPoints and redeem them
           </p>
         </div>
         <Link
           href="/rewards"
-          className="self-start sm:self-center px-4 py-2 border border-violet-500/25 bg-violet-500/5 hover:bg-violet-500/10 text-violet-400 hover:text-violet-300 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all flex items-center gap-1.5 shadow-[0_0_12px_rgba(139,92,246,0.1)] hover:shadow-[0_0_15px_rgba(139,92,246,0.2)] shrink-0"
+          className="self-start sm:self-center px-4 py-2 border border-violet-500/25 bg-violet-500/5 hover:bg-violet-500/10 text-violet-400 hover:text-violet-300 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all flex items-center gap-1.5 shadow-[0_0_12px_rgba(139,92,246,0.15)] hover:shadow-[0_0_15px_rgba(139,92,246,0.3)] shrink-0"
         >
           <span>Rewards Marketplace</span>
           <svg
@@ -46,10 +46,10 @@ export default function Rewards({ activeTier }) {
           />
           <div className="flex flex-col">
             <span className="text-xl font-black text-white leading-none">
-              25
+              250+
             </span>
             <span className="text-[9px] font-black tracking-wider text-slate-500 mt-1">
-              μPoints
+              μPoints Available
             </span>
           </div>
         </div>
@@ -76,20 +76,20 @@ export default function Rewards({ activeTier }) {
               1
             </span>
             <span className="text-[9px] font-black uppercase tracking-wider text-slate-500 mt-1">
-              Arena Ticket
+              Arena Pass Ticket
             </span>
           </div>
         </div>
 
-        {/* REWARD 3: Next Tier Teaser */}
-        <div className="md:col-span-4 bg-gradient-to-r from-violet-900/40 via-indigo-900/30 to-slate-900/50 border border-violet-500/20 rounded-2xl p-4 flex items-center justify-between shadow-lg relative overflow-hidden group">
+        {/* REWARD 3: Marketplace Link */}
+        <Link href="/rewards" className="md:col-span-4 bg-gradient-to-r from-violet-900/40 via-indigo-900/30 to-slate-900/50 border border-violet-500/20 rounded-2xl p-4 flex items-center justify-between shadow-lg relative overflow-hidden group">
           <div className="absolute right-0 bottom-0 top-0 w-24 bg-[radial-gradient(circle_at_bottom_right,_rgba(139,92,246,0.15)_0%,_transparent_70%)] pointer-events-none" />
           <div className="flex flex-col gap-1.5 z-10">
             <span className="text-[8px] font-black text-violet-400 uppercase tracking-widest leading-none">
-              Complete Tier 1
+              μFIFA Store
             </span>
             <span className="text-[9px] font-black text-white uppercase tracking-wide leading-tight mt-1 max-w-[150px]">
-              Unlock Tier 2 rewards & better prizes!
+              Redeem jerseys, tickets, and elite goodies!
             </span>
           </div>
           <div className="w-10 h-10 rounded-xl bg-violet-600/10 border border-violet-500/20 flex items-center justify-center text-violet-400 shadow-[0_0_15px_rgba(139,92,246,0.15)] shrink-0 z-10 group-hover:scale-105 transition-transform duration-300">
@@ -103,11 +103,11 @@ export default function Rewards({ activeTier }) {
               <path
                 strokeLinecap="round"
                 strokeLinejoin="round"
-                d="M12 15a7 7 0 007-7V4H5v4a7 7 0 007 7zm0 0v4m0 0H8m4 0h4m-9-8H3m18 0h-2"
+                d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3"
               />
             </svg>
           </div>
-        </div>
+        </Link>
       </div>
     </div>
   );

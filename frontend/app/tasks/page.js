@@ -7,12 +7,10 @@ import { usePlayer } from "@/components/PlayerContext";
 // Redesigned components
 import Header from "./components/Header/Header";
 import Stats from "./components/Stats/Stats";
-import Timeline from "./components/Timeline/Timeline";
 import ChallengeCard from "./components/ChallengeCard/ChallengeCard";
 import ChallengeModal from "./components/ChallengeModal";
 import Rewards from "./components/Rewards/Rewards";
 import ComingSoonCard from "./components/ComingSoonCard";
-import VideoOverlay from "./components/VideoOverlay";
 
 export default function TasksPage() {
   const { player: contextPlayer, loading: authLoading } = usePlayer();
@@ -24,10 +22,11 @@ export default function TasksPage() {
   const [verifyingTaskId, setVerifyingTaskId] = useState(null);
   const [verifyError, setVerifyError] = useState("");
   const [verifySuccess, setVerifySuccess] = useState("");
-  const [showVideo, setShowVideo] = useState(false);
-  const [showCloseBtn, setShowCloseBtn] = useState(false);
-  const unlockInProgressRef = useRef(false);
-  const carouselRef = useRef(null);
+  const [selectedCategory, setSelectedCategory] = useState("All");
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [overallTotal, setOverallTotal] = useState(0);
+  const [overallCompleted, setOverallCompleted] = useState(0);
   const [dbTasksList, setDbTasksList] = useState([]);
 
   // Fetch referrals to double check task 1 status
@@ -43,12 +42,21 @@ export default function TasksPage() {
     }
   }
 
-  async function fetchDbTasks() {
+  async function fetchDbTasks(page = currentPage, category = selectedCategory) {
     try {
-      const res = await fetch("/api/v1/tasks");
+      const res = await fetch(`/api/v1/tasks?limit=6&page=${page}&category=${category}`);
       const data = await res.json();
       if (res.ok && data.success) {
         setDbTasksList(data.data || []);
+        if (data.pagination) {
+          setTotalPages(data.pagination.totalPages || 1);
+        } else {
+          setTotalPages(1);
+        }
+        if (data.overallStats) {
+          setOverallTotal(data.overallStats.totalTasks || 0);
+          setOverallCompleted(data.overallStats.completedTasks || 0);
+        }
       }
     } catch (err) {
       console.error("Failed to fetch database tasks:", err);
@@ -60,14 +68,24 @@ export default function TasksPage() {
     if (authLoading) return;
     if (contextPlayer) {
       setPlayer(contextPlayer);
-      // Load page-specific data
-      Promise.all([fetchReferrals(), fetchDbTasks()]).finally(() => {
-        setLoading(false);
-      });
+      fetchReferrals();
     } else {
       setLoading(false);
     }
   }, [contextPlayer, authLoading]);
+
+  // Fetch paginated tasks whenever page or category changes
+  useEffect(() => {
+    if (!player) return;
+    fetchDbTasks(currentPage, selectedCategory).finally(() => {
+      setLoading(false);
+    });
+  }, [currentPage, selectedCategory, player]);
+
+  const handleCategoryChange = (cat) => {
+    setSelectedCategory(cat);
+    setCurrentPage(1);
+  };
 
   // Helper to extract JSON tasks object
   const dbTasks = (() => {
@@ -100,32 +118,9 @@ export default function TasksPage() {
   const hasPredictions = (player?.predictions_count || 0) > 0;
   const isTask2Completed = isDbTaskCompleted(2);
 
-  let githubUser = "";
-  if (player && player.socials) {
-    if (typeof player.socials === "object") {
-      githubUser = player.socials.github || "";
-    } else if (typeof player.socials === "string") {
-      try {
-        const parsed = JSON.parse(player.socials);
-        githubUser = parsed.github || "";
-      } catch (e) {}
-    }
-  }
   const isTask3Completed = isDbTaskCompleted(3);
   const isLevel1Completed =
     isTask1Completed && isTask2Completed && isTask3Completed;
-
-  let discordUser = "";
-  if (player && player.socials) {
-    if (typeof player.socials === "object") {
-      discordUser = player.socials.discord || "";
-    } else if (typeof player.socials === "string") {
-      try {
-        const parsed = JSON.parse(player.socials);
-        discordUser = parsed.discord || "";
-      } catch (e) {}
-    }
-  }
 
   // Selected task detail view modal handler
 
@@ -148,7 +143,6 @@ export default function TasksPage() {
       const isProfileComplete = !!(
         player?.bio &&
         player.bio.trim().length > 0 &&
-        (player?.institution || player?.college || "").trim().length > 0 &&
         player?.avatar_url &&
         player.avatar_url.trim().length > 0 &&
         player?.muid &&
@@ -156,7 +150,7 @@ export default function TasksPage() {
       );
       if (!isProfileComplete) {
         setVerifyError(
-          "Profile details incomplete. Please ensure bio, college/institution, avatar image, and µID (µLearn ID) are updated on your profile.",
+          "Profile details incomplete. Please ensure bio, avatar image, and µID (µLearn ID) are updated on your profile.",
         );
         setVerifyingTaskId(null);
         return;
@@ -178,14 +172,7 @@ export default function TasksPage() {
         return;
       }
     } else if (task.id === 6) {
-      const isEligible = !!discordUser && discordUser.trim().length > 0;
-      if (!isEligible) {
-        setVerifyError(
-          "Discord link not found. Please add your Discord username under socials in your profile settings.",
-        );
-        setVerifyingTaskId(null);
-        return;
-      }
+      // Bypassed since socials is not in DB
     }
 
     try {
@@ -221,7 +208,7 @@ export default function TasksPage() {
         });
 
         // Refetch database tasks list to sync the UI completion state immediately
-        fetchDbTasks();
+        fetchDbTasks(currentPage, selectedCategory);
 
         setVerifySuccess(
           data.message || `Task ${task.id} verified and updated!`,
@@ -284,17 +271,7 @@ export default function TasksPage() {
     }
   };
 
-  const scrollLeft = () => {
-    if (carouselRef.current) {
-      carouselRef.current.scrollBy({ left: -374, behavior: "smooth" });
-    }
-  };
-
-  const scrollRight = () => {
-    if (carouselRef.current) {
-      carouselRef.current.scrollBy({ left: 374, behavior: "smooth" });
-    }
-  };
+  // Carousel scroll functions removed (replaced by pagination grid)
 
   if (loading) {
     return (
@@ -333,53 +310,31 @@ export default function TasksPage() {
           actionUrl,
           tier: dbTask.tier || 1,
           mupoint: dbTask.mupoint || 0,
+          category: dbTask.category || "",
         };
       })
       .sort((a, b) => a.id - b.id);
   })();
 
-  const level1Tasks = mergedTasks.filter((t) => t.tier === 1);
-  const level2Tasks = mergedTasks.filter((t) => t.tier === 2);
+  // Helper to categorize tasks dynamically based on content attributes
+  const getTaskCategory = (task) => {
+    const title = (task.title || "").toLowerCase();
+    const desc = (task.shortDesc || task.description || "").toLowerCase();
+    
+    if (title.includes("uiux") || title.includes("ui/ux") || title.includes("ui") || title.includes("ux") || title.includes("design") || desc.includes("design") || desc.includes("ui/ux") || desc.includes("uiux")) return "UIUX";
+    if (title.includes("cyber") || title.includes("security") || title.includes("kuzhi") || title.includes("pothole")) return "Cyber";
+    if (title.includes("web") || title.includes("website") || title.includes("frontend") || title.includes("backend") || title.includes("nextjs") || title.includes("api") || desc.includes("web")) return "Web";
+    if (title.includes("social") || title.includes("discord") || title.includes("referral") || title.includes("invite") || title.includes("git") || title.includes("profile")) return "Social";
+    if (title.includes("iot") || title.includes("hardware") || title.includes("sensor")) return "IoT";
+    if (title.includes("dsa") || title.includes("leetcode") || title.includes("algorithm") || title.includes("data structure") || title.includes("codeforces") || title.includes("coding")) return "DSA";
+    
+    return "Other";
+  };
 
-  // Process current active list of tasks
-  const processedLevel1Tasks = level1Tasks.map((task, i) => {
-    const isLocked = i > 0 && !level1Tasks[i - 1].completed;
-    return {
-      ...task,
-      isLocked,
-    };
-  });
+  const filteredTasks = mergedTasks;
 
-  const processedLevel2Tasks = level2Tasks.map((task, i) => {
-    const isLocked = i > 0 && !level2Tasks[i - 1].completed;
-    return {
-      ...task,
-      isLocked: !dbTasks.level2_unlocked || isLocked,
-    };
-  });
-  const tier1CompletedCount = level1Tasks.filter((t) => t.completed).length;
-  const tier1TotalCount = level1Tasks.length;
-
-  const tier2CompletedCount = level2Tasks.filter((t) => t.completed).length;
-  const tier2TotalCount = level2Tasks.length;
-
-  const currentTier = dbTasks.level2_unlocked ? 2 : 1;
-  const currentCompletedCount =
-    currentTier === 1 ? tier1CompletedCount : tier2CompletedCount;
-  const currentTotalCount =
-    currentTier === 1 ? tier1TotalCount : tier2TotalCount;
-
-  const allTasks = (() => {
-    const list = [...processedLevel1Tasks];
-    if (!dbTasks.level2_unlocked) {
-      if (isLevel1Completed) {
-        list.push({ isUnlockCard: true, id: "unlock-tier-2", mupoint: 0 });
-      }
-    } else {
-      list.push(...processedLevel2Tasks);
-    }
-    return list;
-  })();
+  const completedCount = overallCompleted;
+  const totalCount = overallTotal;
 
   return (
     <div className="w-full relative flex flex-col gap-6 md:gap-8 pb-10">
@@ -412,182 +367,119 @@ export default function TasksPage() {
         {/* STATS ROW (Progression Shield & Achievements) */}
         <div className="relative z-10">
           <Stats
-            activeTier={currentTier}
-            completedCount={currentCompletedCount}
-            totalCount={currentTotalCount}
+            completedCount={completedCount}
+            totalCount={totalCount}
           />
         </div>
-      </div>
-
-      {/* TIMELINE */}
-      <div className="relative z-10 px-4 sm:px-6 md:px-8">
-        <Timeline
-          activeTier={currentTier}
-          level2Unlocked={!!dbTasks.level2_unlocked}
-        />
       </div>
 
       {/* CHALLENGES LIST */}
       <div className="flex flex-col gap-5 relative z-10 px-4 sm:px-6 md:px-8">
         <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
-          <div className="flex items-center gap-4 self-start">
-            <h2 className="text-sm font-black uppercase tracking-[0.25em] text-white">
-              CHALLENGES
-            </h2>
-            {/* Carousel Navigation Arrows */}
-            <div className="flex items-center gap-1.5 ml-2">
-              <button
-                onClick={scrollLeft}
-                className="w-7 h-7 rounded-lg border border-white/5 bg-[#110e20]/60 hover:bg-white/5 flex items-center justify-center text-slate-400 hover:text-white transition-all cursor-pointer"
-                title="Scroll Left"
-              >
-                <svg
-                  className="w-3.5 h-3.5"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2.5"
-                  viewBox="0 0 24 24"
+          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 self-start w-full justify-between">
+            <div className="flex items-center gap-4">
+              <h2 className="text-sm font-black uppercase tracking-[0.25em] text-white">
+                CHALLENGES
+              </h2>
+            </div>
+
+            {/* Category Filter Tabs Selector */}
+            <div className="flex gap-3 overflow-x-auto no-scrollbar scroll-smooth whitespace-nowrap bg-white/5 border border-white/5 p-1 rounded-xl">
+              {["All", "UIUX", "Cyber", "Web", "Other", "Social", "IoT", "DSA"].map((cat) => (
+                <button
+                  key={cat}
+                  onClick={() => handleCategoryChange(cat)}
+                  className={`px-3 py-1.5 text-[9px] font-black uppercase tracking-wider transition-all cursor-pointer rounded-lg ${
+                    selectedCategory === cat
+                      ? "bg-violet-600 text-white shadow-md shadow-violet-600/30"
+                      : "text-slate-400 hover:text-slate-200"
+                  }`}
                 >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    d="M15.75 19.5L8.25 12l7.5-7.5"
-                  />
-                </svg>
-              </button>
-              <button
-                onClick={scrollRight}
-                className="w-7 h-7 rounded-lg border border-white/5 bg-[#110e20]/60 hover:bg-white/5 flex items-center justify-center text-slate-400 hover:text-white transition-all cursor-pointer"
-                title="Scroll Right"
-              >
-                <svg
-                  className="w-3.5 h-3.5"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2.5"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    d="M8.25 4.5l7.5 7.5-7.5 7.5"
-                  />
-                </svg>
-              </button>
+                  {cat}
+                </button>
+              ))}
             </div>
           </div>
         </div>
 
-        {/* Unified challenges list inside Carousel */}
-        <div
-          ref={carouselRef}
-          className="flex gap-6 overflow-x-auto scroll-smooth pb-4 snap-x snap-mandatory no-scrollbar items-stretch max-w-[1098px] mx-auto w-full"
-          style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
-        >
-          {allTasks.map((task) => {
-            if (task.isUnlockCard) {
-              return (
-                <div
-                  key={task.id}
-                  className="snap-start shrink-0 w-full sm:w-[325px] md:w-[350px] flex"
-                >
-                  <div className="flex flex-col bg-gradient-to-b from-[#110e24]/80 to-[#070613]/80 border border-violet-500/35 hover:border-violet-500/50 rounded-2xl p-5 relative overflow-hidden transition-all duration-300 h-full justify-between shadow-[0_0_20px_rgba(139,92,246,0.05)]">
-                    <div className="flex gap-4 items-start">
-                      <div className="relative shrink-0 select-none">
-                        <div className="w-14 h-14 rounded-full bg-gradient-to-br from-amber-500 to-yellow-600 border border-amber-400/20 flex items-center justify-center text-white shadow-[0_0_15px_rgba(245,158,11,0.3)]">
-                          <svg
-                            className="w-6 h-6 text-white drop-shadow-[0_0_8px_rgba(255,255,255,0.4)]"
-                            fill="none"
-                            stroke="currentColor"
-                            strokeWidth="2.5"
-                            viewBox="0 0 24 24"
-                          >
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              d="M13.5 10.5V6.75a4.5 4.5 0 119 0v3.75M3.75 21.75h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H3.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z"
-                            />
-                          </svg>
-                        </div>
-                      </div>
-                      <div className="flex flex-col gap-1 text-left min-w-0">
-                        <h3 className="text-xs font-black tracking-wide uppercase leading-tight text-white">
-                          Unlock Tier 2
-                        </h3>
-                        <p className="text-[10px] text-slate-400 font-medium leading-relaxed mt-0.5 min-h-[48px] max-h-[48px] overflow-hidden">
-                          Tier 1 completed! Watch the transition video to unlock
-                          Tier 2.
-                        </p>
-                      </div>
-                    </div>
-
-                    <div className="flex items-center justify-between gap-4 mt-5 border-t border-white/5 pt-4">
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-1.5 text-amber-400 select-none">
-                          <span className="text-[9px] font-black uppercase tracking-wider">
-                            READY TO UNLOCK
-                          </span>
-                        </div>
-                      </div>
-                      <div className="border border-amber-500/25 bg-amber-500/5 text-amber-400 px-3 py-1 rounded-xl flex flex-col items-center justify-center shrink-0 min-w-[68px] h-[48px] select-none">
-                        <span className="text-sm font-black tracking-tight leading-none">
-                          TIER 2
-                        </span>
-                        <span className="text-[7px] font-black uppercase tracking-widest mt-1">
-                          ACCESS
-                        </span>
-                      </div>
-                    </div>
-
-                    <div className="mt-4 pt-1">
-                      <button
-                        onClick={startUnlockProcess}
-                        className="w-full py-3.5 bg-gradient-to-r from-violet-600 to-indigo-600 border-transparent text-white shadow-md hover:from-violet-500 hover:to-indigo-500 text-[9px] font-black tracking-widest uppercase rounded-xl transition-all cursor-pointer flex items-center justify-center gap-1.5"
-                      >
-                        <span>Unlock Now</span>
-                        <svg
-                          className="w-3.5 h-3.5"
-                          fill="currentColor"
-                          viewBox="0 0 24 24"
-                        >
-                          <path d="M8 5v14l11-7z" />
-                        </svg>
-                      </button>
-                    </div>
-                  </div>
+        {/* Unified challenges list inside Grid */}
+        <div className="max-w-[1098px] mx-auto w-full">
+          {filteredTasks.length === 0 ? (
+            <ComingSoonCard category={selectedCategory} />
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 auto-rows-stretch">
+              {filteredTasks.map((task) => (
+                <div key={task.id} className="flex h-full">
+                  <ChallengeCard
+                    task={task}
+                    onViewDetails={(t) => {
+                      setSelectedTaskForModal(t);
+                      setIsModalOpen(true);
+                    }}
+                    dbTasks={dbTasks}
+                  />
                 </div>
-              );
-            }
-
-            return (
-              <div
-                key={task.id}
-                className="snap-start shrink-0 w-full sm:w-[325px] md:w-[350px] flex"
-              >
-                <ChallengeCard
-                  task={task}
-                  onViewDetails={(t) => {
-                    setSelectedTaskForModal(t);
-                    setIsModalOpen(true);
-                  }}
-                  dbTasks={dbTasks}
-                />
-              </div>
-            );
-          })}
+              ))}
+            </div>
+          )}
         </div>
+
+        {/* Pagination Controls */}
+        {totalPages > 1 && (
+          <div className="flex items-center justify-center gap-4 mt-8 select-none">
+            <button
+              onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
+              disabled={currentPage === 1}
+              className={`px-4 py-2 rounded-xl border text-xs font-black tracking-wider uppercase transition-all flex items-center gap-2 cursor-pointer ${
+                currentPage === 1
+                  ? "border-white/5 bg-white/2 opacity-30 cursor-not-allowed text-slate-500"
+                  : "border-violet-500/25 bg-[#110e20]/60 text-violet-400 hover:border-violet-500/50 hover:bg-violet-500/10"
+              }`}
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5" />
+              </svg>
+              <span>Prev</span>
+            </button>
+
+            <div className="flex items-center gap-1">
+              {Array.from({ length: totalPages }, (_, i) => i + 1).map((p) => (
+                <button
+                  key={p}
+                  onClick={() => setCurrentPage(p)}
+                  className={`w-8 h-8 rounded-lg text-xs font-black transition-all cursor-pointer ${
+                    currentPage === p
+                      ? "bg-violet-600 text-white shadow-md shadow-violet-600/30"
+                      : "text-slate-400 hover:text-slate-200 bg-white/5 border border-white/5 hover:bg-white/10"
+                  }`}
+                >
+                  {p}
+                </button>
+              ))}
+            </div>
+
+            <button
+              onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
+              disabled={currentPage === totalPages}
+              className={`px-4 py-2 rounded-xl border text-xs font-black tracking-wider uppercase transition-all flex items-center gap-2 cursor-pointer ${
+                currentPage === totalPages
+                  ? "border-white/5 bg-white/2 opacity-30 cursor-not-allowed text-slate-500"
+                  : "border-violet-500/25 bg-[#110e20]/60 text-violet-400 hover:border-violet-500/50 hover:bg-violet-500/10"
+              }`}
+            >
+              <span>Next</span>
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
+              </svg>
+            </button>
+          </div>
+        )}
       </div>
 
-      {/* TIER REWARDS ROW */}
+      {/* REWARDS ROW */}
       <div className="relative z-10 border-t border-white/5 pt-8 px-4 sm:px-6 md:px-8">
-        <Rewards activeTier={currentTier} />
+        <Rewards />
       </div>
-
-      <VideoOverlay
-        showVideo={showVideo}
-        showCloseBtn={showCloseBtn}
-        completeUnlock={completeUnlock}
-      />
 
       <ChallengeModal
         isOpen={isModalOpen}
@@ -598,7 +490,7 @@ export default function TasksPage() {
         }}
         task={
           selectedTaskForModal
-            ? allTasks.find((t) => t.id === selectedTaskForModal.id)
+            ? mergedTasks.find((t) => t.id === selectedTaskForModal.id)
             : null
         }
         onVerify={handleVerifyTask}

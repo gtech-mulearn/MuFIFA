@@ -5,7 +5,6 @@ import { usePathname, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
 import Navbar from "@/components/Navbar";
-import Ticker from "@/components/Ticker";
 import Footer from "@/components/Footer";
 import Sidebar from "@/app/tasks/components/Sidebar/Sidebar";
 import { PlayerProvider, usePlayer } from "@/components/PlayerContext";
@@ -66,7 +65,11 @@ function LayoutInner({
     );
   }
 
-  const shouldRenderPublic = !player && pathname.startsWith("/leaderboard");
+  const shouldRenderPublic =
+    !player &&
+    (pathname.startsWith("/leaderboard") ||
+      pathname.startsWith("/match") ||
+      pathname.startsWith("/profile"));
 
   if (isArenaRoute && !shouldRenderPublic) {
     return (
@@ -84,7 +87,6 @@ function LayoutInner({
   return (
     <>
       <Navbar />
-      <Ticker />
       <main className="flex-1 flex flex-col w-full relative">{children}</main>
       <Footer />
     </>
@@ -327,16 +329,13 @@ function ArenaLayout({
             <Link
               key={item.name}
               href={item.href}
-              className={`flex-1 min-w-0 flex flex-col items-center justify-center gap-1 py-1.5 px-0.5 rounded-xl transition-all ${
+              className={`flex-1 min-w-0 flex flex-col items-center justify-center py-1.5 px-0.5 rounded-xl transition-all ${
                 isActive
                   ? "text-violet-400"
                   : "text-slate-400 hover:text-slate-200"
               }`}
             >
               {item.icon}
-              <span className="text-[8.5px] font-black uppercase tracking-wider truncate w-full text-center">
-                {item.name}
-              </span>
             </Link>
           );
         })}

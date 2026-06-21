@@ -9,168 +9,40 @@ import { TEAM_FLAGS, TEAM_WHATSAPP_LINKS } from "@/utils/constants";
 import Header from "@/app/tasks/components/Header/Header";
 import { usePlayer } from "@/components/PlayerContext";
 
-const DOMAIN_STYLES = {
-  Coder: "bg-blue-500/10 border-blue-500/30 text-blue-400",
-  Creative: "bg-pink-500/10 border-pink-500/30 text-pink-400",
-  Strategist: "bg-[#06B6D4]/10 border-[#06B6D4]/30 text-[#06B6D4]",
-  Maker: "bg-[#4F46E5]/10 border-[#4F46E5]/30 text-[#4F46E5]",
+const TEAM_FLAG_BGS = {
+  Argentina: "/playerCard/flag/argentina.jpeg",
+  Brazil: "/playerCard/flag/brazil.jpeg",
+  England: "/playerCard/flag/england.jpeg",
+  Japan: "/playerCard/flag/japan.jpeg",
+  Portugal: "/playerCard/flag/portugal.jpeg",
+  Netherlands: "/playerCard/flag/netherlands.png",
+  Belgium: "/playerCard/flag/belgium.jpeg",
+  Spain: "/playerCard/flag/spain.jpeg",
+  Uruguay: "/playerCard/flag/uruguay.jpeg",
+  Germany: "/playerCard/flag/germany.jpeg",
+  France: "/playerCard/flag/france.jpeg",
+  Croatia: "/playerCard/flag/crotia.jpeg",
 };
-
-// SVG icon components for sidebar tabs
-const TabIcons = {
-  player: (
-    <svg
-      className="w-4 h-4"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    >
-      <circle cx="12" cy="12" r="10" />
-      <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" />
-      <path d="M2 12h20" />
-    </svg>
-  ),
-  edit: (
-    <svg
-      className="w-4 h-4"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    >
-      <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
-      <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
-    </svg>
-  ),
-  password: (
-    <svg
-      className="w-4 h-4"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    >
-      <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
-      <path d="M7 11V7a5 5 0 0 1 10 0v4" />
-    </svg>
-  ),
-  badges: (
-    <svg
-      className="w-4 h-4"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    >
-      <circle cx="12" cy="8" r="6" />
-      <path d="M15.477 12.89L17 22l-5-3-5 3 1.523-9.11" />
-    </svg>
-  ),
-};
-
-const SIDEBAR_TABS = [
-  { id: "player", label: "Player" },
-  { id: "edit", label: "Edit Details" },
-  { id: "password", label: "Reset Password" },
-  { id: "badges", label: "Badges" },
-];
-
-// Dummy badges data
-const DUMMY_BADGES = [
-  {
-    id: 1,
-    name: "First Goal",
-    description: "Completed your first task",
-    icon: "/playerCard/badge/IMG_2353.PNG",
-    earned: false,
-    date: null,
-  },
-  {
-    id: 2,
-    name: "Creative Spark",
-    description: "Submitted a creative project",
-    icon: "/playerCard/badge/IMG_2349.PNG",
-    earned: false,
-    date: null,
-  },
-  {
-    id: 3,
-    name: "Team Player",
-    description: "Collaborated with 5+ members",
-    icon: "/playerCard/badge/people.PNG",
-    earned: false,
-    date: null,
-  },
-  {
-    id: 4,
-    name: "Sprint Champion",
-    description: "Won a design sprint",
-    icon: "/playerCard/badge/IMG_2355.PNG",
-    earned: false,
-    date: null,
-  },
-  {
-    id: 5,
-    name: "Code Warrior",
-    description: "Solved 10 coding challenges",
-    icon: "/playerCard/badge/IMG_2351.PNG",
-    earned: false,
-    date: null,
-  },
-  {
-    id: 6,
-    name: "Content Creator",
-    description: "Published 3 articles",
-    icon: "/playerCard/badge/IMG_2357.PNG",
-    earned: false,
-    date: null,
-  },
-];
 
 function ProfilePageContent({ params }) {
   const router = useRouter();
   const unwrappedParams = React.use(params);
   const id = unwrappedParams.id;
-  const { player: contextPlayer } = usePlayer();
+  const { player: contextPlayer, refreshPlayer } = usePlayer();
 
   const [player, setPlayer] = useState(null);
   const [currentUser, setCurrentUser] = useState(null);
   const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    setCurrentUser(contextPlayer);
-  }, [contextPlayer]);
   const [error, setError] = useState("");
   const [uploading, setUploading] = useState(false);
   const [uploadError, setUploadError] = useState("");
-  const searchParams = useSearchParams();
-  const activeTab =
-    searchParams && searchParams.get("tab") === "badges" ? "badges" : "profile";
 
   // Edit details form state
   const [editForm, setEditForm] = useState({
     name: "",
-    college: "",
     bio: "",
     phone: "",
     muid: "",
-    socials: {
-      website: "",
-      reddit: "",
-      discord: "",
-      twitter: "",
-      github: "",
-      medium: "",
-    },
   });
   const [editSaved, setEditSaved] = useState(false);
   const [editError, setEditError] = useState("");
@@ -184,6 +56,24 @@ function ProfilePageContent({ params }) {
   const [passwordError, setPasswordError] = useState("");
   const [passwordSuccess, setPasswordSuccess] = useState(false);
   const [passwordLoading, setPasswordLoading] = useState(false);
+
+  // Modal Open state
+  const [isEditOpen, setIsEditOpen] = useState(false);
+  const [activeTab, setActiveTab] = useState("profile");
+
+  // Mock preferences state
+  const [prefReminders, setPrefReminders] = useState(true);
+  const [prefSound, setPrefSound] = useState(true);
+  const [prefOvr, setPrefOvr] = useState(true);
+
+  // History state for Recent Activity
+  const [history, setHistory] = useState([]);
+
+  useEffect(() => {
+    setCurrentUser(contextPlayer);
+  }, [contextPlayer]);
+
+  const isOwner = currentUser && player && currentUser.id === player.id;
 
   const handleLogout = async () => {
     try {
@@ -200,52 +90,58 @@ function ProfilePageContent({ params }) {
     }
   };
 
-  useEffect(() => {
+  const fetchProfile = async () => {
     if (!id) return;
+    try {
+      const profileRes = await fetch(
+        `/api/v1/profile/${encodeURIComponent(id)}`,
+      );
+      const profileData = await profileRes.json();
 
-    async function fetchProfile() {
-      try {
-        const profileRes = await fetch(
-          `/api/v1/profile/${encodeURIComponent(id)}`,
-        );
-        const profileData = await profileRes.json();
-
-        if (!profileRes.ok || !profileData.success) {
-          setError(profileData.error?.message || "Profile not found.");
-          setLoading(false);
-          return;
-        }
-
-        setPlayer(profileData.data);
-
-        // Pre-fill edit form
-        const socialsObj = profileData.data.socials || {};
-        setEditForm({
-          name: profileData.data.name || "",
-          college:
-            profileData.data.institution || profileData.data.college || "",
-          bio: profileData.data.bio || "",
-          phone: profileData.data.phone || "",
-          muid: profileData.data.muid || "",
-          socials: {
-            website: socialsObj.website || "",
-            reddit: socialsObj.reddit || "",
-            discord: socialsObj.discord || "",
-            twitter: socialsObj.twitter || "",
-            github: socialsObj.github || "",
-            medium: socialsObj.medium || "",
-          },
-        });
-      } catch (err) {
-        console.error("Error fetching player profile:", err);
-        setError("Unable to load profile. Please try again.");
-      } finally {
+      if (!profileRes.ok || !profileData.success) {
+        setError(profileData.error?.message || "Profile not found.");
         setLoading(false);
+        return;
       }
-    }
 
+      setPlayer(profileData.data);
+
+      // Pre-fill edit form
+      setEditForm({
+        name: profileData.data.name || "",
+        bio: profileData.data.bio || "",
+        phone: profileData.data.phone || "",
+        muid: profileData.data.muid || "",
+      });
+    } catch (err) {
+      console.error("Error fetching player profile:", err);
+      setError("Unable to load profile. Please try again.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
     fetchProfile();
   }, [id]);
+
+  // Fetch points history if owner
+  useEffect(() => {
+    if (isOwner) {
+      async function fetchHistory() {
+        try {
+          const res = await fetch("/api/v1/points-history");
+          const json = await res.json();
+          if (res.ok && json.success) {
+            setHistory(json.data.history || []);
+          }
+        } catch (e) {
+          console.error("Failed to load history inside profile", e);
+        }
+      }
+      fetchHistory();
+    }
+  }, [isOwner]);
 
   const handleAvatarChange = async (e) => {
     const file = e.target.files?.[0];
@@ -280,6 +176,9 @@ function ProfilePageContent({ params }) {
       }
 
       setPlayer((prev) => ({ ...prev, avatar_url: data.avatar_url }));
+      if (isOwner && refreshPlayer) {
+        refreshPlayer();
+      }
     } catch (err) {
       console.error("Avatar upload error:", err);
       setUploadError("A connection error occurred. Please try again.");
@@ -308,11 +207,9 @@ function ProfilePageContent({ params }) {
         },
         body: JSON.stringify({
           name: editForm.name,
-          institution: editForm.college,
           bio: editForm.bio,
           phone: editForm.phone,
           muid: editForm.muid,
-          socials: editForm.socials,
         }),
       });
 
@@ -324,7 +221,13 @@ function ProfilePageContent({ params }) {
 
       setPlayer(resData.data);
       setEditSaved(true);
-      setTimeout(() => setEditSaved(false), 3000);
+      if (refreshPlayer) {
+        refreshPlayer();
+      }
+      setTimeout(() => {
+        setEditSaved(false);
+        setIsEditOpen(false);
+      }, 1500);
     } catch (err) {
       console.error("Profile update error:", err);
       setEditError("A connection error occurred. Please try again.");
@@ -374,7 +277,10 @@ function ProfilePageContent({ params }) {
         newPassword: "",
         confirmPassword: "",
       });
-      setTimeout(() => setPasswordSuccess(false), 5000);
+      setTimeout(() => {
+        setPasswordSuccess(false);
+        setIsEditOpen(false);
+      }, 2000);
     } catch (err) {
       console.error("Password reset error:", err);
       setPasswordError("A connection error occurred. Please try again.");
@@ -383,7 +289,46 @@ function ProfilePageContent({ params }) {
     }
   };
 
-  const isOwner = currentUser && player && currentUser.id === player.id;
+  // Profile Card Download function
+  const [downloadingCard, setDownloadingCard] = useState(false);
+  const handleDownloadCard = async () => {
+    if (downloadingCard) return;
+    setDownloadingCard(true);
+    try {
+      const html2canvas = (await import("html2canvas")).default;
+      const cardElement = document.querySelector(".player-card");
+      if (!cardElement) {
+        setDownloadingCard(false);
+        return;
+      }
+
+      const canvas = await html2canvas(cardElement, {
+        scale: 2,
+        useCORS: true,
+        backgroundColor: null,
+        logging: false,
+      });
+
+      const dataUrl = canvas.toDataURL("image/png");
+      const link = document.createElement("a");
+      link.download = `${player?.user_id || "player"}-card.png`;
+      link.href = dataUrl;
+      link.click();
+    } catch (err) {
+      console.error("Failed to download player card:", err);
+    } finally {
+      setDownloadingCard(false);
+    }
+  };
+
+  // Profile Share Url
+  const [copiedShare, setCopiedShare] = useState(false);
+  const handleShareProfile = () => {
+    const shareUrl = typeof window !== "undefined" ? window.location.href : "";
+    navigator.clipboard.writeText(shareUrl);
+    setCopiedShare(true);
+    setTimeout(() => setCopiedShare(false), 2500);
+  };
 
   if (loading) {
     return (
@@ -393,348 +338,436 @@ function ProfilePageContent({ params }) {
     );
   }
 
-  // Renders the content panel dynamically based on the active sidebar tab.
-
-  const renderPlayerTab = () => (
-    <div className="flex flex-col gap-6">
-      {/* Player Info Header */}
-      <div className="flex items-center gap-4">
-        <div className="relative group">
-          <div className="relative w-16 h-16 rounded-full bg-gradient-to-tr from-[#4F46E5] to-[#06B6D4] p-[2.5px] shadow-[0_0_15px_rgba(6,182,212,0.25)] overflow-hidden">
-            {player.avatar_url ? (
-              <Image
-                src={player.avatar_url}
-                alt={player.name || "Player Avatar"}
-                fill
-                className="rounded-full object-cover"
-              />
-            ) : (
-              <div className="w-full h-full rounded-full bg-[#131927] flex items-center justify-center font-extrabold text-lg text-slate-100 uppercase tracking-wider">
-                {getInitials(player.name)}
-              </div>
-            )}
-            {isOwner && (
-              <label
-                htmlFor="avatar-upload-input"
-                className="absolute inset-0 bg-black/60 flex flex-col items-center justify-center cursor-pointer opacity-0 group-hover:opacity-100 transition-opacity duration-200 text-[10px] text-white font-bold rounded-full"
-              >
-                {uploading ? (
-                  <span className="w-4 h-4 rounded-full border-2 border-white border-t-transparent animate-spin" />
-                ) : (
-                  <span className="mt-0.5">Edit</span>
-                )}
-                <input
-                  id="avatar-upload-input"
-                  type="file"
-                  accept="image/*"
-                  onChange={handleAvatarChange}
-                  className="hidden"
-                  disabled={uploading}
-                />
-              </label>
-            )}
-          </div>
-          {TEAM_FLAGS[player.team] && (
-            <div
-              className="absolute bottom-0 right-0 w-5 h-5 rounded-full border-2 border-[#131927] bg-[#131927] shadow-md flex items-center justify-center overflow-hidden"
-              style={{ transform: "translate(15%, 15%)" }}
+  if (error || !player) {
+    return (
+      <div className="flex items-center justify-center min-h-screen bg-[#070b19]">
+        <div className="w-full max-w-md bg-glass-card border border-white/10 rounded-2xl p-6 md:p-8 backdrop-blur-md shadow-2xl flex flex-col items-center gap-6 text-center">
+          <div className="w-16 h-16 rounded-full bg-red-500/10 border border-red-500/30 flex items-center justify-center">
+            <svg
+              className="w-8 h-8 text-red-400"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
             >
-              <span
-                className={`fi fi-${TEAM_FLAGS[player.team]} scale-125`}
-                aria-hidden="true"
-              />
-            </div>
-          )}
-        </div>
-        <div className="flex flex-col">
-          <h2 className="text-base font-extrabold tracking-wide text-slate-100">
-            {player.name}
-          </h2>
-          <span className="text-xs font-bold text-[#06B6D4] tracking-wider">
-            @{player.user_id}
-          </span>
-        </div>
-      </div>
-
-      {uploadError && (
-        <div className="bg-red-500/10 border border-red-500/30 text-red-400 text-[10px] py-1.5 px-3 rounded-xl font-semibold text-center flex items-center justify-center gap-1.5">
-          <svg
-            className="w-3 h-3 shrink-0"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
+              <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
+              <line x1="12" y1="9" x2="12" y2="13" />
+              <line x1="12" y1="17" x2="12.01" y2="17" />
+            </svg>
+          </div>
+          <div className="flex flex-col gap-2">
+            <h2 className="text-xl font-bold uppercase tracking-wider text-slate-200">
+              Profile Not Found
+            </h2>
+            <p className="text-xs text-slate-400">
+              {error || "The requested player profile could not be found."}
+            </p>
+          </div>
+          <Link
+            href="/leaderboard"
+            className="w-full py-2.5 rounded-xl border border-white/10 hover:border-white/30 text-xs font-bold uppercase tracking-wider transition-colors bg-white/5 text-center text-slate-200"
           >
-            <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
-            <line x1="12" y1="9" x2="12" y2="13" />
-            <line x1="12" y1="17" x2="12.01" y2="17" />
-          </svg>
-          {uploadError}
-        </div>
-      )}
-
-      {/* Points Overview */}
-      <div className="grid grid-cols-3 gap-3">
-        <div className="bg-[#0f1a2e]/80 border border-white/8 rounded-xl p-3 flex flex-col items-center gap-1">
-          <span className="text-[8px] font-black tracking-wider text-slate-500">
-            μPoints
-          </span>
-          <span className="text-lg font-black text-[#06B6D4]">
-            {player.mu_points || 0}
-          </span>
-        </div>
-        <div className="bg-[#0f1a2e]/80 border border-white/8 rounded-xl p-3 flex flex-col items-center gap-1">
-          <span className="text-[8px] font-black uppercase tracking-wider text-slate-500">
-            Rank
-          </span>
-          <span className="text-lg font-black text-[#f0d060]">
-            #{player.rank ?? 1}
-          </span>
-        </div>
-        <div className="bg-[#0f1a2e]/80 border border-white/8 rounded-xl p-3 flex flex-col items-center gap-1">
-          <span className="text-[8px] font-black uppercase tracking-wider text-slate-500">
-            Badges
-          </span>
-          <span className="text-lg font-black text-[#4F46E5]">
-            {DUMMY_BADGES.filter((b) => b.earned).length}
-          </span>
+            Go to Leaderboard
+          </Link>
         </div>
       </div>
+    );
+  }
 
-      {/* Details Grid */}
-      <div className="flex flex-col gap-3">
-        <h3 className="text-[9px] font-black uppercase tracking-[3px] text-slate-500 border-b border-white/5 pb-2">
-          Player Details
-        </h3>
+  // Calculate dynamic stats
+  const xp = player.xp_breakdown || {};
+  const refXp = player.avg_highest_xp && player.avg_highest_xp > 0 ? player.avg_highest_xp : 38;
+  const stats = {
+    creativity: Math.min(99, Math.round(((xp.creativity || 0) / refXp) * 99)),
+    branding: Math.min(99, Math.round(((xp.branding || 0) / refXp) * 99)),
+    innovation: Math.min(99, Math.round(((xp.innovation || 0) / refXp) * 99)),
+    teamwork: Math.min(99, Math.round(((xp.teamwork || 0) / refXp) * 99)),
+    execution: Math.min(99, Math.round(((xp.execution || 0) / refXp) * 99)),
+  };
+  const ovr = Math.round(Object.values(stats).reduce((a, b) => a + b, 0) / 5);
 
-        <div className="grid grid-cols-2 gap-3">
-          <div className="flex flex-col gap-0.5">
-            <span className="text-[8px] font-black uppercase tracking-wider text-slate-600">
-              Team
-            </span>
-            <span className="text-xs font-bold text-slate-200 flex items-center gap-1.5">
-              {TEAM_FLAGS[player.team] && (
-                <span
-                  className={`fi fi-${TEAM_FLAGS[player.team]}`}
-                  aria-hidden="true"
-                />
-              )}
-              {player.team}
-            </span>
-          </div>
-          <div className="flex flex-col gap-0.5">
-            <span className="text-[8px] font-black uppercase tracking-wider text-slate-600">
-              Domain
-            </span>
-            <span
-              className={`inline-block w-fit border px-2 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider leading-none ${DOMAIN_STYLES[player.domain] || "bg-white/5 border-white/10 text-white"}`}
-            >
-              {player.domain}
-            </span>
-          </div>
-          <div className="flex flex-col gap-0.5">
-            <span className="text-[8px] font-black uppercase tracking-wider text-slate-600">
-              College
-            </span>
-            <span className="text-xs font-semibold text-slate-300">
-              {player.institution || ""}
-            </span>
-          </div>
-          <div className="flex flex-col gap-0.5">
-            <span className="text-[8px] font-black uppercase tracking-wider text-slate-600">
-              μID
-            </span>
-            <span className="text-xs font-semibold text-[#06B6D4] font-bold">
-              {player.muid || "Not Linked"}
-            </span>
-          </div>
-          <div className="flex flex-col gap-0.5">
-            <span className="text-[8px] font-black uppercase tracking-wider text-slate-600">
-              Joined
-            </span>
-            <span className="text-xs font-semibold text-slate-300">
-              {new Date(player.created_at || Date.now()).toLocaleDateString(
-                undefined,
-                {
-                  year: "numeric",
-                  month: "short",
-                  day: "numeric",
-                },
-              )}
-            </span>
-          </div>
-        </div>
-      </div>
+  const totalXp =
+    (xp.creativity || 0) +
+    (xp.branding || 0) +
+    (xp.innovation || 0) +
+    (xp.teamwork || 0) +
+    (xp.execution || 0);
+  const xpPerLevel = 1500;
+  const level = Math.floor(totalXp / xpPerLevel) + 1;
+  const xpInLevel = totalXp % xpPerLevel;
+  const xpPercent = Math.round((xpInLevel / xpPerLevel) * 100) || 0;
 
-      {/* Bio */}
-      <div className="flex flex-col gap-1.5">
-        <h3 className="text-[9px] font-black uppercase tracking-[3px] text-slate-500 border-b border-white/5 pb-2">
-          Bio
-        </h3>
-        <p className="text-[11px] text-slate-400 leading-relaxed">
-          {player.bio || ""}
-        </p>
-      </div>
-
-      {/* Social Links */}
-      {player.socials && Object.values(player.socials).some((v) => v) && (
-        <div className="flex flex-col gap-1.5 mt-2">
-          <h3 className="text-[9px] font-black uppercase tracking-[3px] text-slate-500 border-b border-white/5 pb-2">
-            Socials
-          </h3>
-          <div className="flex flex-wrap gap-2 pt-1">
-            {player.socials.website && (
-              <a
-                href={
-                  player.socials.website.startsWith("http")
-                    ? player.socials.website
-                    : `https://${player.socials.website}`
-                }
-                target="_blank"
-                rel="noopener noreferrer"
-                className="px-2.5 py-1 rounded bg-[#4F46E5]/10 border border-[#4F46E5]/20 hover:bg-[#4F46E5]/25 hover:border-[#4F46E5]/50 text-[10px] text-indigo-400 font-bold transition-all flex items-center gap-1.5"
-              >
-                <svg
-                  className="w-3 h-3 fill-none stroke-current"
-                  viewBox="0 0 24 24"
-                  strokeWidth="2.5"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                >
-                  <circle cx="12" cy="12" r="10" />
-                  <line x1="2" y1="12" x2="22" y2="12" />
-                  <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" />
-                </svg>
-                Website
-              </a>
-            )}
-            {player.socials.github && (
-              <a
-                href={
-                  player.socials.github.startsWith("http")
-                    ? player.socials.github
-                    : `https://github.com/${player.socials.github}`
-                }
-                target="_blank"
-                rel="noopener noreferrer"
-                className="px-2.5 py-1 rounded bg-slate-800/40 border border-slate-700 hover:bg-slate-700/60 text-[10px] text-slate-300 font-bold transition-all flex items-center gap-1.5"
-              >
-                <svg className="w-3 h-3 fill-current" viewBox="0 0 24 24">
-                  <path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z" />
-                </svg>
-                GitHub
-              </a>
-            )}
-            {player.socials.twitter && (
-              <a
-                href={
-                  player.socials.twitter.startsWith("http")
-                    ? player.socials.twitter
-                    : `https://twitter.com/${player.socials.twitter}`
-                }
-                target="_blank"
-                rel="noopener noreferrer"
-                className="px-2.5 py-1 rounded bg-[#1DA1F2]/10 border border-[#1DA1F2]/20 hover:bg-[#1DA1F2]/20 text-[10px] text-[#1DA1F2] font-bold transition-all flex items-center gap-1.5"
-              >
-                <svg className="w-3 h-3 fill-current" viewBox="0 0 24 24">
-                  <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
-                </svg>
-                Twitter
-              </a>
-            )}
-            {player.socials.reddit && (
-              <a
-                href={
-                  player.socials.reddit.startsWith("http")
-                    ? player.socials.reddit
-                    : `https://reddit.com/user/${player.socials.reddit}`
-                }
-                target="_blank"
-                rel="noopener noreferrer"
-                className="px-2.5 py-1 rounded bg-[#FF4500]/10 border border-[#FF4500]/20 hover:bg-[#FF4500]/20 text-[10px] text-[#FF4500] font-bold transition-all flex items-center gap-1.5"
-              >
-                <svg className="w-3 h-3 fill-current" viewBox="0 0 24 24">
-                  <path d="M24 11.5c0-1.65-1.35-3-3-3-.96 0-1.86.48-2.42 1.24-1.64-1-3.85-1.64-6.29-1.72l1.32-4.16 4.31.92c.04.96.83 1.73 1.8 1.73 1 0 1.81-.81 1.81-1.81s-.81-1.81-1.81-1.81c-.74 0-1.38.44-1.66 1.07l-4.73-1c-.22-.05-.44.09-.5.31l-1.5 4.72c-2.51.05-4.79.7-6.47 1.72-.56-.75-1.46-1.22-2.41-1.22-1.65 0-3 1.35-3 3 0 1.1.6 2.06 1.49 2.58-.03.26-.05.52-.05.78 0 3.86 4.49 7 10 7s10-3.14 10-7c0-.26-.02-.52-.05-.78.89-.52 1.49-1.48 1.49-2.58zm-16 1.5c0-1.1.9-2 2-2s2 .9 2 2-.9 2-2 2-2-.9-2-2zm9 4c-1.82 1.82-5.18 1.82-7 0-.2-.2-.2-.51 0-.71.2-.2.51-.2.71 0 1.43 1.43 4.16 1.43 5.58 0 .2-.2.51-.2.71 0 .2.2.2.51 0 .71zm-.5-2c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2z" />
-                </svg>
-                Reddit
-              </a>
-            )}
-            {player.socials.medium && (
-              <a
-                href={
-                  player.socials.medium.startsWith("http")
-                    ? player.socials.medium
-                    : `https://medium.com/@${player.socials.medium}`
-                }
-                target="_blank"
-                rel="noopener noreferrer"
-                className="px-2.5 py-1 rounded bg-slate-200/5 border border-slate-700 hover:bg-slate-700/30 text-[10px] text-slate-300 font-bold transition-all flex items-center gap-1.5"
-              >
-                <svg className="w-3 h-3 fill-current" viewBox="0 0 24 24">
-                  <path d="M13.54 12a6.8 6.8 0 01-6.77 6.82A6.8 6.8 0 010 12a6.8 6.8 0 016.77-6.82A6.8 6.8 0 0113.54 12zm7.42 0c0 3.54-1.51 6.42-3.38 6.42-1.87 0-3.39-2.88-3.39-6.42s1.52-6.42 3.39-6.42 3.38 2.88 3.38 6.42zm3.04 0c0 3.21-.4 5.82-.9 5.82s-.9-2.61-.9-5.82.4-5.82.9-5.82.9 2.61.9 5.82z" />
-                </svg>
-                Medium
-              </a>
-            )}
-            {player.socials.discord && (
-              <span className="px-2.5 py-1 rounded bg-[#5865F2]/10 border border-[#5865F2]/20 text-[10px] text-[#5865F2] font-bold transition-all flex items-center gap-1.5 select-text">
-                <svg className="w-3 h-3 fill-current" viewBox="0 0 24 24">
-                  <path d="M20.317 4.37a19.791 19.791 0 00-4.885-1.515.074.074 0 00-.079.037c-.21.375-.444.864-.608 1.25a18.27 18.27 0 00-5.487 0 12.64 12.64 0 00-.617-1.25.077.077 0 00-.079-.037A19.736 19.736 0 003.677 4.37a.07.07 0 00-.032.027C.533 9.046-.32 13.58.099 18.057a.082.082 0 00.031.057 19.9 19.9 0 005.993 3.03.078.078 0 00.084-.028c.462-.63.874-1.295 1.226-1.994a.076.076 0 00-.041-.106 13.107 13.107 0 01-1.873-.894.077.077 0 01-.008-.128c.126-.093.252-.19.372-.287a.075.075 0 01.077-.011c3.92 1.793 8.18 1.793 12.061 0a.073.073 0 01.078.009c.12.099.246.195.373.289a.077.077 0 01-.006.127 12.299 12.299 0 01-1.873.894.077.077 0 00-.041.107c.36.698.772 1.362 1.225 1.993a.076.076 0 00.084.028 19.839 19.839 0 006.002-3.03.077.077 0 00.032-.054c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 00-.031-.03zM8.02 15.33c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.956-2.419 2.156-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.956 2.418-2.156 2.418zm7.975 0c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.955-2.419 2.156-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.946 2.418-2.156 2.418z" />
-                </svg>
-                Discord: {player.socials.discord}
-              </span>
-            )}
-          </div>
-        </div>
-      )}
-    </div>
+  // Nation standing data
+  const nationRank = player.rank ? Math.max(1, (player.rank % 6) + 1) : 4;
+  const nationContribution = Math.min(95, 30 + (player.mu_points % 60));
+  const nationPercentage = Math.max(
+    1,
+    Math.min(99, 25 - Math.floor(player.mu_points / 20)),
   );
 
-  const renderEditTab = () => (
-    <div className="flex flex-col gap-6">
-      <div className="flex flex-col gap-1">
-        <h3 className="text-sm font-extrabold text-slate-100 tracking-wide">
-          Edit Details
-        </h3>
-        <p className="text-[10px] text-slate-500">
-          Update your profile information
-        </p>
+  const bannerBg =
+    player.team && TEAM_FLAG_BGS[player.team]
+      ? TEAM_FLAG_BGS[player.team]
+      : "/bg_img.webp";
+
+  // Referral count
+  let referralCount = 0;
+  if (player.tasks) {
+    if (typeof player.tasks === "object") {
+      referralCount = player.tasks.referal || 0;
+    } else if (typeof player.tasks === "string") {
+      try {
+        const parsed = JSON.parse(player.tasks);
+        referralCount = parsed.referal || 0;
+      } catch (e) {}
+    }
+  }
+
+  const performanceList = [
+    {
+      label: "Goals",
+      value: Math.floor(player.mu_points / 7),
+      icon: (
+        <svg
+          className="w-5 h-5 text-indigo-400"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2"
+        >
+          <circle cx="12" cy="12" r="10" />
+          <path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20" />
+          <path d="M2 12h20" />
+        </svg>
+      ),
+    },
+    {
+      label: "Assists",
+      value: referralCount,
+      icon: (
+        <svg
+          className="w-5 h-5 text-indigo-400"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2"
+        >
+          <path d="M4 16v-6a8 8 0 1 1 16 0v6M2 16h20M6 21h12" />
+        </svg>
+      ),
+    },
+    {
+      label: "Predictions",
+      value: player.predictions_count || 0,
+      icon: (
+        <svg
+          className="w-5 h-5 text-indigo-400"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2"
+        >
+          <circle cx="12" cy="12" r="10" />
+          <circle cx="12" cy="12" r="6" />
+          <circle cx="12" cy="12" r="2" />
+        </svg>
+      ),
+    },
+    {
+      label: "Challenges Won",
+      value: player.completed_tasks_count || 0,
+      icon: (
+        <svg
+          className="w-5 h-5 text-indigo-400"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2"
+        >
+          <path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6M18 9h1.5a2.5 2.5 0 0 0 0-5H18M4 22h16M10 14.66V17c0 .55-.45 1-1 1H4v2h16v-2h-5c-.55 0-1-.45-1-1v-2.34M12 2a4 4 0 0 0-4 4v5c0 2.2 1.8 4 4 4s4-1.8 4-4V6a4 4 0 0 0-4-4z" />
+        </svg>
+      ),
+    },
+    {
+      label: "Top 3 Finishes",
+      value: Math.floor((player.predictions_count || 0) / 3),
+      icon: (
+        <svg
+          className="w-5 h-5 text-indigo-400"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2"
+        >
+          <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
+        </svg>
+      ),
+    },
+    {
+      label: "Win Rate",
+      value: `${Math.min(95, Math.max(20, 50 + ((player.predictions_count || 0) % 35)))}%`,
+      icon: (
+        <svg
+          className="w-5 h-5 text-indigo-400"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2"
+        >
+          <path d="M3 3v18h18M18.7 8l-5.1 5.2-2.8-2.7L7 14.3" />
+        </svg>
+      ),
+    },
+  ];
+
+  const achievementsList = [
+    {
+      id: "ref",
+      name: "Referral Master",
+      desc: "Earned on 12 May 2026",
+      earned: referralCount > 0,
+      icon: "/playerCard/badge/Object-2.png",
+    },
+    {
+      id: "pred",
+      name: "Prediction Pro",
+      desc: "Earned on 10 May 2026",
+      earned: (player.predictions_count || 0) > 0,
+      icon: "/playerCard/badge/Object-1.png",
+    },
+    {
+      id: "streak",
+      name: "7 Day Streak",
+      desc: "Earned on 8 May 2026",
+      earned: player.mu_points >= 10,
+      icon: "/playerCard/badge/Object.png",
+    },
+    {
+      id: "goal",
+      name: "First Goal",
+      desc: "Earned on 5 May 2026",
+      earned: (player.completed_tasks_count || 0) > 0,
+      icon: "/playerCard/badge/Object-6.png",
+    },
+    {
+      id: "nation",
+      name: "Nation Builder",
+      desc: "Earned on 1 May 2026",
+      earned: !!player.team,
+      icon: "/playerCard/badge/Object-3.png",
+    },
+    {
+      id: "champ",
+      name: "World Champion",
+      desc: "Locked",
+      earned: player.rank === 1,
+      icon: "/playerCard/badge/Object-5.png",
+    },
+    {
+      id: "top10",
+      name: "Top 10 Predictor",
+      desc: "Locked",
+      earned: player.rank <= 10,
+      icon: "/playerCard/badge/Object-4.png",
+    },
+  ];
+
+  function getTeamName(teamName) {
+    return teamName || "Free Agent";
+  }
+
+  const countryCode = TEAM_FLAGS[player.team] || "un";
+
+  const openModalWithTab = (tab) => {
+    setActiveTab(tab);
+    setIsEditOpen(true);
+  };
+
+  return (
+    <div className="w-full relative flex flex-col gap-6 pt-20 sm:pt-24 pb-12 select-none">
+      {/* Stadium background */}
+      <div
+        className="fixed inset-0 z-0 bg-cover bg-center pointer-events-none"
+        style={{ backgroundImage: `url('/stadium_bg_pruble.webp')` }}
+      />
+      <div className="fixed inset-0 z-0 bg-gradient-to-b from-[#04050a]/80 via-[#04050a]/60 to-[#04050a]/90 pointer-events-none" />
+
+      {/* Top Header Section */}
+      <div className="relative z-10 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 px-4 sm:px-6 md:px-8 mt-4">
+        <div className="flex flex-col">
+          <h1 className="text-2xl font-extrabold tracking-wider text-slate-100 flex items-center gap-2">
+            PLAYER <span className="text-[#8B5CF6]">PROFILE</span>
+          </h1>
+          <div className="flex items-center gap-1 mt-1 text-xs font-semibold text-slate-400">
+            <Link
+              href="/dashboard"
+              className="hover:text-white transition-colors"
+            >
+              Home
+            </Link>
+            <span className="text-slate-600 px-1">&gt;</span>
+            <span className="text-slate-300">Profile</span>
+          </div>
+        </div>
+
+        <button
+          onClick={handleShareProfile}
+          className="cursor-pointer px-4 py-2 bg-white/5 border border-white/10 hover:border-[#8B5CF6]/50 hover:bg-[#8B5CF6]/10 rounded-xl text-xs font-semibold tracking-wide text-slate-300 hover:text-white transition-all flex items-center gap-2 shadow-lg"
+        >
+          <svg
+            className="w-3.5 h-3.5"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2.5"
+            viewBox="0 0 24 24"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              d="M7.217 10.907a2.25 2.25 0 100 2.186m0-2.186l5.343-2.73m-5.343 2.73l5.34 2.73m0 0a2.25 2.25 0 103.933-2.185 2.25 2.25 0 00-3.933 2.185zm-.007-12.75a2.25 2.25 0 103.933-2.184 2.25 2.25 0 00-3.933 2.184z"
+            />
+          </svg>
+          {copiedShare ? "Copied Link!" : "Share Profile"}
+        </button>
       </div>
 
-      <form onSubmit={handleEditSubmit} className="flex flex-col gap-4">
-        {/* Avatar Upload Field */}
-        <div className="flex flex-col gap-2.5 pb-3 border-b border-white/5">
-          <label className="text-[9px] font-black uppercase tracking-wider text-slate-500">
-            Profile Avatar
-          </label>
-          <div className="flex items-center gap-4">
-            <div className="relative w-16 h-16 rounded-full bg-gradient-to-tr from-[#4F46E5] to-[#06B6D4] p-[2.5px] shadow-[0_0_15px_rgba(6,182,212,0.25)] overflow-hidden shrink-0">
-              {player.avatar_url ? (
-                <Image
-                  src={player.avatar_url}
-                  alt={player.name || "Player Avatar"}
-                  fill
-                  className="rounded-full object-cover"
-                />
-              ) : (
-                <div className="w-full h-full rounded-full bg-[#131927] flex items-center justify-center font-extrabold text-lg text-slate-100 uppercase tracking-wider">
-                  {getInitials(player.name)}
-                </div>
-              )}
-              {uploading && (
-                <div className="absolute inset-0 bg-black/60 flex items-center justify-center rounded-full">
-                  <span className="w-4 h-4 rounded-full border-2 border-white border-t-transparent animate-spin" />
-                </div>
+      {/* Main Layout Card */}
+      <div className="relative z-10 w-full max-w-[1360px] mx-auto px-4 sm:px-6 md:px-8 flex flex-col gap-6">
+        {/* Large Player Arena Banner Card */}
+        <div className="relative overflow-hidden rounded-3xl border border-white/8 bg-[#090715]/40 backdrop-blur-md p-6 md:p-8 flex flex-col md:flex-row items-center justify-between gap-6 shadow-2xl">
+          {/* Custom Banner Flag Background */}
+          <div
+            className="absolute inset-0 z-0 bg-cover bg-center opacity-[0.35] pointer-events-none"
+            style={{ backgroundImage: `url('${bannerBg}')` }}
+          />
+          {/* Soccer Field Lines Overlay */}
+          <div
+            className="absolute inset-0 z-0 bg-cover bg-center opacity-[0.20] mix-blend-overlay pointer-events-none"
+            style={{ backgroundImage: `url('/bg_img.webp')` }}
+          />
+          <div className="absolute inset-0 bg-gradient-to-r from-[#0d0724]/90 via-[#0a0c16]/80 to-[#0b061d]/90 z-0 pointer-events-none" />
+
+          {/* Banner Left Details */}
+          <div className="relative z-10 flex flex-col sm:flex-row items-center gap-6 text-center sm:text-left">
+            <div className="relative">
+              <div className="relative w-24 h-24 rounded-full bg-gradient-to-tr from-[#8B5CF6] via-transparent to-[#06B6D4] p-[3px] shadow-[0_0_20px_rgba(139,92,246,0.45)] overflow-hidden">
+                {player.avatar_url ? (
+                  <Image
+                    src={player.avatar_url}
+                    alt={player.name}
+                    fill
+                    className="rounded-full object-cover"
+                  />
+                ) : (
+                  <div className="w-full h-full rounded-full bg-[#121626] flex items-center justify-center font-black text-3xl text-slate-100 uppercase tracking-widest">
+                    {getInitials(player.name)}
+                  </div>
+                )}
+              </div>
+
+              {isOwner && (
+                <label
+                  htmlFor="banner-avatar-upload"
+                  className="absolute bottom-0 right-0 w-8 h-8 bg-[#8B5CF6] hover:bg-[#7C3AED] text-white flex items-center justify-center rounded-full cursor-pointer shadow-lg border-2 border-[#090715] transition-all transform hover:scale-110 active:scale-95"
+                  title="Edit Avatar"
+                >
+                  {uploading ? (
+                    <span className="w-4 h-4 rounded-full border-2 border-white border-t-transparent animate-spin" />
+                  ) : (
+                    <svg
+                      className="w-4 h-4"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2.5"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0115.75 21H5.25A2.25 2.25 0 013 18.75V8.25A2.25 2.25 0 015.25 6H10"
+                      />
+                    </svg>
+                  )}
+                  <input
+                    id="banner-avatar-upload"
+                    type="file"
+                    accept="image/*"
+                    onChange={handleAvatarChange}
+                    className="hidden"
+                    disabled={uploading}
+                  />
+                </label>
               )}
             </div>
 
-            <div className="flex flex-col gap-1.5 flex-1">
-              <label
-                htmlFor="avatar-upload-edit"
-                className="w-fit px-3 py-1.5 rounded-lg bg-[#4F46E5]/10 border border-[#4F46E5]/30 hover:bg-[#4F46E5]/25 hover:border-[#4F46E5]/50 text-[10px] text-indigo-400 font-bold transition-all cursor-pointer flex items-center gap-1.5"
+            <div className="flex flex-col gap-1">
+              <div className="flex items-center justify-center sm:justify-start gap-2">
+                <h2 className="text-2xl font-extrabold tracking-wide text-white uppercase drop-shadow-[0_0_12px_rgba(255,255,255,0.15)]">
+                  {player.name}
+                </h2>
+              </div>
+
+              <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2.5 mt-1 text-xs">
+                {player.team && (
+                  <span className="font-semibold text-slate-300 flex items-center gap-1.5">
+                    <span
+                      className={`fi fi-${countryCode} rounded-sm shadow-sm scale-110`}
+                    />
+                    {getTeamName(player.team)}
+                  </span>
+                )}
+                <span
+                  className="w-4 h-4 bg-violet-600/95 text-white flex items-center justify-center rounded-full text-[9px] font-black shadow-md shadow-violet-600/30"
+                  title="Verified Player"
+                >
+                  ✓
+                </span>
+              </div>
+
+              <div className="flex flex-wrap items-center justify-center sm:justify-start gap-3 mt-2">
+                <div className="flex items-center gap-2 bg-[#8B5CF6]/15 border border-[#8B5CF6]/35 rounded-full px-3 py-0.5">
+                  <span className="text-[10px] font-black uppercase text-[#a78bfa] tracking-wider">
+                    LVL {level}
+                  </span>
+                </div>
+                <span className="text-xs font-semibold text-slate-300">
+                  {xpInLevel} / {xpPerLevel} XP
+                </span>
+              </div>
+            </div>
+          </div>
+
+          {/* Banner Right Controls */}
+          <div className="relative z-10 flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full sm:w-auto justify-center shrink-0">
+            <button
+              onClick={handleDownloadCard}
+              className="cursor-pointer flex-1 sm:flex-none px-4 py-2.5 bg-white/5 border border-white/10 hover:border-white/20 hover:bg-white/10 rounded-xl text-xs font-semibold tracking-wide text-slate-300 hover:text-white transition-all flex items-center justify-center gap-2 shadow-lg w-full sm:w-auto"
+            >
+              <svg
+                className="w-4 h-4"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2.5"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3"
+                />
+              </svg>
+              {downloadingCard ? "Generating..." : "Download Card"}
+            </button>
+
+            {isOwner && (
+              <button
+                onClick={() => openModalWithTab("profile")}
+                className="cursor-pointer flex-1 sm:flex-none px-4 py-2.5 bg-gradient-to-r from-[#8B5CF6] to-[#7C3AED] hover:from-[#7C3AED] hover:to-[#6D28D9] text-white rounded-xl text-xs font-semibold tracking-wide transition-all flex items-center justify-center gap-2 shadow-lg shadow-[#8B5CF6]/20 hover:-translate-y-0.5 w-full sm:w-auto"
               >
                 <svg
-                  className="w-3.5 h-3.5"
+                  className="w-4 h-4"
                   fill="none"
                   stroke="currentColor"
                   strokeWidth="2.5"
@@ -743,651 +776,778 @@ function ProfilePageContent({ params }) {
                   <path
                     strokeLinecap="round"
                     strokeLinejoin="round"
-                    d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5"
+                    d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0115.75 21H5.25A2.25 2.25 0 013 18.75V8.25A2.25 2.25 0 015.25 6H10"
                   />
                 </svg>
-                {player.avatar_url ? "Change Avatar" : "Upload Avatar"}
-              </label>
-              <input
-                id="avatar-upload-edit"
-                type="file"
-                accept="image/*"
-                onChange={handleAvatarChange}
-                className="hidden"
-                disabled={uploading}
-              />
-              <span className="text-[8px] text-slate-500 font-semibold leading-normal">
-                Supports JPEG, PNG, WEBP, or GIF. Max 3MB. Saved instantly.
-              </span>
-            </div>
+                Edit Profile
+              </button>
+            )}
           </div>
-          {uploadError && (
-            <div className="bg-red-500/10 border border-red-500/30 text-red-400 text-[9px] py-1.5 px-3 rounded-lg font-semibold flex items-center gap-1.5 mt-1">
+        </div>
+
+        {uploadError && (
+          <div className="bg-red-500/10 border border-red-500/30 text-red-400 text-xs py-2.5 px-4 rounded-2xl font-bold text-center flex items-center justify-center gap-2">
+            <svg
+              className="w-4 h-4 shrink-0"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+            >
+              <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
+              <line x1="12" y1="9" x2="12" y2="13" />
+              <line x1="12" y1="17" x2="12.01" y2="17" />
+            </svg>
+            {uploadError}
+          </div>
+        )}
+
+        {/* WhatsApp Group Banner if Owner */}
+        {isOwner && (
+          <div className="w-full flex justify-center mt-1 relative z-10">
+            <a
+              href={
+                TEAM_WHATSAPP_LINKS[player.team] || "https://chat.whatsapp.com/"
+              }
+              target="_blank"
+              rel="noopener noreferrer"
+              className="cursor-pointer bg-[#25D366] text-white hover:bg-[#20ba5a] w-full py-3 rounded-2xl text-[10px] font-black tracking-widest uppercase transition-all flex items-center justify-center gap-2 shadow-[0_0_15px_rgba(37,211,102,0.2)] hover:shadow-[0_0_25px_rgba(37,211,102,0.4)] hover:-translate-y-0.5 border border-white/5"
+            >
               <svg
-                className="w-3.5 h-3.5 text-red-400 shrink-0"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
+                xmlns="http://www.w3.org/2000/svg"
+                viewBox="0 0 32 32"
+                className="w-4.5 h-4.5 fill-current"
               >
-                <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
-                <line x1="12" y1="9" x2="12" y2="13" />
-                <line x1="12" y1="17" x2="12.01" y2="17" />
+                <path d="M16.004 3C8.82 3 3 8.82 3 16.004c0 2.293.598 4.532 1.734 6.504L3 29l6.676-1.706a12.95 12.95 0 0 0 6.328 1.636C23.18 28.93 29 23.11 29 15.926 29 8.82 23.18 3 16.004 3zm0 23.798a10.74 10.74 0 0 1-5.47-1.496l-.392-.232-3.96 1.01 1.056-3.86-.254-.4a10.72 10.72 0 0 1-1.646-5.816c0-5.94 4.83-10.77 10.766-10.77 2.878 0 5.584 1.12 7.617 3.154a10.69 10.69 0 0 1 3.148 7.612c0 5.94-4.83 10.798-10.766 10.798zm5.906-8.052c-.322-.16-1.904-.94-2.198-1.046-.294-.106-.508-.16-.722.16-.214.32-.83 1.046-1.018 1.26-.186.214-.374.24-.694.08-.32-.16-1.35-.498-2.572-1.586-.95-.846-1.59-1.89-1.776-2.21-.188-.32-.02-.492.14-.65.144-.144.32-.374.48-.56.16-.188.214-.32.32-.534.106-.214.054-.4-.026-.56-.08-.16-.722-1.74-.99-2.386-.26-.626-.524-.54-.722-.55l-.614-.01c-.214 0-.56.08-.854.4-.294.32-1.122 1.096-1.122 2.674 0 1.578 1.15 3.102 1.31 3.316.16.214 2.262 3.454 5.48 4.842.766.33 1.364.526 1.83.674.77.244 1.47.21 2.024.128.618-.092 1.904-.778 2.172-1.53.268-.752.268-1.396.188-1.53-.08-.132-.294-.212-.616-.372z" />
               </svg>
-              {uploadError}
-            </div>
-          )}
-        </div>
-
-        <div className="flex flex-col gap-1.5">
-          <label className="text-[9px] font-black uppercase tracking-wider text-slate-500">
-            Full Name
-          </label>
-          <input
-            type="text"
-            value={editForm.name}
-            onChange={(e) =>
-              setEditForm((prev) => ({ ...prev, name: e.target.value }))
-            }
-            className="w-full bg-[#0f1a2e] border border-white/10 rounded-xl px-3 py-2.5 text-xs text-slate-200 font-semibold focus:outline-none focus:border-[#4F46E5]/50 transition-colors placeholder:text-slate-600"
-            placeholder="Enter your name"
-          />
-        </div>
-
-        <div className="flex flex-col gap-1.5">
-          <label className="text-[9px] font-black uppercase tracking-wider text-slate-500">
-            College
-          </label>
-          <input
-            type="text"
-            value={editForm.college}
-            onChange={(e) =>
-              setEditForm((prev) => ({ ...prev, college: e.target.value }))
-            }
-            className="w-full bg-[#0f1a2e] border border-white/10 rounded-xl px-3 py-2.5 text-xs text-slate-200 font-semibold focus:outline-none focus:border-[#4F46E5]/50 transition-colors placeholder:text-slate-600"
-            placeholder="Enter your college"
-          />
-        </div>
-
-        <div className="flex flex-col gap-1.5">
-          <label className="text-[9px] font-black uppercase tracking-wider text-slate-500">
-            μID (µLearn ID)
-          </label>
-          <input
-            type="text"
-            value={editForm.muid}
-            onChange={(e) =>
-              setEditForm((prev) => ({ ...prev, muid: e.target.value }))
-            }
-            className="w-full bg-[#0f1a2e] border border-white/10 rounded-xl px-3 py-2.5 text-xs text-slate-200 font-semibold focus:outline-none focus:border-[#4F46E5]/50 transition-colors placeholder:text-slate-600"
-            placeholder="e.g. username@mulearn"
-          />
-        </div>
-
-        <div className="flex flex-col gap-1.5">
-          <label className="text-[9px] font-black uppercase tracking-wider text-slate-500">
-            Phone
-          </label>
-          <input
-            type="tel"
-            value={editForm.phone}
-            onChange={(e) =>
-              setEditForm((prev) => ({ ...prev, phone: e.target.value }))
-            }
-            className="w-full bg-[#0f1a2e] border border-white/10 rounded-xl px-3 py-2.5 text-xs text-slate-200 font-semibold focus:outline-none focus:border-[#4F46E5]/50 transition-colors placeholder:text-slate-600"
-            placeholder="Enter phone number"
-          />
-        </div>
-
-        <div className="flex flex-col gap-1.5">
-          <label className="text-[9px] font-black uppercase tracking-wider text-slate-500">
-            Bio
-          </label>
-          <textarea
-            value={editForm.bio}
-            onChange={(e) =>
-              setEditForm((prev) => ({ ...prev, bio: e.target.value }))
-            }
-            rows={3}
-            className="w-full bg-[#0f1a2e] border border-white/10 rounded-xl px-3 py-2.5 text-xs text-slate-200 font-semibold focus:outline-none focus:border-[#4F46E5]/50 transition-colors resize-none placeholder:text-slate-600"
-            placeholder="Tell us about yourself"
-          />
-        </div>
-
-        <div className="border-t border-white/5 pt-3 mt-1 flex flex-col gap-3">
-          <h4 className="text-[10px] font-black uppercase tracking-wider text-slate-400">
-            Social Media Links
-          </h4>
-          <div className="grid grid-cols-2 gap-3">
-            <div className="flex flex-col gap-1">
-              <label className="text-[8px] font-bold uppercase tracking-wider text-slate-500">
-                Personal Website
-              </label>
-              <input
-                type="text"
-                value={editForm.socials?.website || ""}
-                onChange={(e) =>
-                  setEditForm((prev) => ({
-                    ...prev,
-                    socials: { ...prev.socials, website: e.target.value },
-                  }))
-                }
-                className="w-full bg-[#0f1a2e] border border-white/10 rounded-lg px-2.5 py-2 text-[10px] text-slate-200 font-semibold focus:outline-none focus:border-[#4F46E5]/50 transition-colors placeholder:text-slate-600"
-                placeholder="website.com"
-              />
-            </div>
-
-            <div className="flex flex-col gap-1">
-              <label className="text-[8px] font-bold uppercase tracking-wider text-slate-500">
-                Twitter
-              </label>
-              <input
-                type="text"
-                value={editForm.socials?.twitter || ""}
-                onChange={(e) =>
-                  setEditForm((prev) => ({
-                    ...prev,
-                    socials: { ...prev.socials, twitter: e.target.value },
-                  }))
-                }
-                className="w-full bg-[#0f1a2e] border border-white/10 rounded-lg px-2.5 py-2 text-[10px] text-slate-200 font-semibold focus:outline-none focus:border-[#4F46E5]/50 transition-colors placeholder:text-slate-600"
-                placeholder="Twitter username"
-              />
-            </div>
-
-            <div className="flex flex-col gap-1">
-              <label className="text-[8px] font-bold uppercase tracking-wider text-slate-500">
-                GitHub
-              </label>
-              <input
-                type="text"
-                value={editForm.socials?.github || ""}
-                onChange={(e) =>
-                  setEditForm((prev) => ({
-                    ...prev,
-                    socials: { ...prev.socials, github: e.target.value },
-                  }))
-                }
-                className="w-full bg-[#0f1a2e] border border-white/10 rounded-lg px-2.5 py-2 text-[10px] text-slate-200 font-semibold focus:outline-none focus:border-[#4F46E5]/50 transition-colors placeholder:text-slate-600"
-                placeholder="GitHub username"
-              />
-            </div>
-
-            <div className="flex flex-col gap-1">
-              <label className="text-[8px] font-bold uppercase tracking-wider text-slate-500">
-                Reddit
-              </label>
-              <input
-                type="text"
-                value={editForm.socials?.reddit || ""}
-                onChange={(e) =>
-                  setEditForm((prev) => ({
-                    ...prev,
-                    socials: { ...prev.socials, reddit: e.target.value },
-                  }))
-                }
-                className="w-full bg-[#0f1a2e] border border-white/10 rounded-lg px-2.5 py-2 text-[10px] text-slate-200 font-semibold focus:outline-none focus:border-[#4F46E5]/50 transition-colors placeholder:text-slate-600"
-                placeholder="Reddit username"
-              />
-            </div>
-
-            <div className="flex flex-col gap-1">
-              <label className="text-[8px] font-bold uppercase tracking-wider text-slate-500">
-                Medium
-              </label>
-              <input
-                type="text"
-                value={editForm.socials?.medium || ""}
-                onChange={(e) =>
-                  setEditForm((prev) => ({
-                    ...prev,
-                    socials: { ...prev.socials, medium: e.target.value },
-                  }))
-                }
-                className="w-full bg-[#0f1a2e] border border-white/10 rounded-lg px-2.5 py-2 text-[10px] text-slate-200 font-semibold focus:outline-none focus:border-[#4F46E5]/50 transition-colors placeholder:text-slate-600"
-                placeholder="Medium username"
-              />
-            </div>
-
-            <div className="flex flex-col gap-1">
-              <label className="text-[8px] font-bold uppercase tracking-wider text-slate-500">
-                Discord
-              </label>
-              <input
-                type="text"
-                value={editForm.socials?.discord || ""}
-                onChange={(e) =>
-                  setEditForm((prev) => ({
-                    ...prev,
-                    socials: { ...prev.socials, discord: e.target.value },
-                  }))
-                }
-                className="w-full bg-[#0f1a2e] border border-white/10 rounded-lg px-2.5 py-2 text-[10px] text-slate-200 font-semibold focus:outline-none focus:border-[#4F46E5]/50 transition-colors placeholder:text-slate-600"
-                placeholder="Discord username"
-              />
-            </div>
-          </div>
-        </div>
-
-        {editError && (
-          <div className="bg-red-500/10 border border-red-500/30 text-red-400 text-[10px] py-2 px-3 rounded-xl font-semibold text-center flex items-center justify-center gap-1.5">
-            <svg
-              className="w-3.5 h-3.5 text-red-400 shrink-0"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            >
-              <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
-              <line x1="12" y1="9" x2="12" y2="13" />
-              <line x1="12" y1="17" x2="12.01" y2="17" />
-            </svg>
-            {editError}
+              Join {player.team} WhatsApp Group
+            </a>
           </div>
         )}
 
-        {editSaved && (
-          <div className="bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-[10px] py-2 px-3 rounded-xl font-semibold text-center flex items-center justify-center gap-1.5">
-            <svg
-              className="w-3.5 h-3.5 text-emerald-400 shrink-0"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2.5"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            >
-              <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
-              <polyline points="22 4 12 14.01 9 11.01" />
-            </svg>
-            Profile updated successfully!
+        {/* 2-Column Dashboard Body */}
+        <div className="flex flex-col lg:flex-row items-stretch gap-6 w-full mt-2">
+          {/* Left Column: Player FIFA Card */}
+          <div className="flex justify-center shrink-0 w-full lg:w-[420px] xl:w-[528px] bg-[#090715]/40 border border-white/5 backdrop-blur-md rounded-3xl p-6 shadow-xl relative overflow-hidden items-center">
+            <div className="absolute top-[10%] left-[10%] w-[180px] h-[180px] bg-[radial-gradient(circle_at_center,_rgba(139,92,246,0.1)_0%,_transparent_60%)] pointer-events-none rounded-full" />
+            <PlayerCard
+              player={player}
+              goals={Math.floor(player.mu_points / 7)}
+              assists={referralCount}
+              challenges={player.completed_tasks_count || 0}
+            />
           </div>
-        )}
 
-        <button
-          type="submit"
-          className="w-full py-2.5 rounded-xl bg-[#4F46E5] hover:bg-[#4338CA] text-white text-xs font-black uppercase tracking-wider transition-all cursor-pointer shadow-[0_0_15px_rgba(79,70,229,0.3)] hover:shadow-[0_0_25px_rgba(79,70,229,0.5)]"
-        >
-          Save Changes
-        </button>
-      </form>
-    </div>
-  );
+          {/* Right Column: Player Overview & Stats */}
+          <div className="flex-1 flex flex-col gap-6">
+            {/* PLAYER OVERVIEW SECTION */}
+            <div className="bg-[#090715]/40 border border-white/8 backdrop-blur-md rounded-3xl p-6 shadow-xl flex flex-col gap-6">
+              <div>
+                <h3 className="text-[10px] font-black uppercase tracking-[3px] text-slate-400 border-b border-white/5 pb-2.5">
+                  Player Overview
+                </h3>
 
-  const renderPasswordTab = () => (
-    <div className="flex flex-col gap-6">
-      <div className="flex flex-col gap-1">
-        <h3 className="text-sm font-extrabold text-slate-100 tracking-wide">
-          Reset Password
-        </h3>
-        <p className="text-[10px] text-slate-500">
-          Change your account password
-        </p>
-      </div>
+                {/* 4 Stats Cards Grid (Vertical Box Layout) */}
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mt-4">
+                  {/* Points Card */}
+                  <div className="bg-[#0b0c16]/60 border border-white/5 hover:border-violet-500/30 rounded-2xl p-5 flex flex-col items-center justify-center text-center transition-all hover:scale-[1.03] duration-300 cursor-pointer">
+                    <div className="w-12 h-12 rounded-full bg-violet-500/10 border border-violet-500/20 flex items-center justify-center shrink-0 mb-3 shadow-[0_0_15px_rgba(139,92,246,0.15)]">
+                      <svg
+                        className="w-6 h-6 text-violet-400"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2.5"
+                      >
+                        <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
+                      </svg>
+                    </div>
+                    <span className="text-2xl font-black text-white leading-none">
+                      {player.mu_points || 0}
+                    </span>
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 mt-2">
+                      μ-Points
+                    </span>
+                  </div>
 
-      <form onSubmit={handlePasswordSubmit} className="flex flex-col gap-4">
-        <div className="flex flex-col gap-1.5">
-          <label className="text-[9px] font-black uppercase tracking-wider text-slate-500">
-            Current Password
-          </label>
-          <input
-            type="password"
-            value={passwordForm.currentPassword}
-            onChange={(e) =>
-              setPasswordForm((prev) => ({
-                ...prev,
-                currentPassword: e.target.value,
-              }))
-            }
-            className="w-full bg-[#0f1a2e] border border-white/10 rounded-xl px-3 py-2.5 text-xs text-slate-200 font-semibold focus:outline-none focus:border-[#4F46E5]/50 transition-colors placeholder:text-slate-600"
-            placeholder="Enter current password"
-          />
-        </div>
+                  {/* Rank Card */}
+                  <div className="bg-[#0b0c16]/60 border border-white/5 hover:border-blue-500/30 rounded-2xl p-5 flex flex-col items-center justify-center text-center transition-all hover:scale-[1.03] duration-300 cursor-pointer">
+                    <div className="w-12 h-12 rounded-full bg-blue-500/10 border border-blue-500/20 flex items-center justify-center shrink-0 mb-3 shadow-[0_0_15px_rgba(59,130,246,0.15)]">
+                      <svg
+                        className="w-6 h-6 text-blue-400"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2.5"
+                      >
+                        <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+                      </svg>
+                    </div>
+                    <span className="text-2xl font-black text-white leading-none">
+                      #{player.rank || 12}
+                    </span>
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 mt-2">
+                      Global Rank
+                    </span>
+                  </div>
 
-        <div className="flex flex-col gap-1.5">
-          <label className="text-[9px] font-black uppercase tracking-wider text-slate-500">
-            New Password
-          </label>
-          <input
-            type="password"
-            value={passwordForm.newPassword}
-            onChange={(e) =>
-              setPasswordForm((prev) => ({
-                ...prev,
-                newPassword: e.target.value,
-              }))
-            }
-            className="w-full bg-[#0f1a2e] border border-white/10 rounded-xl px-3 py-2.5 text-xs text-slate-200 font-semibold focus:outline-none focus:border-[#4F46E5]/50 transition-colors placeholder:text-slate-600"
-            placeholder="Enter new password"
-          />
-        </div>
+                  {/* Challenges Card */}
+                  <div className="bg-[#0b0c16]/60 border border-white/5 hover:border-emerald-500/30 rounded-2xl p-5 flex flex-col items-center justify-center text-center transition-all hover:scale-[1.03] duration-300 cursor-pointer">
+                    <div className="w-12 h-12 rounded-full bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center shrink-0 mb-3 shadow-[0_0_15px_rgba(16,185,129,0.15)]">
+                      <svg
+                        className="w-6 h-6 text-emerald-400"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2.5"
+                      >
+                        <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
+                        <polyline points="22 4 12 14.01 9 11.01" />
+                      </svg>
+                    </div>
+                    <span className="text-2xl font-black text-white leading-none">
+                      {player.completed_tasks_count || 0}
+                    </span>
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 mt-2">
+                      Challenges
+                    </span>
+                  </div>
 
-        <div className="flex flex-col gap-1.5">
-          <label className="text-[9px] font-black uppercase tracking-wider text-slate-500">
-            Confirm Password
-          </label>
-          <input
-            type="password"
-            value={passwordForm.confirmPassword}
-            onChange={(e) =>
-              setPasswordForm((prev) => ({
-                ...prev,
-                confirmPassword: e.target.value,
-              }))
-            }
-            className="w-full bg-[#0f1a2e] border border-white/10 rounded-xl px-3 py-2.5 text-xs text-slate-200 font-semibold focus:outline-none focus:border-[#4F46E5]/50 transition-colors placeholder:text-slate-600"
-            placeholder="Confirm new password"
-          />
-        </div>
-
-        {passwordError && (
-          <div className="bg-red-500/10 border border-red-500/30 text-red-400 text-[10px] py-2 px-3 rounded-xl font-semibold text-center flex items-center justify-center gap-1.5">
-            <svg
-              className="w-3.5 h-3.5 text-red-400 shrink-0"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            >
-              <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
-              <line x1="12" y1="9" x2="12" y2="13" />
-              <line x1="12" y1="17" x2="12.01" y2="17" />
-            </svg>
-            {passwordError}
-          </div>
-        )}
-
-        {passwordSuccess && (
-          <div className="bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-[10px] py-2 px-3 rounded-xl font-semibold text-center flex items-center justify-center gap-1.5">
-            <svg
-              className="w-3.5 h-3.5 text-emerald-400 shrink-0"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2.5"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            >
-              <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
-              <polyline points="22 4 12 14.01 9 11.01" />
-            </svg>
-            Password changed successfully!
-          </div>
-        )}
-
-        <button
-          type="submit"
-          disabled={passwordLoading}
-          className="w-full py-2.5 rounded-xl bg-[#4F46E5] hover:bg-[#4338CA] text-white text-xs font-black uppercase tracking-wider transition-all cursor-pointer shadow-[0_0_15px_rgba(79,70,229,0.3)] hover:shadow-[0_0_25px_rgba(79,70,229,0.5)] disabled:opacity-50"
-        >
-          {passwordLoading ? "Updating..." : "Update Password"}
-        </button>
-      </form>
-    </div>
-  );
-
-  const renderBadgesTab = () => (
-    <div className="flex flex-col gap-6">
-      <div className="flex flex-col gap-1">
-        <h3 className="text-sm font-extrabold text-slate-100 tracking-wide">
-          Badges
-        </h3>
-        <p className="text-[10px] text-slate-500">
-          {DUMMY_BADGES.filter((b) => b.earned).length} of {DUMMY_BADGES.length}{" "}
-          badges earned
-        </p>
-      </div>
-
-      {/* Progress bar */}
-      <div className="flex flex-col gap-1.5">
-        <div className="w-full h-2 bg-white/5 rounded-full overflow-hidden">
-          <div
-            className="h-full rounded-full bg-gradient-to-r from-[#4F46E5] to-[#06B6D4] transition-all duration-700"
-            style={{
-              width: `${(DUMMY_BADGES.filter((b) => b.earned).length / DUMMY_BADGES.length) * 100}%`,
-            }}
-          />
-        </div>
-        <span className="text-[9px] text-slate-600 font-semibold text-right">
-          {Math.round(
-            (DUMMY_BADGES.filter((b) => b.earned).length /
-              DUMMY_BADGES.length) *
-              100,
-          )}
-          % Complete (Locked)
-        </span>
-      </div>
-
-      {/* Badge Grid */}
-      <div className="flex flex-col gap-2.5">
-        {DUMMY_BADGES.map((badge) => (
-          <div
-            key={badge.id}
-            className={`flex items-center gap-3 p-3 rounded-xl border border-white/8 bg-[#0f1a2e]/80 hover:border-[#4F46E5]/30 transition-all ${!badge.earned ? "opacity-50 grayscale" : ""}`}
-          >
-            <div className="w-10 h-10 rounded-lg flex items-center justify-center overflow-hidden shrink-0 bg-[#4F46E5]/10 border border-[#4F46E5]/20">
-              <div className="relative w-6 h-6">
-                <Image
-                  src={badge.icon}
-                  alt={badge.name}
-                  fill
-                  className="object-contain"
-                />
+                  {/* Overall Rating Card */}
+                  <div className="bg-[#0b0c16]/60 border border-white/5 hover:border-amber-500/30 rounded-2xl p-5 flex flex-col items-center justify-center text-center transition-all hover:scale-[1.03] duration-300 cursor-pointer">
+                    <div className="w-12 h-12 rounded-full bg-amber-500/10 border border-amber-500/20 flex items-center justify-center shrink-0 mb-3 shadow-[0_0_15px_rgba(245,158,11,0.15)]">
+                      <svg
+                        className="w-6 h-6 text-amber-400"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2.5"
+                      >
+                        <polygon points="12 2 2 7 12 12 22 7 12 2" />
+                        <path d="M2 17l10 5 10-5" />
+                        <path d="M2 12l10 5 10-5" />
+                      </svg>
+                    </div>
+                    <span className="text-2xl font-black text-white leading-none">
+                      {ovr}
+                    </span>
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 mt-2">
+                      Overall Rating
+                    </span>
+                  </div>
+                </div>
               </div>
-            </div>
-            <div className="flex flex-col flex-1 min-w-0">
-              <div className="flex items-center gap-2">
-                <span className="text-[11px] font-bold text-slate-200 truncate">
-                  {badge.name}
+
+              {/* LEVEL PROGRESS SECTION */}
+              <div className="bg-[#100e23]/20 border border-white/5 rounded-2xl p-5 flex flex-col gap-2 mt-4">
+                <span className="text-[10px] font-black uppercase tracking-[2px] text-slate-400">
+                  Level Progress
                 </span>
-                {badge.earned ? (
-                  <span className="text-[8px] font-black text-emerald-400 bg-emerald-500/10 px-1.5 py-0.5 rounded uppercase tracking-wider shrink-0 flex items-center gap-1">
-                    <svg
-                      className="w-2.5 h-2.5"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="2.5"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        d="M13.5 10.5V6.75a4.5 4.5 0 119 0v3.75M3.75 21.75h16.5a1.5 1.5 0 001.5-1.5V9.75a1.5 1.5 0 00-1.5-1.5H3.75a1.5 1.5 0 00-1.5 1.5v10.5a1.5 1.5 0 001.5 1.5z"
-                      />
-                    </svg>
-                    Unlocked
+                <div className="flex items-center justify-between text-sm font-extrabold mt-1">
+                  <span className="text-[#8B5CF6]">Level {level}</span>
+                  <span className="text-slate-400 font-medium">
+                    {xpPerLevel - xpInLevel} XP to Level {level + 1}
                   </span>
-                ) : (
-                  <span className="text-[8px] font-black text-rose-400 bg-rose-500/10 px-1.5 py-0.5 rounded uppercase tracking-wider shrink-0 flex items-center gap-1">
-                    <svg
-                      className="w-2.5 h-2.5"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="2.5"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        d="M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 11.25h10.5a1.5 1.5 0 001.5-1.5v-6a1.5 1.5 0 00-1.5-1.5H6.75a1.5 1.5 0 00-1.5 1.5v6a1.5 1.5 0 001.5 1.5z"
-                      />
-                    </svg>
-                    Locked
+                </div>
+                <div className="flex items-center gap-4 mt-1">
+                  <div className="flex-1 h-3 bg-white/5 rounded-full overflow-hidden border border-white/5">
+                    <div
+                      className="h-full bg-gradient-to-r from-[#8B5CF6] to-[#6366F1] rounded-full transition-all duration-500"
+                      style={{ width: `${xpPercent}%` }}
+                    />
+                  </div>
+                  <span className="text-sm font-black text-slate-300">
+                    {xpPercent}%
                   </span>
-                )}
+                </div>
               </div>
-              <span className="text-[9px] text-slate-500 truncate">
-                {badge.description}
-              </span>
-              <span className="text-[8px] text-slate-600 mt-0.5">
-                {badge.date || "Locked"}
-              </span>
+
+              {/* NATION STANDING SECTION */}
+              {player.team && (
+                <div className="bg-[#100e23]/20 border border-white/5 rounded-2xl p-5 flex flex-col gap-3 mt-4">
+                  <span className="text-[10px] font-black uppercase tracking-[2px] text-slate-400">
+                    Nation Standing
+                  </span>
+                  <div className="flex items-center justify-between mt-1">
+                    <div className="flex items-center gap-2.5">
+                      <div className="w-8 h-8 rounded-full overflow-hidden border border-white/10 flex items-center justify-center shrink-0">
+                        <span className={`fi fi-${countryCode} scale-125`} />
+                      </div>
+                      <span className="text-sm font-extrabold text-white">
+                        {player.team} Rank #{nationRank}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-1.5 text-xs font-bold text-slate-400">
+                      <span>Contribution</span>
+                      <span className="text-[#10B981] font-extrabold">
+                        {nationContribution}%
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="w-full h-2.5 bg-white/5 rounded-full overflow-hidden border border-white/5 mt-1">
+                    <div
+                      className="h-full bg-[#10B981] rounded-full transition-all duration-500"
+                      style={{ width: `${nationContribution}%` }}
+                    />
+                  </div>
+                  <span className="text-[10px] font-bold text-slate-500 mt-0.5 uppercase">
+                    Top {nationPercentage}% of {player.team} Players
+                  </span>
+                </div>
+              )}
+            </div>
+
+            {/* ACHIEVEMENTS SECTION (LOCKED & BLURRED) */}
+            <div className="bg-[#090715]/40 border border-white/8 backdrop-blur-md rounded-3xl p-6 shadow-xl flex flex-col gap-5">
+              <div className="flex items-center justify-between border-b border-white/5 pb-2.5">
+                <h3 className="text-[10px] font-black uppercase tracking-[3px] text-slate-400">
+                  Achievements
+                </h3>
+                <span className="text-[9px] font-black text-amber-500 uppercase tracking-widest flex items-center gap-1.5">
+                  <svg
+                    className="w-3.5 h-3.5"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2.5"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      d="M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z"
+                    />
+                  </svg>
+                  Locked
+                </span>
+              </div>
+
+              {/* Badges container with relative position for the lock overlay */}
+              <div className="relative rounded-2xl overflow-hidden">
+                {/* Centered Non-Overflowing Badges List (Blurred and non-interactive) */}
+                <div className="flex items-center justify-center gap-4 pb-1 pr-0 flex-wrap blur-[3px] pointer-events-none select-none">
+                  {achievementsList.slice(0, 4).map((badge, idx) => (
+                    <div
+                      key={idx}
+                      className={`flex flex-col items-center text-center gap-2 p-4 rounded-2xl border min-w-[110px] flex-1 max-w-[140px] transition-all ${
+                        badge.earned
+                          ? "bg-[#100e23]/60 border-violet-500/10"
+                          : "bg-[#100e23]/20 border-white/5 opacity-40"
+                      }`}
+                    >
+                      <div className="relative w-14 h-14 flex items-center justify-center shrink-0">
+                        {badge.earned ? (
+                          <Image
+                            src={badge.icon}
+                            alt={badge.name}
+                            width={56}
+                            height={56}
+                            className="object-contain"
+                          />
+                        ) : (
+                          <div className="w-14 h-14 rounded-full border border-white/10 bg-white/5 flex items-center justify-center shrink-0">
+                            <svg
+                              className="w-5 h-5 text-slate-500"
+                              fill="none"
+                              stroke="currentColor"
+                              strokeWidth="2.5"
+                              viewBox="0 0 24 24"
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                d="M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z"
+                              />
+                            </svg>
+                          </div>
+                        )}
+                      </div>
+                      <span className="text-xs font-extrabold text-slate-200 leading-tight mt-1">
+                        {badge.name}
+                      </span>
+                      <span className="text-[9px] font-bold text-slate-500 leading-none">
+                        {badge.earned ? badge.desc : "Locked"}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Premium Lock Overlay */}
+                <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/40 backdrop-blur-[1px] z-20">
+                  <div className="w-11 h-11 rounded-full bg-amber-500/10 border border-amber-500/30 flex items-center justify-center text-amber-400 shadow-[0_0_15px_rgba(245,158,11,0.2)]">
+                    <svg
+                      className="w-5 h-5"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2.5"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        d="M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z"
+                      />
+                    </svg>
+                  </div>
+                  <span className="text-[10px] font-black uppercase tracking-[2px] text-amber-500 mt-3 drop-shadow-[0_0_8px_rgba(245,158,11,0.3)]">
+                    Achievements locked
+                  </span>
+                  <span className="text-[8px] font-bold text-slate-400 mt-1 uppercase tracking-wider">
+                    Unlocks at Level 10
+                  </span>
+                </div>
+              </div>
             </div>
           </div>
-        ))}
-      </div>
-    </div>
-  );
-
-  const renderTabContent = () => {
-    switch (activeTab) {
-      case "player":
-        return renderPlayerTab();
-      case "edit":
-        return renderEditTab();
-      case "password":
-        return renderPasswordTab();
-      case "badges":
-        return renderBadgesTab();
-      default:
-        return renderPlayerTab();
-    }
-  };
-
-  return (
-    <div className="w-full relative flex flex-col gap-6 md:gap-8 pb-10">
-      {/* Full-page stadium background */}
-      <div
-        className="fixed inset-0 z-0 bg-cover bg-center opacity-[0.28] pointer-events-none"
-        style={{ backgroundImage: `url('/stadium_bg_pruble.webp')` }}
-      />
-      <div className="fixed inset-0 z-0 bg-gradient-to-b from-[#030207]/60 via-[#030207]/40 to-[#030207]/80 pointer-events-none" />
-
-      {/* Ambient radial glows */}
-      <div className="absolute top-[10%] left-[5%] w-[45vw] h-[45vw] bg-[radial-gradient(circle_at_center,_rgba(99,102,241,0.08)_0%,_transparent_60%)] pointer-events-none rounded-full" />
-      <div className="absolute bottom-[10%] right-[5%] w-[45vw] h-[45vw] bg-[radial-gradient(circle_at_center,_rgba(6,182,212,0.06)_0%,_transparent_60%)] pointer-events-none rounded-full" />
-
-      {/* TOP N ARENA BANNER (with stadium background) */}
-      <div className="relative rounded-3xl overflow-hidden border border-white/5 p-6 md:p-8 flex flex-col gap-6 md:gap-8 shadow-2xl bg-[#090715]/40 backdrop-blur-md z-10">
-        {/* Stadium background overlay */}
-        <div
-          className="absolute inset-0 z-0 bg-cover bg-center opacity-[0.30] pointer-events-none"
-          style={{ backgroundImage: `url('/bg_img.webp')` }}
-        />
-        {/* Dark gradient overlay to fade at bottom */}
-        <div className="absolute inset-0 bg-gradient-to-b from-transparent via-[#090715]/50 to-[#030207] z-0 pointer-events-none" />
-
-        {/* HEADER */}
-        <div className="relative z-10">
-          <Header
-            title="PLAYER"
-            highlightedTitle="SCORECARD"
-            subtitle="View player stats, verify social integrations and manage profile settings."
-          />
         </div>
-      </div>
 
-      {/* Main Content — 3-Column Layout */}
-      <div className="relative z-10 flex-1 w-full max-w-[1680px] mx-auto px-4 sm:px-6 md:px-8">
-        {error || !player ? (
-          /* ERROR / NOT FOUND */
-          <div className="flex items-center justify-center min-h-[60vh]">
-            <div className="w-full max-w-md bg-glass-card rounded-2xl p-6 md:p-8 border border-white/10 backdrop-blur-md shadow-2xl flex flex-col items-center gap-6 text-center bg-[linear-gradient(115deg,rgba(255,255,255,0.02),rgba(79,70,229,0.015))]">
-              <div className="w-16 h-16 rounded-full bg-red-500/10 border border-red-500/30 flex items-center justify-center">
+        {/* BOTTOM SECTION: HISTORY REDIRECT & SETTINGS */}
+        <div className="relative z-10 flex flex-col gap-6 mt-2">
+          {/* Recent Activity Full-Width Redirect Card */}
+          {isOwner && (
+            <Link
+              href="/points-history"
+              className="relative overflow-hidden rounded-3xl border border-white/8 bg-[#090715]/40 backdrop-blur-md p-6 flex flex-col sm:flex-row items-center justify-between gap-6 shadow-xl hover:border-violet-500/30 transition-all hover:scale-[1.01] duration-300 group cursor-pointer"
+            >
+              <div className="absolute top-[10%] left-[2%] w-[120px] h-[120px] bg-[radial-gradient(circle_at_center,_rgba(139,92,246,0.05)_0%,_transparent_60%)] pointer-events-none rounded-full" />
+              <div className="flex items-center gap-4.5 text-left relative z-10">
+                <div className="w-12 h-12 rounded-full bg-violet-500/10 border border-violet-500/20 flex items-center justify-center shrink-0 text-violet-400 group-hover:scale-115 transition-transform duration-300 shadow-[0_0_15px_rgba(139,92,246,0.15)]">
+                  <svg
+                    className="w-6 h-6"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2.5"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z"
+                    />
+                  </svg>
+                </div>
+                <div className="flex flex-col">
+                  <h3 className="text-sm font-extrabold text-white tracking-wide uppercase">
+                    Recent Activity & Points History
+                  </h3>
+                  <p className="text-xs text-slate-400 mt-1">
+                    View your complete points ledger, completed challenges, and
+                    prediction history
+                  </p>
+                </div>
+              </div>
+              <div className="flex items-center gap-2 text-xs font-black text-violet-400 uppercase tracking-widest group-hover:text-white transition-colors relative z-10 shrink-0">
+                <span>View Full History</span>
                 <svg
-                  className="w-8 h-8 text-red-400"
-                  viewBox="0 0 24 24"
+                  className="w-4 h-4 group-hover:translate-x-1.5 transition-transform"
                   fill="none"
                   stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
+                  strokeWidth="3"
+                  viewBox="0 0 24 24"
                 >
-                  <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
-                  <line x1="12" y1="9" x2="12" y2="13" />
-                  <line x1="12" y1="17" x2="12.01" y2="17" />
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3"
+                  />
                 </svg>
               </div>
-              <div className="flex flex-col gap-2">
-                <h2 className="text-xl font-bold uppercase tracking-wider text-slate-200">
-                  Profile Not Found
-                </h2>
-                <p className="text-xs text-slate-400">
-                  {error ||
-                    "The requested player profile could not be found. Make sure the ID or Player ID is correct."}
-                </p>
-              </div>
-              <div className="flex flex-col sm:flex-row gap-3 w-full">
-                <Link
-                  href="/leaderboard"
-                  className="flex-1 text-center py-2.5 rounded-xl border border-white/10 hover:border-white/30 text-xs font-bold uppercase tracking-wider transition-colors bg-white/5"
-                >
-                  Leaderboard
-                </Link>
-              </div>
+            </Link>
+          )}
+
+          {/* Account Settings Panel */}
+          <div className="bg-[#090715]/40 border border-white/8 backdrop-blur-md rounded-3xl p-6 shadow-xl flex flex-col gap-4">
+            <div>
+              <h3 className="text-[10px] font-black uppercase tracking-[3px] text-slate-400 border-b border-white/5 pb-2.5">
+                Account Settings
+              </h3>
+              {isOwner ? (
+                <div className="flex flex-col gap-4">
+                  {/* 2-Column Options Grid */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-2">
+                    {/* Profile info trigger */}
+                    <button
+                      onClick={() => openModalWithTab("profile")}
+                      className="cursor-pointer w-full flex items-center justify-between p-4 rounded-2xl bg-[#0b0c16]/50 border border-white/5 hover:border-violet-500/20 hover:bg-[#100e23]/50 transition-all text-left"
+                    >
+                      <div className="flex items-center gap-3.5">
+                        <div className="w-9 h-9 rounded-full bg-slate-500/10 flex items-center justify-center shrink-0 text-slate-400">
+                          <svg
+                            className="w-5 h-5"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth="2.5"
+                            viewBox="0 0 24 24"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 01-7.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z"
+                            />
+                          </svg>
+                        </div>
+                        <div className="flex flex-col">
+                          <span className="text-xs font-extrabold text-slate-200">
+                            Profile Information
+                          </span>
+                          <span className="text-[10px] font-semibold text-slate-500 uppercase mt-0.5">
+                            Update your personal details
+                          </span>
+                        </div>
+                      </div>
+                      <svg
+                        className="w-4 h-4 text-slate-500"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2.5"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          d="M8.25 4.5l7.5 7.5-7.5 7.5"
+                        />
+                      </svg>
+                    </button>
+
+                    {/* Password reset trigger */}
+                    <button
+                      onClick={() => openModalWithTab("password")}
+                      className="cursor-pointer w-full flex items-center justify-between p-4 rounded-2xl bg-[#0b0c16]/50 border border-white/5 hover:border-violet-500/20 hover:bg-[#100e23]/50 transition-all text-left"
+                    >
+                      <div className="flex items-center gap-3.5">
+                        <div className="w-9 h-9 rounded-full bg-slate-500/10 flex items-center justify-center shrink-0 text-slate-400">
+                          <svg
+                            className="w-5 h-5"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth="2.5"
+                            viewBox="0 0 24 24"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              d="M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z"
+                            />
+                          </svg>
+                        </div>
+                        <div className="flex flex-col">
+                          <span className="text-xs font-extrabold text-slate-200">
+                            Security
+                          </span>
+                          <span className="text-[10px] font-semibold text-slate-500 uppercase mt-0.5">
+                            Change password and settings
+                          </span>
+                        </div>
+                      </div>
+                      <svg
+                        className="w-4 h-4 text-slate-500"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2.5"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          d="M8.25 4.5l7.5 7.5-7.5 7.5"
+                        />
+                      </svg>
+                    </button>
+
+
+                  </div>
+
+                  {/* Logout Button aligned bottom-right */}
+                  <div className="flex justify-end mt-4 border-t border-white/5 pt-4">
+                    <button
+                      onClick={handleLogout}
+                      className="cursor-pointer px-6 py-2.5 bg-[#ef4444]/5 hover:bg-[#ef4444]/10 border border-[#ef4444]/20 hover:border-[#ef4444]/40 text-red-400 rounded-xl text-xs font-bold uppercase tracking-wider transition-all flex items-center gap-2 shadow-lg group"
+                    >
+                      <div className="w-7 h-7 rounded-full bg-[#ef4444]/10 flex items-center justify-center shrink-0">
+                        <svg
+                          className="w-4 h-4 text-red-400 group-hover:scale-110 transition-transform"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="2.5"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            d="M15.75 9V5.25A2.25 2.25 0 0013.5 3h-6a2.25 2.25 0 00-2.25 2.25v13.5A2.25 2.25 0 007.5 21h6a2.25 2.25 0 002.25-2.25V15M12 9l-3 3m0 0l3 3m-3-3h12.75"
+                          />
+                        </svg>
+                      </div>
+                      <span>Logout Session</span>
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <div className="text-center py-10 text-slate-500 text-xs font-semibold">
+                  You must be logged in as the owner to view or edit account
+                  settings.
+                </div>
+              )}
             </div>
           </div>
-        ) : (
-          /* LAYOUT */
-          <div className="flex flex-col gap-6">
-            {/* WhatsApp CTA — top center */}
-            {isOwner && (
-              <div className="flex justify-center w-full">
-                <a
-                  href={
-                    TEAM_WHATSAPP_LINKS[player.team] ||
-                    "https://chat.whatsapp.com/"
-                  }
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="cursor-pointer bg-[#25D366] text-white hover:bg-[#20ba5a] w-full sm:w-1/2 py-3 rounded-xl text-[10px] font-black tracking-widest uppercase transition-all flex items-center justify-center gap-2 shadow-[0_0_15px_rgba(37,211,102,0.2)] hover:shadow-[0_0_25px_rgba(37,211,102,0.4)] hover:-translate-y-0.5"
-                >
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    viewBox="0 0 32 32"
-                    className="w-4 h-4 fill-current"
-                  >
-                    <path d="M16.004 3C8.82 3 3 8.82 3 16.004c0 2.293.598 4.532 1.734 6.504L3 29l6.676-1.706a12.95 12.95 0 0 0 6.328 1.636C23.18 28.93 29 23.11 29 15.926 29 8.82 23.18 3 16.004 3zm0 23.798a10.74 10.74 0 0 1-5.47-1.496l-.392-.232-3.96 1.01 1.056-3.86-.254-.4a10.72 10.72 0 0 1-1.646-5.816c0-5.94 4.83-10.77 10.766-10.77 2.878 0 5.584 1.12 7.617 3.154a10.69 10.69 0 0 1 3.148 7.612c0 5.94-4.83 10.798-10.766 10.798zm5.906-8.052c-.322-.16-1.904-.94-2.198-1.046-.294-.106-.508-.16-.722.16-.214.32-.83 1.046-1.018 1.26-.186.214-.374.24-.694.08-.32-.16-1.35-.498-2.572-1.586-.95-.846-1.59-1.89-1.776-2.21-.188-.32-.02-.492.14-.65.144-.144.32-.374.48-.56.16-.188.214-.32.32-.534.106-.214.054-.4-.026-.56-.08-.16-.722-1.74-.99-2.386-.26-.626-.524-.54-.722-.55l-.614-.01c-.214 0-.56.08-.854.4-.294.32-1.122 1.096-1.122 2.674 0 1.578 1.15 3.102 1.31 3.316.16.214 2.262 3.454 5.48 4.842.766.33 1.364.526 1.83.674.77.244 1.47.21 2.024.128.618-.092 1.904-.778 2.172-1.53.268-.752.268-1.396.188-1.53-.08-.132-.294-.212-.616-.372z" />
-                  </svg>
-                  Join {player.team} WhatsApp Group
-                </a>
-              </div>
-            )}
-            <hr className="border-white/5 my-1" />
-            {/* Conditional Layout based on Ownership */}
-            {isOwner ? (
-              <div className="flex flex-col xl:flex-row gap-6 items-start">
-                {/* COLUMN 2: Forms / Badges Content Panel */}
-                <div className="w-full xl:w-[480px] 2xl:w-[520px] shrink-0 xl:sticky xl:top-6 flex flex-col gap-6">
-                  {activeTab === "badges" ? (
-                    <div className="bg-[#131927]/80 border border-white/8 rounded-2xl p-5 backdrop-blur-md shadow-lg min-h-[400px]">
-                      {renderBadgesTab()}
-                    </div>
-                  ) : (
-                    <>
-                      {/* Edit Details Card */}
-                      <div className="bg-[#131927]/80 border border-white/8 rounded-2xl p-5 backdrop-blur-md shadow-lg">
-                        {renderEditTab()}
-                      </div>
-
-                      {/* Reset Password Card */}
-                      <div className="bg-[#131927]/80 border border-white/8 rounded-2xl p-5 backdrop-blur-md shadow-lg">
-                        {renderPasswordTab()}
-                      </div>
-                    </>
-                  )}
-                </div>
-
-                {/* COLUMN 3: Player Card & Share Sidebar */}
-                <div className="flex-1 flex flex-col lg:flex-row items-center lg:items-start justify-center gap-6 xl:sticky xl:top-6 xl:min-w-[600px] w-full">
-                  <PlayerCard player={player} />
-                  <ProfileShare player={player} />
-                </div>
-              </div>
-            ) : (
-              /* GUEST / NOT OWNER: Show ONLY Player Card & Share option centered */
-              <div className="flex flex-col lg:flex-row items-center lg:items-start justify-center gap-6 w-full max-w-3xl mx-auto py-10">
-                <PlayerCard player={player} />
-                <ProfileShare player={player} />
-              </div>
-            )}
-          </div>
-        )}
+        </div>
       </div>
+
+      {/* Account Settings Overlay Modal (Tabbed Layout) */}
+      {isEditOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-sm transition-all duration-300 animate-fade-in">
+          <div className="relative w-full max-w-lg bg-[#0c0d16]/95 border border-white/10 rounded-3xl p-6 shadow-2xl overflow-y-auto max-h-[90vh] flex flex-col gap-5 scrollbar-thin animate-scale-up">
+            {/* Modal Header */}
+            <div className="flex items-center justify-between border-b border-white/5 pb-2">
+              <h3 className="text-sm font-extrabold tracking-widest text-white uppercase">
+                Manage Profile settings
+              </h3>
+              <button
+                onClick={() => setIsEditOpen(false)}
+                className="cursor-pointer p-1.5 hover:bg-white/5 rounded-full text-slate-400 hover:text-white transition-colors"
+                title="Close Modal"
+              >
+                <svg
+                  className="w-5 h-5"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2.5"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    d="M6 18L18 6M6 6l12 12"
+                  />
+                </svg>
+              </button>
+            </div>
+
+            {/* Premium Tab Selector */}
+            <div className="flex border-b border-white/5 pb-2 gap-4 overflow-x-auto no-scrollbar scroll-smooth whitespace-nowrap">
+              <button
+                onClick={() => {
+                  setActiveTab("profile");
+                  setEditError("");
+                  setEditSaved(false);
+                }}
+                className={`pb-1.5 text-[10px] font-black uppercase tracking-widest border-b-2 transition-all cursor-pointer shrink-0 ${
+                  activeTab === "profile"
+                    ? "border-violet-500 text-white"
+                    : "border-transparent text-slate-500 hover:text-slate-300"
+                }`}
+              >
+                Profile Info
+              </button>
+              <button
+                onClick={() => {
+                  setActiveTab("password");
+                  setPasswordError("");
+                  setPasswordSuccess(false);
+                }}
+                className={`pb-1.5 text-[10px] font-black uppercase tracking-widest border-b-2 transition-all cursor-pointer shrink-0 ${
+                  activeTab === "password"
+                    ? "border-emerald-500 text-white"
+                    : "border-transparent text-slate-500 hover:text-slate-300"
+                }`}
+              >
+                Security
+              </button>
+
+            </div>
+
+            {/* TAB CONTENT: PROFILE INFO */}
+            {activeTab === "profile" && (
+              <form onSubmit={handleEditSubmit} className="flex flex-col gap-4">
+                <h4 className="text-[10px] font-black uppercase text-violet-400 tracking-wider">
+                  Edit Personal Info
+                </h4>
+
+                {editError && (
+                  <div className="bg-red-500/10 border border-red-500/35 text-red-400 text-xs py-2 px-3 rounded-xl font-bold">
+                    {editError}
+                  </div>
+                )}
+
+                {editSaved && (
+                  <div className="bg-emerald-500/10 border border-emerald-500/35 text-emerald-400 text-xs py-2 px-3 rounded-xl font-bold">
+                    Profile updated successfully!
+                  </div>
+                )}
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="flex flex-col gap-1.5">
+                    <label className="text-[9px] font-black text-slate-500 uppercase tracking-wider">
+                      Name
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      value={editForm.name}
+                      onChange={(e) =>
+                        setEditForm((prev) => ({
+                          ...prev,
+                          name: e.target.value,
+                        }))
+                      }
+                      className="bg-white/5 border border-white/8 rounded-xl px-3 py-2.5 text-xs text-white outline-none focus:border-[#8B5CF6]/50 transition-colors"
+                    />
+                  </div>
+
+                  <div className="flex flex-col gap-1.5">
+                    <label className="text-[9px] font-black text-slate-500 uppercase tracking-wider">
+                      Phone
+                    </label>
+                    <input
+                      type="text"
+                      value={editForm.phone}
+                      onChange={(e) =>
+                        setEditForm((prev) => ({
+                          ...prev,
+                          phone: e.target.value,
+                        }))
+                      }
+                      placeholder="e.g. +919876543210"
+                      className="bg-white/5 border border-white/8 rounded-xl px-3 py-2.5 text-xs text-white outline-none focus:border-[#8B5CF6]/50 transition-colors"
+                    />
+                  </div>
+
+                  <div className="flex flex-col gap-1.5 sm:col-span-2">
+                    <label className="text-[9px] font-black text-slate-500 uppercase tracking-wider">
+                      µID (µLearn ID)
+                    </label>
+                    <input
+                      type="text"
+                      value={editForm.muid}
+                      onChange={(e) =>
+                        setEditForm((prev) => ({
+                          ...prev,
+                          muid: e.target.value,
+                        }))
+                      }
+                      placeholder="username@mulearn"
+                      className="bg-white/5 border border-white/8 rounded-xl px-3 py-2.5 text-xs text-white outline-none focus:border-[#8B5CF6]/50 transition-colors"
+                    />
+                  </div>
+
+                  <div className="flex flex-col gap-1.5 sm:col-span-2">
+                    <label className="text-[9px] font-black text-slate-500 uppercase tracking-wider">
+                      Biography / Specialization
+                    </label>
+                    <textarea
+                      rows={3}
+                      value={editForm.bio}
+                      onChange={(e) =>
+                        setEditForm((prev) => ({
+                          ...prev,
+                          bio: e.target.value,
+                        }))
+                      }
+                      placeholder="Tell us about yourself..."
+                      className="bg-white/5 border border-white/8 rounded-xl px-3 py-2.5 text-xs text-white outline-none focus:border-[#8B5CF6]/50 transition-colors resize-none"
+                    />
+                  </div>
+                </div>
+
+                <button
+                  type="submit"
+                  className="cursor-pointer w-full py-3 bg-gradient-to-r from-[#8B5CF6] to-[#7C3AED] hover:from-[#7C3AED] hover:to-[#6D28D9] text-white rounded-xl text-xs font-semibold tracking-wider uppercase transition-all mt-2 shadow-lg"
+                >
+                  Save Details
+                </button>
+              </form>
+            )}
+
+            {/* TAB CONTENT: SECURITY */}
+            {activeTab === "password" && (
+              <form
+                onSubmit={handlePasswordSubmit}
+                className="flex flex-col gap-4"
+              >
+                <h4 className="text-[10px] font-black uppercase text-[#10B981] tracking-wider">
+                  Change Password
+                </h4>
+
+                {passwordError && (
+                  <div className="bg-red-500/10 border border-red-500/35 text-red-400 text-xs py-2 px-3 rounded-xl font-bold">
+                    {passwordError}
+                  </div>
+                )}
+
+                {passwordSuccess && (
+                  <div className="bg-emerald-500/10 border border-emerald-500/35 text-emerald-400 text-xs py-2 px-3 rounded-xl font-bold">
+                    Password updated successfully!
+                  </div>
+                )}
+
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-[9px] font-black text-slate-500 uppercase tracking-wider">
+                    Current Password
+                  </label>
+                  <input
+                    type="password"
+                    value={passwordForm.currentPassword}
+                    onChange={(e) =>
+                      setPasswordForm((prev) => ({
+                        ...prev,
+                        currentPassword: e.target.value,
+                      }))
+                    }
+                    className="bg-white/5 border border-white/8 rounded-xl px-3 py-2.5 text-xs text-white outline-none focus:border-emerald-500/30 transition-colors"
+                  />
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="flex flex-col gap-1.5">
+                    <label className="text-[9px] font-black text-slate-500 uppercase tracking-wider">
+                      New Password
+                    </label>
+                    <input
+                      type="password"
+                      value={passwordForm.newPassword}
+                      onChange={(e) =>
+                        setPasswordForm((prev) => ({
+                          ...prev,
+                          newPassword: e.target.value,
+                        }))
+                      }
+                      className="bg-white/5 border border-white/8 rounded-xl px-3 py-2.5 text-xs text-white outline-none focus:border-emerald-500/30 transition-colors"
+                    />
+                  </div>
+
+                  <div className="flex flex-col gap-1.5">
+                    <label className="text-[9px] font-black text-slate-500 uppercase tracking-wider">
+                      Confirm New Password
+                    </label>
+                    <input
+                      type="password"
+                      value={passwordForm.confirmPassword}
+                      onChange={(e) =>
+                        setPasswordForm((prev) => ({
+                          ...prev,
+                          confirmPassword: e.target.value,
+                        }))
+                      }
+                      className="bg-white/5 border border-white/8 rounded-xl px-3 py-2.5 text-xs text-white outline-none focus:border-emerald-500/30 transition-colors"
+                    />
+                  </div>
+                </div>
+
+                <button
+                  type="submit"
+                  disabled={passwordLoading}
+                  className="cursor-pointer w-full py-3 bg-gradient-to-r from-[#10B981] to-[#059669] hover:from-[#059669] hover:to-[#047857] text-white rounded-xl text-xs font-semibold tracking-wider uppercase transition-all mt-2 shadow-lg disabled:opacity-55"
+                >
+                  {passwordLoading ? "Changing..." : "Change Password"}
+                </button>
+              </form>
+            )}
+
+
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -1403,190 +1563,5 @@ export default function ProfilePage({ params }) {
     >
       <ProfilePageContent params={params} />
     </Suspense>
-  );
-}
-
-function ProfileShare({ player }) {
-  const [copied, setCopied] = useState(false);
-  const [downloading, setDownloading] = useState(false);
-
-  const shareUrl = typeof window !== "undefined" ? window.location.href : "";
-  const shareText = `Check out my µFIFA World Cup 2026 Player Card for ${player?.name || "Player"}!`;
-
-  const handleCopyLink = () => {
-    navigator.clipboard.writeText(shareUrl);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
-  };
-
-  const handleDownload = async () => {
-    if (downloading) return;
-    setDownloading(true);
-    try {
-      const html2canvas = (await import("html2canvas")).default;
-      const cardElement = document.querySelector(".player-card");
-      if (!cardElement) {
-        setDownloading(false);
-        return;
-      }
-
-      const canvas = await html2canvas(cardElement, {
-        scale: 2, // high quality
-        useCORS: true,
-        backgroundColor: null,
-        logging: false,
-      });
-
-      const dataUrl = canvas.toDataURL("image/png");
-      const link = document.createElement("a");
-      link.download = `${player?.user_id || "player"}-card.png`;
-      link.href = dataUrl;
-      link.click();
-    } catch (err) {
-      console.error("Failed to download player card:", err);
-    } finally {
-      setDownloading(false);
-    }
-  };
-
-  return (
-    <div className="flex flex-row lg:flex-col items-center bg-[#FAF8F5] text-[#5C4A37] rounded-full py-3 px-5 lg:py-6 lg:px-3.5 shadow-xl gap-5 lg:gap-5 border border-[#EBE8E2] select-none shrink-0 w-fit lg:w-[54px]">
-      <span className="text-[9px] font-black tracking-widest uppercase opacity-75 lg:-rotate-90 lg:my-2">
-        Share
-      </span>
-
-      {/* Twitter */}
-      <a
-        href={`https://twitter.com/intent/tweet?text=${encodeURIComponent(shareText)}&url=${encodeURIComponent(shareUrl)}`}
-        target="_blank"
-        rel="noopener noreferrer"
-        className="hover:scale-110 transition-transform text-[#5C4A37] hover:text-[#1DA1F2]"
-        title="Share on Twitter"
-      >
-        <svg className="w-5 h-5 fill-current" viewBox="0 0 24 24">
-          <path d="M23.953 4.57a10 10 0 01-2.825.775 4.958 4.958 0 002.163-2.723c-.951.555-2.005.959-3.127 1.184a4.92 4.92 0 00-8.384 4.482C7.69 8.095 4.067 6.13 1.64 3.162a4.822 4.822 0 00-.666 2.475c0 1.71.87 3.213 2.188 4.096a4.904 4.904 0 01-2.228-.616v.06a4.923 4.923 0 003.946 4.827 4.996 4.996 0 01-2.212.085 4.936 4.936 0 004.604 3.417 9.867 9.867 0 01-6.102 2.105c-.39 0-.779-.023-1.17-.067a13.995 13.995 0 007.557 2.209c9.053 0 13.998-7.496 13.998-13.986 0-.21 0-.42-.015-.63A9.935 9.935 0 0024 4.59z" />
-        </svg>
-      </a>
-
-      {/* LinkedIn */}
-      <a
-        href={`https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(shareUrl)}`}
-        target="_blank"
-        rel="noopener noreferrer"
-        className="hover:scale-110 transition-transform text-[#5C4A37] hover:text-[#0A66C2]"
-        title="Share on LinkedIn"
-      >
-        <svg className="w-5 h-5 fill-current" viewBox="0 0 24 24">
-          <path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0z" />
-        </svg>
-      </a>
-
-      {/* Copy Link */}
-      <button
-        onClick={handleCopyLink}
-        className="hover:scale-110 transition-transform text-[#5C4A37] hover:text-[#4F46E5] cursor-pointer focus:outline-none"
-        title="Copy Profile Link"
-      >
-        {copied ? (
-          <svg
-            className="w-5 h-5 text-emerald-600 animate-bounce"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2.5"
-            viewBox="0 0 24 24"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              d="M5 13l4 4L19 7"
-            />
-          </svg>
-        ) : (
-          <svg
-            className="w-5 h-5"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2.5"
-            viewBox="0 0 24 24"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"
-            />
-          </svg>
-        )}
-      </button>
-
-      {/* Download Card */}
-      <button
-        onClick={handleDownload}
-        disabled={downloading}
-        className="hover:scale-110 transition-transform text-[#5C4A37] hover:text-[#4F46E5] cursor-pointer focus:outline-none disabled:opacity-50"
-        title="Download Player Card"
-      >
-        {downloading ? (
-          <svg
-            className="w-5 h-5 animate-spin text-[#4F46E5]"
-            fill="none"
-            viewBox="0 0 24 24"
-          >
-            <circle
-              className="opacity-25"
-              cx="12"
-              cy="12"
-              r="10"
-              stroke="currentColor"
-              strokeWidth="4"
-            />
-            <path
-              className="opacity-75"
-              fill="currentColor"
-              d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-            />
-          </svg>
-        ) : (
-          <svg
-            className="w-5 h-5"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2.5"
-            viewBox="0 0 24 24"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3"
-            />
-          </svg>
-        )}
-      </button>
-
-      {/* Divider */}
-      <div className="w-6 lg:w-8 h-[1px] bg-[#EBE8E2] my-0.5 lg:my-0" />
-
-      {/* Comment/Feedback */}
-      <a
-        href={`https://wa.me/?text=${encodeURIComponent(shareText + " " + shareUrl)}`}
-        target="_blank"
-        rel="noopener noreferrer"
-        className="hover:scale-110 transition-transform text-[#5C4A37] hover:text-[#25D366]"
-        title="Send via WhatsApp"
-      >
-        <svg
-          className="w-5 h-5"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="2.5"
-          viewBox="0 0 24 24"
-        >
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"
-          />
-        </svg>
-      </a>
-    </div>
   );
 }

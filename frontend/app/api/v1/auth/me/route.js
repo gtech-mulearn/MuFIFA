@@ -43,8 +43,9 @@ export async function GET(request) {
 
     const query = `${supabaseUrl}/rest/v1/registrations?id=eq.${decoded.id}&select=*&limit=1`;
     const predQuery = `${supabaseUrl}/rest/v1/match_predictions?user_id=eq.${encodeURIComponent(decoded.user_id)}&limit=1`;
+    const compQuery = `${supabaseUrl}/rest/v1/user_completed_tasks?user_id=eq.${encodeURIComponent(decoded.user_id)}&select=*`;
 
-    const [res, predRes] = await Promise.all([
+    const [res, predRes, compRes] = await Promise.all([
       fetch(query, {
         method: "GET",
         headers,
@@ -57,6 +58,13 @@ export async function GET(request) {
         },
       }).catch((err) => {
         console.error("Failed to fetch player predictions count (async):", err);
+        return null;
+      }),
+      fetch(compQuery, {
+        method: "GET",
+        headers,
+      }).catch((err) => {
+        console.error("Failed to fetch player completed tasks for XP (async):", err);
         return null;
       }),
     ]);
@@ -87,11 +95,37 @@ export async function GET(request) {
       }
     }
 
+    // Sum domain XP values
+    let xp_creativity = 0;
+    let xp_branding = 0;
+    let xp_innovation = 0;
+    let xp_teamwork = 0;
+    let xp_execution = 0;
+    if (compRes && compRes.ok) {
+      const completions = await compRes.json();
+      completions.forEach((c) => {
+        xp_creativity += c.xp_creativity || 0;
+        xp_branding += c.xp_branding || 0;
+        xp_innovation += c.xp_innovation || 0;
+        xp_teamwork += c.xp_teamwork || 0;
+        xp_execution += c.xp_execution || 0;
+      });
+    }
+
+    const xpBreakdown = {
+      creativity: xp_creativity,
+      branding: xp_branding,
+      innovation: xp_innovation,
+      teamwork: xp_teamwork,
+      execution: xp_execution,
+    };
+
     return NextResponse.json({
       success: true,
       data: {
         ...player,
         predictions_count: predictionsCount,
+        xp_breakdown: xpBreakdown,
       },
     });
   } catch (error) {

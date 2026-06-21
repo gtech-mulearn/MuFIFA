@@ -46,7 +46,7 @@ export async function GET(request) {
       // 1. Fetch all registrations and predictions concurrently (with 5-minute Next.js caching)
       const [registrationsRes, predictionsRes] = await Promise.all([
         fetch(
-          `${supabaseUrl}/rest/v1/registrations?select=user_id,name,team,avatar_url,institution,domain&limit=5000`,
+          `${supabaseUrl}/rest/v1/registrations?select=user_id,name,team,avatar_url,domain&limit=5000`,
           {
             method: "GET",
             headers: supabaseHeaders,

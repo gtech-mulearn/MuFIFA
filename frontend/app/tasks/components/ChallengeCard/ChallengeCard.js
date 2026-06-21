@@ -153,32 +153,33 @@ export default function ChallengeCard({ task, onViewDetails, dbTasks }) {
 
   // Border and accent styling based on state
   const borderClass = isCompleted
-    ? "border-white-100/50 hover:border-emerald-500/50 shadow-[0_0_20px_rgba(16,185,129,0.05)]"
+    ? "border-amber-500/40 hover:border-amber-400/60 shadow-[0_0_20px_rgba(245,158,11,0.05)] hover:-translate-y-1.5 hover:shadow-[0_12px_28px_rgba(245,158,11,0.15)] cursor-pointer"
     : isLocked
       ? "border-white/5 opacity-55 select-none"
-      : "border-violet-500/35 hover:border-violet-500/50 shadow-[0_0_20px_rgba(139,92,246,0.05)]";
+      : "border-violet-500/35 hover:border-violet-500/50 shadow-[0_0_20px_rgba(139,92,246,0.05)] hover:-translate-y-1.5 hover:shadow-[0_12px_28px_rgba(139,92,246,0.12)] cursor-pointer";
 
   const glowBg = isCompleted
-    ? "from-[#081510] to-[#04080a]"
+    ? "from-[#1c1204] to-[#040301]"
     : isLocked
       ? "from-[#07060f] to-[#04030a]"
       : "from-[#0d0a20] to-[#04030a]";
 
   return (
     <div
-      className={`flex flex-col bg-gradient-to-b ${glowBg} border rounded-2xl p-5 relative overflow-hidden transition-all duration-300 ${borderClass} h-full justify-between`}
+      onClick={() => !isLocked && onViewDetails(task)}
+      className={`group flex flex-col bg-gradient-to-b ${glowBg} border rounded-2xl p-5 relative overflow-hidden transition-all duration-300 ${borderClass} h-full justify-between`}
     >
       {/* Top Section: Icon (left) + Text Details (right) */}
       <div className="flex gap-4 items-start">
         <div className="relative shrink-0 select-none">
           {renderIcon()}
           {isCompleted && (
-            <div className="absolute -top-1 -left-1 w-5 h-5 rounded-full bg-emerald-500 border-2 border-[#090A0F] flex items-center justify-center text-white shadow-md">
+            <div className="absolute -top-1 -left-1 w-5 h-5 rounded-full bg-gradient-to-br from-amber-400 to-yellow-500 border-2 border-[#090A0F] flex items-center justify-center text-slate-950 shadow-md">
               <svg
                 className="w-3 h-3"
                 fill="none"
                 stroke="currentColor"
-                strokeWidth="4"
+                strokeWidth="4.5"
                 viewBox="0 0 24 24"
               >
                 <path
@@ -208,7 +209,7 @@ export default function ChallengeCard({ task, onViewDetails, dbTasks }) {
         {/* Left Side: Status */}
         <div className="flex-1 min-w-0">
           {isCompleted ? (
-            <div className="flex items-center gap-1.5 text-emerald-400 select-none">
+            <div className="flex items-center gap-1.5 text-amber-400 select-none">
               <span className="text-[9px] font-black uppercase tracking-wider">
                 COMPLETED
               </span>
@@ -270,7 +271,7 @@ export default function ChallengeCard({ task, onViewDetails, dbTasks }) {
         <div
           className={`border ${
             isCompleted
-              ? "border-emerald-500/25 bg-emerald-500/5 text-white shadow-[0_0_15px_rgba(16,185,129,0.05)]"
+              ? "border-amber-500/25 bg-amber-500/5 text-amber-400 shadow-[0_0_15px_rgba(245,158,11,0.05)]"
               : isLocked
                 ? "border-slate-800 bg-slate-900/10 text-slate-600"
                 : "border-violet-500/25 bg-violet-500/5 text-violet-400 shadow-[0_0_15px_rgba(139,92,246,0.05)]"
@@ -288,16 +289,15 @@ export default function ChallengeCard({ task, onViewDetails, dbTasks }) {
       {/* Button Row */}
       {!isLocked && (
         <div className="mt-4 pt-1">
-          <button
-            onClick={() => onViewDetails(task)}
-            className={`w-full py-3.5 text-[9px] font-black tracking-widest uppercase rounded-xl border transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
+          <div
+            className={`w-full py-3.5 text-[9px] font-black tracking-widest uppercase rounded-xl border transition-all flex items-center justify-center gap-1.5 ${
               isCompleted
-                ? "bg-[#0b2b1a] border-white/35 hover:bg-emerald-500/20 text-white-400"
-                : "bg-gradient-to-r from-violet-600 to-indigo-600 border-transparent text-white shadow-md hover:from-violet-500 hover:to-indigo-500"
+                ? "bg-[#221605] border-amber-500/35 group-hover:bg-amber-500/20 text-amber-400"
+                : "bg-gradient-to-r from-violet-600 to-indigo-600 border-transparent text-white shadow-md group-hover:from-violet-500 group-hover:to-indigo-500"
             }`}
           >
             <span>VIEW DETAILS</span>
-          </button>
+          </div>
         </div>
       )}
     </div>

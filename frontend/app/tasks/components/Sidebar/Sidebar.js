@@ -221,7 +221,7 @@ export default function Sidebar({ player, handleLogout }) {
           </div>
           <Link
             href="/points-history"
-            className="inline-flex items-center gap-1 text-[9px] font-bold text-slate-400 hover:text-white mt-3.5 transition-colors"
+            className="inline-flex items-center gap-1 text-[9px] font-bold text-slate-200 hover:text-white mt-3.5 transition-colors"
           >
             <span>View History</span>
             <svg

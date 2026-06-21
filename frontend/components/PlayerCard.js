@@ -79,15 +79,15 @@ const ACHIEVEMENT_ICONS = {
  * Generate pseudo-random stats from a player's mu_points and name.
  * This creates consistent stats for the same player.
  */
-function generateStats(muPoints = 0, name = "", xpBreakdown = null) {
+function generateStats(muPoints = 0, name = "", xpBreakdown = null, avgHighestXp = null) {
   if (xpBreakdown) {
-    const base = 50;
+    const refXp = avgHighestXp && avgHighestXp > 0 ? avgHighestXp : 38;
     return {
-      creativity: Math.min(99, base + (xpBreakdown.creativity || 0)),
-      branding: Math.min(99, base + (xpBreakdown.branding || 0)),
-      innovation: Math.min(99, base + (xpBreakdown.innovation || 0)),
-      teamwork: Math.min(99, base + (xpBreakdown.teamwork || 0)),
-      execution: Math.min(99, base + (xpBreakdown.execution || 0)),
+      creativity: Math.min(99, Math.round(((xpBreakdown.creativity || 0) / refXp) * 99)),
+      branding: Math.min(99, Math.round(((xpBreakdown.branding || 0) / refXp) * 99)),
+      innovation: Math.min(99, Math.round(((xpBreakdown.innovation || 0) / refXp) * 99)),
+      teamwork: Math.min(99, Math.round(((xpBreakdown.teamwork || 0) / refXp) * 99)),
+      execution: Math.min(99, Math.round(((xpBreakdown.execution || 0) / refXp) * 99)),
     };
   }
 
@@ -143,7 +143,7 @@ export default function PlayerCard({
     college: player.institution || player.college || "",
   };
 
-  const stats = generateStats(data.mu_points, data.name, player.xp_breakdown);
+  const stats = generateStats(data.mu_points, data.name, player.xp_breakdown, player.avg_highest_xp);
   const ovr = calculateOVR(stats);
 
   // Get referral count from player tasks
@@ -163,7 +163,7 @@ export default function PlayerCard({
 
   const playerGoals = goals ?? Math.floor(data.mu_points / 7);
   const playerAssists = assists ?? referralCount;
-  const playerChallenges = challenges ?? Math.floor(data.mu_points / 105);
+  const playerChallenges = challenges ?? player.completed_tasks_count ?? Math.floor(data.mu_points / 105);
 
   const playerPosition = DOMAIN_POSITIONS[data.domain] || "";
 
@@ -319,8 +319,6 @@ export default function PlayerCard({
           {/* Info & Stats Section (Right Column) */}
           <div className="pc-info-section">
             <div className="pc-player-name">{data.name}</div>
-
-            <div className="pc-player-college">{data.college}</div>
 
             {/* Position Block with Neon Silhouette */}
             <div className="pc-position-container pc-position-locked">

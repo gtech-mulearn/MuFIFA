@@ -16,7 +16,7 @@ export async function POST(request) {
     if (!supabaseUrl || !supabaseKey) {
       return NextResponse.json(
         { success: false, error: "Database not configured." },
-        { status: 503 }
+        { status: 503 },
       );
     }
 
@@ -24,12 +24,12 @@ export async function POST(request) {
     let userId = null;
     const cookieHeader = request.headers.get("cookie") || "";
     const cookieMatch = cookieHeader.match(
-      new RegExp(`(?:^|;\\s*)${PLAYER_COOKIE}=([^;]*)`)
+      new RegExp(`(?:^|;\\s*)${PLAYER_COOKIE}=([^;]*)`),
     );
     if (!cookieMatch) {
       return NextResponse.json(
         { success: false, error: "Authentication required." },
-        { status: 401 }
+        { status: 401 },
       );
     }
 
@@ -37,7 +37,7 @@ export async function POST(request) {
     if (!decoded || decoded.role !== "player") {
       return NextResponse.json(
         { success: false, error: "Invalid session." },
-        { status: 401 }
+        { status: 401 },
       );
     }
     userId = decoded.user_id;
@@ -50,7 +50,7 @@ export async function POST(request) {
           apikey: supabaseKey,
           Authorization: `Bearer ${supabaseKey}`,
         },
-      }
+      },
     );
     if (!userRes.ok) {
       throw new Error(`Fetch user failed: ${await userRes.text()}`);
@@ -59,30 +59,12 @@ export async function POST(request) {
     if (users.length === 0) {
       return NextResponse.json(
         { success: false, error: "Player not found." },
-        { status: 404 }
+        { status: 404 },
       );
     }
     const player = users[0];
 
-    // Parse socials JSON
-    const socials = (() => {
-      if (!player.socials) return {};
-      if (typeof player.socials === "object") return player.socials;
-      try {
-        return JSON.parse(player.socials);
-      } catch {
-        return {};
-      }
-    })();
-
-    const uuid = socials.kuzhiundo_uuid;
-    if (!uuid) {
-      return NextResponse.json({
-        success: true,
-        linked: false,
-        message: "No Kuzhiundo ID linked to your profile.",
-      });
-    }
+    const uuid = player.id;
 
     // 3. Fetch history from Kuzhiundo API
     let history;
@@ -93,7 +75,7 @@ export async function POST(request) {
           method: "GET",
           headers: { Accept: "application/json" },
           cache: "no-store",
-        }
+        },
       );
       if (!kuzhiRes.ok) {
         return NextResponse.json(
@@ -101,7 +83,7 @@ export async function POST(request) {
             success: false,
             error: "Failed to fetch stats from Kuzhiundo.",
           },
-          { status: 400 }
+          { status: 400 },
         );
       }
       history = await kuzhiRes.json();
@@ -112,7 +94,7 @@ export async function POST(request) {
           success: false,
           error: "Kuzhiundo API server is temporarily unreachable.",
         },
-        { status: 502 }
+        { status: 502 },
       );
     }
 
@@ -122,7 +104,7 @@ export async function POST(request) {
           success: false,
           error: "Invalid history data returned from Kuzhiundo.",
         },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -136,31 +118,35 @@ export async function POST(request) {
           apikey: supabaseKey,
           Authorization: `Bearer ${supabaseKey}`,
         },
-      }
+      },
     );
     if (!task100CompRes.ok) {
-      throw new Error(`Failed to fetch Task 100 completion: ${await task100CompRes.text()}`);
+      throw new Error(
+        `Failed to fetch Task 100 completion: ${await task100CompRes.text()}`,
+      );
     }
     const task100Completions = await task100CompRes.json();
-    const task100Comp = task100Completions.length > 0 ? task100Completions[0] : null;
+    const task100Comp =
+      task100Completions.length > 0 ? task100Completions[0] : null;
 
-    const oldSubmissions = task100Comp ? (task100Comp.points_awarded / KUZHIUNDO_PER_SUBMISSION) : 0;
+    const oldPoints = task100Comp ? (task100Comp.points_awarded || 0) : 0;
+    const newPoints = Math.max(0, newSubmissions - 1) * KUZHIUNDO_PER_SUBMISSION;
+    const deltaPoints = newPoints - oldPoints;
+    const oldSubmissions = task100Comp ? (task100Comp.xp_execution || 0) : 0;
     const delta = newSubmissions - oldSubmissions;
 
-    if (delta <= 0 && task100Comp) {
+    if (deltaPoints <= 0 && task100Comp) {
       return NextResponse.json({
         success: true,
         linked: true,
         delta: 0,
         message: "Your stats are already up to date!",
         data: {
-          submissions: oldSubmissions,
-          points: oldSubmissions * KUZHIUNDO_PER_SUBMISSION,
+          submissions: newSubmissions,
+          points: newPoints,
         },
       });
     }
-
-    const deltaPoints = delta * KUZHIUNDO_PER_SUBMISSION;
 
     // 4. Upsert the repeatable task completion row
     const upsertRes = await fetch(
@@ -176,7 +162,7 @@ export async function POST(request) {
         body: JSON.stringify({
           user_id: player.user_id,
           task_id: KUZHIUNDO_SUBMISSION_TASK_ID,
-          points_awarded: newSubmissions * KUZHIUNDO_PER_SUBMISSION,
+          points_awarded: newPoints,
           xp_creativity: 0,
           xp_branding: 0,
           xp_innovation: 0,
@@ -184,17 +170,15 @@ export async function POST(request) {
           xp_execution: newSubmissions, // 1 XP per submission
           completed_at: new Date().toISOString(),
         }),
-      }
+      },
     );
     if (!upsertRes.ok) {
-      throw new Error(`Failed to upsert task completion: ${await upsertRes.text()}`);
+      throw new Error(
+        `Failed to upsert task completion: ${await upsertRes.text()}`,
+      );
     }
 
-    // 5. Update user's registrations (socials and mu_points)
-    const updatedSocials = {
-      ...socials,
-      kuzhiundo_submissions: newSubmissions,
-    };
+    // 5. Update user's registrations (mu_points)
     const newMuPoints = (player.mu_points || 0) + deltaPoints;
 
     const patchUserRes = await fetch(
@@ -207,13 +191,14 @@ export async function POST(request) {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          socials: updatedSocials,
           mu_points: newMuPoints,
         }),
-      }
+      },
     );
     if (!patchUserRes.ok) {
-      throw new Error(`Failed to update player stats: ${await patchUserRes.text()}`);
+      throw new Error(
+        `Failed to update player stats: ${await patchUserRes.text()}`,
+      );
     }
 
     // 6. Update Squad Standings if player has a team
@@ -222,7 +207,7 @@ export async function POST(request) {
         supabaseUrl,
         supabaseKey,
         player.team,
-        deltaPoints
+        deltaPoints,
       );
     }
 
@@ -233,7 +218,7 @@ export async function POST(request) {
       message: `Sync successful! Processed ${delta} new pothole mappings. Awarded +${deltaPoints} uPoints.`,
       data: {
         submissions: newSubmissions,
-        points: newSubmissions * KUZHIUNDO_PER_SUBMISSION,
+        points: newPoints,
         mu_points: newMuPoints,
       },
     });
@@ -241,7 +226,7 @@ export async function POST(request) {
     console.error("Kuzhiundo sync error:", error);
     return NextResponse.json(
       { success: false, error: "Internal server error." },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

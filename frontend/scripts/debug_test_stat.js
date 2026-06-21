@@ -8,8 +8,23 @@ async function main() {
   };
 
   // 1. Fetch Registrations
-  const regRes = await fetch(`${supabaseUrl}/rest/v1/registrations?select=id,user_id,name,team,socials&limit=5000`, { headers });
+  const regRes = await fetch(`${supabaseUrl}/rest/v1/registrations?select=id,user_id,name,team&limit=5000`, { headers });
   const registrations = await regRes.json();
+
+  // Fetch completions
+  const compRes = await fetch(`${supabaseUrl}/rest/v1/user_completed_tasks?task_id=in.(4,100)&select=user_id,task_id,xp_execution`, { headers });
+  const completions = await compRes.json();
+  
+  const userTask4Completed = {};
+  const userKuzhiundoSubmissions = {};
+  completions.forEach(c => {
+    if (c.task_id === 4) {
+      userTask4Completed[c.user_id] = true;
+    }
+    if (c.task_id === 100) {
+      userKuzhiundoSubmissions[c.user_id] = Number(c.xp_execution) || 0;
+    }
+  });
 
   // 2. Fetch Live Kuzhiundo API
   let kuzhiundoApiReports = {};
@@ -30,16 +45,16 @@ async function main() {
   const portugalMembers = registrations.filter(r => r.team === "Portugal");
   console.log("\nPortugal squad matching diagnostics:");
   portugalMembers.forEach(r => {
-    const socialsObj = typeof r.socials === 'string' ? JSON.parse(r.socials) : (r.socials || {});
-    const dbCount = socialsObj.kuzhiundo_submissions || 0;
+    const dbCount = userKuzhiundoSubmissions[r.user_id] !== undefined
+      ? userKuzhiundoSubmissions[r.user_id]
+      : (userTask4Completed[r.user_id] ? 1 : 0);
     
     const matchedCountDefault = kuzhiundoApiReports[r.id];
     const matchedCountLower = kuzhiundoApiReports[String(r.id).toLowerCase()];
     
     console.log(`- Member: ${r.name} (${r.user_id})`);
     console.log(`  r.id (type: ${typeof r.id}): "${r.id}"`);
-    console.log(`  socials kuzhi_uuid: "${socialsObj.kuzhiundo_uuid}"`);
-    console.log(`  socials kuzhi_submissions (DB): ${dbCount}`);
+    console.log(`  Kuzhiundo submissions (DB completions): ${dbCount}`);
     console.log(`  Matched by r.id (exact): ${matchedCountDefault}`);
     console.log(`  Matched by r.id.toLowerCase(): ${matchedCountLower}`);
   });

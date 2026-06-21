@@ -12,10 +12,24 @@ export default function Navbar() {
   const { player: contextPlayer } = usePlayer();
   const [menuOpen, setMenuOpen] = useState(false);
   const [player, setPlayer] = useState(null);
+  const [scrolled, setScrolled] = useState(false);
 
   useEffect(() => {
     setPlayer(contextPlayer);
   }, [contextPlayer]);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      if (window.scrollY > 20) {
+        setScrolled(true);
+      } else {
+        setScrolled(false);
+      }
+    };
+    handleScroll();
+    window.addEventListener("scroll", handleScroll);
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
 
   const isArenaActive = pathname?.startsWith("/dashboard");
 
@@ -44,8 +58,14 @@ export default function Navbar() {
   ].filter(Boolean);
 
   return (
-    <header className="absolute top-0 left-0 w-full z-50 border-b border-white/5 bg-transparent select-none">
-      <div className="max-w-7xl mx-auto px-6 py-4 md:py-6 flex flex-wrap items-center justify-between gap-4">
+    <header className="sticky top-0 left-0 w-full z-50 bg-transparent pointer-events-none select-none">
+      <div
+        className={`max-w-7xl mx-auto px-6 flex flex-wrap items-center justify-between gap-4 pointer-events-auto transition-all duration-300 ease-in-out ${
+          scrolled
+            ? "w-[calc(100%-2rem)] mt-4 bg-[#070513]/70 backdrop-blur-md border border-white/10 rounded-2xl shadow-[0_4px_30px_rgba(0,0,0,0.5)] py-3 md:py-3.5"
+            : "w-full mt-0 bg-transparent border-b border-white/5 rounded-none py-4 md:py-5"
+        }`}
+      >
         <Link
           href="/"
           className="flex items-center gap-1.5 cursor-pointer group"

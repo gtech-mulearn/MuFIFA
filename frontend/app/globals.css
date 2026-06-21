@@ -252,7 +252,6 @@ body {
 .guidelines-content code {
   color: #e2e8f0 !important; /* text-slate-200 */
 }
-
 @media (max-width: 768px) {
   .guidelines-content,
   .guidelines-content ul,
@@ -264,3 +263,29 @@ body {
     font-size: 0.875rem !important; /* text-sm (14px) */
   }
 }
+
+.section-alt {
+  background:
+    linear-gradient(
+      180deg,
+      rgba(124,58,237,.03),
+      rgba(0,229,255,.02)
+    );
+}
+
+.homepage-bg {
+  background-image: url("/hero/full.png");
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  background-attachment: scroll;
+}
+
+@media (min-width: 1024px) {
+  .homepage-bg {
+    background-attachment: fixed;
+  }
+}
+
+
+

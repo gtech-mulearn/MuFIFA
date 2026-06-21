@@ -85,8 +85,8 @@ export async function middleware(request) {
   const playerToken = request.cookies.get("player_token")?.value;
   const hasValidPlayerToken = isTokenValid(playerToken);
 
-  // Protect Player Dashboard, Tasks/Challenges, Profile, and Kuzhiundo routes
-  const playerRoutes = ["/dashboard", "/tasks", "/profile", "/kuzhiundo"];
+  // Protect Player Dashboard, Tasks/Challenges, and Kuzhiundo routes
+  const playerRoutes = ["/dashboard", "/tasks", "/kuzhiundo"];
   const isPlayerRoute = playerRoutes.some((route) => pathname.startsWith(route));
 
   if (isPlayerRoute) {

@@ -120,6 +120,14 @@ function SearchTestIcon() {
   );
 }
 
+function GiftIcon() {
+  return (
+    <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
+      <path strokeLinecap="round" strokeLinejoin="round" d="M21 11.25v8.25a1.5 1.5 0 01-1.5 1.5H5.25a1.5 1.5 0 01-1.5-1.5v-8.25M12 4.875A2.625 2.625 0 109.375 7.5H12m0-2.625A2.625 2.625 0 1114.625 7.5H12m0-2.625V7.5m-9 0h18a1.5 1.5 0 011.5 1.5v1.5a1.5 1.5 0 01-1.5 1.5H3a1.5 1.5 0 01-1.5-1.5V9A1.5 1.5 0 013 7.5z" />
+    </svg>
+  );
+}
+
 
 function Sidebar({ admin, collapsed, setCollapsed }) {
   const pathname = usePathname();
@@ -131,6 +139,7 @@ function Sidebar({ admin, collapsed, setCollapsed }) {
     { name: "Tasks", href: "/admin/tasks", icon: <TasksIcon /> },
     { name: "Create Task", href: "/admin/tasks/create", icon: <CreateTaskIcon /> },
     { name: "Test Stat", href: "/admin/test-stat", icon: <TestStatIcon /> },
+    { name: "Rewards Store", href: "/admin/rewards", icon: <GiftIcon /> },
     { name: "Send Email", href: "/admin/email", icon: <EmailIcon /> },
     { name: "API Search Test", href: "/admin/external-test", icon: <SearchTestIcon /> },
   ];

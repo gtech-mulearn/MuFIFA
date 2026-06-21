@@ -1,6 +1,10 @@
 import { NextResponse } from "next/server";
 import { verifyToken } from "@/utils/auth";
 
+// Cache for avg_highest_xp. TTL: 10 minutes.
+let _avgHighestXpCache = null; // { value: number, ts: number }
+const AVG_HIGHEST_XP_TTL_MS = 600_000;
+
 export async function GET(request, { params }) {
   try {
     const { id } = await params;
@@ -37,7 +41,7 @@ export async function GET(request, { params }) {
     }
 
     const selectFields =
-      "id,name,user_id,team,domain,mu_points,avatar_url,created_at,email,phone,referal_id,tasks,ticket_url,referred_by,institution,bio,socials,muid";
+      "id,name,user_id,team,domain,mu_points,avatar_url,created_at,email,phone,referal_id,tasks,ticket_url,referred_by,bio,muid";
 
     // 1. Try to find the user by user_id (username)
     let query = `${supabaseUrl}/rest/v1/registrations?user_id=eq.${encodeURIComponent(cleanId)}&select=${selectFields}&limit=1`;
@@ -167,14 +171,14 @@ export async function GET(request, { params }) {
 
     responseData.predictions_count = predictionsCount;
 
-    // Fetch user completed tasks to sum domain XP values
+    // Fetch current user's completed tasks to sum domain XP values (fully optimized query selecting only XP columns)
     let xp_creativity = 0;
     let xp_branding = 0;
     let xp_innovation = 0;
     let xp_teamwork = 0;
     let xp_execution = 0;
     try {
-      const compQuery = `${supabaseUrl}/rest/v1/user_completed_tasks?user_id=eq.${encodeURIComponent(profile.user_id)}&select=*`;
+      const compQuery = `${supabaseUrl}/rest/v1/user_completed_tasks?user_id=eq.${encodeURIComponent(profile.user_id)}&select=xp_creativity,xp_branding,xp_innovation,xp_teamwork,xp_execution`;
       const compRes = await fetch(compQuery, {
         method: "GET",
         headers: {
@@ -184,6 +188,7 @@ export async function GET(request, { params }) {
       });
       if (compRes.ok) {
         const completions = await compRes.json();
+        responseData.completed_tasks_count = completions.length;
         completions.forEach((c) => {
           xp_creativity += c.xp_creativity || 0;
           xp_branding += c.xp_branding || 0;
@@ -196,6 +201,53 @@ export async function GET(request, { params }) {
       console.error("Failed to fetch player completed tasks for stats:", err);
     }
 
+    // Retrieve or calculate global average of student highest XP (with in-memory cache and optimized selects)
+    let avgHighestXp = 38;
+    const now = Date.now();
+    if (_avgHighestXpCache && now - _avgHighestXpCache.ts < AVG_HIGHEST_XP_TTL_MS) {
+      avgHighestXp = _avgHighestXpCache.value;
+    } else {
+      try {
+        const globalQuery = `${supabaseUrl}/rest/v1/user_completed_tasks?select=user_id,xp_creativity,xp_branding,xp_innovation,xp_teamwork,xp_execution`;
+        const globalRes = await fetch(globalQuery, {
+          method: "GET",
+          headers: {
+            apikey: supabaseKey,
+            Authorization: `Bearer ${supabaseKey}`,
+          },
+        });
+        if (globalRes.ok) {
+          const completions = await globalRes.json();
+          const userXpMap = {};
+          completions.forEach((c) => {
+            const uid = c.user_id;
+            if (!userXpMap[uid]) {
+              userXpMap[uid] = { creativity: 0, branding: 0, innovation: 0, teamwork: 0, execution: 0 };
+            }
+            userXpMap[uid].creativity += c.xp_creativity || 0;
+            userXpMap[uid].branding += c.xp_branding || 0;
+            userXpMap[uid].innovation += c.xp_innovation || 0;
+            userXpMap[uid].teamwork += c.xp_teamwork || 0;
+            userXpMap[uid].execution += c.xp_execution || 0;
+          });
+
+          const uids = Object.keys(userXpMap);
+          let sumOfStudentHighest = 0;
+          uids.forEach((uid) => {
+            const xp = userXpMap[uid];
+            const highest = Math.max(xp.creativity, xp.branding, xp.innovation, xp.teamwork, xp.execution);
+            sumOfStudentHighest += highest;
+          });
+          avgHighestXp = uids.length > 0 ? sumOfStudentHighest / uids.length : 38;
+          _avgHighestXpCache = { value: avgHighestXp, ts: now };
+        }
+      } catch (err) {
+        console.error("Failed to fetch global completions for avg_highest_xp:", err);
+        if (_avgHighestXpCache) avgHighestXp = _avgHighestXpCache.value;
+      }
+    }
+    responseData.avg_highest_xp = avgHighestXp;
+
     responseData.xp_breakdown = {
       creativity: xp_creativity,
       branding: xp_branding,
@@ -203,6 +255,8 @@ export async function GET(request, { params }) {
       teamwork: xp_teamwork,
       execution: xp_execution,
     };
+
+    delete responseData.institution;
 
     if (!isOwner) {
       delete responseData.email;
@@ -326,15 +380,13 @@ export async function PATCH(request, { params }) {
 
     // 4. Parse request body
     const body = await request.json();
-    const { name, institution, bio, phone, socials, tasks, muid } = body;
+    const { name, bio, phone, tasks, muid } = body;
 
     // Build update object
     const updateData = {};
     if (name !== undefined) updateData.name = name.trim();
-    if (institution !== undefined) updateData.institution = institution.trim();
     if (bio !== undefined) updateData.bio = bio.trim();
     if (phone !== undefined) updateData.phone = phone.trim();
-    if (socials !== undefined) updateData.socials = socials;
     if (tasks !== undefined) updateData.tasks = tasks;
     if (muid !== undefined) updateData.muid = muid.trim();
 
