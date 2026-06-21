@@ -80,10 +80,10 @@ function ProfilePageContent({ params }) {
       const res = await fetch("/api/v1/auth/logout", { method: "POST" });
       if (res.ok) {
         if (typeof window !== "undefined") {
-          localStorage.clear();
+          localStorage.removeItem("player");
         }
         setCurrentUser(null);
-        router.push("/");
+        window.location.href = "/login";
       }
     } catch (err) {
       console.error("Logout request error:", err);
@@ -378,7 +378,10 @@ function ProfilePageContent({ params }) {
 
   // Calculate dynamic stats
   const xp = player.xp_breakdown || {};
-  const refXp = player.avg_highest_xp && player.avg_highest_xp > 0 ? player.avg_highest_xp : 38;
+  const refXp =
+    player.avg_highest_xp && player.avg_highest_xp > 0
+      ? player.avg_highest_xp
+      : 38;
   const stats = {
     creativity: Math.min(99, Math.round(((xp.creativity || 0) / refXp) * 99)),
     branding: Math.min(99, Math.round(((xp.branding || 0) / refXp) * 99)),
@@ -1254,8 +1257,6 @@ function ProfilePageContent({ params }) {
                         />
                       </svg>
                     </button>
-
-
                   </div>
 
                   {/* Logout Button aligned bottom-right */}
@@ -1354,7 +1355,6 @@ function ProfilePageContent({ params }) {
               >
                 Security
               </button>
-
             </div>
 
             {/* TAB CONTENT: PROFILE INFO */}
@@ -1543,8 +1543,6 @@ function ProfilePageContent({ params }) {
                 </button>
               </form>
             )}
-
-
           </div>
         </div>
       )}

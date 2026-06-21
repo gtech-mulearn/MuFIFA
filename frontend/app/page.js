@@ -2,7 +2,6 @@
 
 import React from "react";
 import { useRouter } from "next/navigation";
-import BackgroundVideo from "@/components/BackgroundVideo";
 import Hero from "@/components/home/Hero";
 import WhatIsMuFifa from "@/components/home/WhatIsMuFifa";
 import WhyJoin from "@/components/home/WhyJoin";
@@ -29,13 +28,9 @@ export default function Home() {
     <div className="w-full bg-[#090A0F] text-white flex flex-col font-sans relative select-none">
       {/* Homepage Background Image */}
       <div className="absolute inset-0 z-0 pointer-events-none homepage-bg" />
-
-      <BackgroundVideo />
-
       <div className="absolute inset-0 z-0 bg-[radial-gradient(circle_at_center,rgba(255,255,255,0.02)_25%,#090A0F_95%)] opacity-85 pointer-events-none" />
       <div className="absolute inset-0 z-0 bg-gradient-to-tr from-[rgba(148,163,184,0.05)] via-transparent to-[rgba(6, 182, 212,0.03)] pointer-events-none" />
       <div className="absolute inset-0 z-0 bg-gradient-to-tl from-[rgba(167,139,250,0.04)] via-transparent to-transparent pointer-events-none" />
-
 
       {/* Ambient background glows */}
       <div className="absolute top-[10%] left-[10%] w-[40vw] h-[40vw] indigo-accent-glow pointer-events-none rounded-full opacity-35" />
