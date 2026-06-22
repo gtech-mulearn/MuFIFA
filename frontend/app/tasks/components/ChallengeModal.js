@@ -48,7 +48,7 @@ export default function ChallengeModal({
     );
   };
 
-  const xpValue = task.mupoint > 0 ? task.mupoint * 10 : 50;
+  const xpValue = task.xpValue || 0;
 
   return (
     <div

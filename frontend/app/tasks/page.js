@@ -287,9 +287,19 @@ export default function TasksPage() {
       .map((dbTask) => {
         const completed = !!dbTask.completed;
 
-        const longDesc = dbTask.guidelines ? (
-          <div dangerouslySetInnerHTML={{ __html: dbTask.guidelines }} />
-        ) : (
+        const longDesc = dbTask.guidelines ? (() => {
+          // Sanitize HTML: strip dangerous tags and event handler attributes
+          let safe = dbTask.guidelines;
+          // Remove script, iframe, object, embed, form, link, style tags and their contents
+          safe = safe.replace(/<(script|iframe|object|embed|form|link|style)\b[^<]*(?:(?!<\/\1>)<[^<]*)*<\/\1>/gi, "");
+          // Remove self-closing versions of dangerous tags
+          safe = safe.replace(/<(script|iframe|object|embed|form|link|style)\b[^>]*\/?>/gi, "");
+          // Remove all on* event handler attributes (onclick, onerror, onload, etc.)
+          safe = safe.replace(/\s+on\w+\s*=\s*(?:"[^"]*"|'[^']*'|[^\s>]+)/gi, "");
+          // Remove javascript: and data: URLs from href/src attributes
+          safe = safe.replace(/(href|src)\s*=\s*(?:"(?:javascript|data):[^"]*"|'(?:javascript|data):[^']*')/gi, "$1=\"\"");
+          return <div dangerouslySetInnerHTML={{ __html: safe }} />;
+        })() : (
           <p className="text-[10px] text-slate-300">{dbTask.description}</p>
         );
 
@@ -311,6 +321,7 @@ export default function TasksPage() {
           tier: dbTask.tier || 1,
           mupoint: dbTask.mupoint || 0,
           category: dbTask.category || "",
+          xpValue: (dbTask.xp_creativity || 0) + (dbTask.xp_branding || 0) + (dbTask.xp_innovation || 0) + (dbTask.xp_teamwork || 0) + (dbTask.xp_execution || 0),
         };
       })
       .sort((a, b) => a.id - b.id);
