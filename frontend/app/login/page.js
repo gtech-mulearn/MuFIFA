@@ -72,7 +72,7 @@ export default function LoginPage() {
         localStorage.setItem("player", JSON.stringify(data.data));
       }
       // Redirect to dashboard on success
-      router.push(`/dashboard`);
+      window.location.href = "/dashboard";
     } catch (err) {
       console.error("Login request error:", err);
       setError("A connection error occurred. Please try again.");

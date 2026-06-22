@@ -433,7 +433,7 @@ function RegisterForm() {
         if (typeof window !== "undefined") {
           localStorage.setItem("player", JSON.stringify(data.data));
         }
-        router.push("/dashboard");
+        window.location.href = "/dashboard";
       } else {
         setOtpModal((prev) => ({
           ...prev,
