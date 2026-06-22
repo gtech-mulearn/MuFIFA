@@ -101,6 +101,14 @@ function ArenaLayout({
 }) {
   const { player, loading } = usePlayer();
 
+  const xp = player?.xp_breakdown || {};
+  const totalXp =
+    (xp.creativity || 0) +
+    (xp.branding || 0) +
+    (xp.innovation || 0) +
+    (xp.teamwork || 0) +
+    (xp.execution || 0);
+
   const handleLogout = async () => {
     try {
       const res = await fetch("/api/v1/auth/logout", { method: "POST" });
@@ -284,7 +292,7 @@ function ArenaLayout({
                 XP
               </span>
               <span className="text-xs font-black text-white">
-                {(player.mu_points || 0) * 100}
+                {totalXp}
               </span>
             </div>
 
