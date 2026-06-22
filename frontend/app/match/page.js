@@ -90,9 +90,7 @@ function TopPredictorsList({
       }
     }[rankPosition];
 
-    const displayCollege = pred.institution && pred.institution !== "N/A"
-      ? pred.institution
-      : "No College Listed";
+    const displayTeam = pred.team || "No Team";
 
     return (
       <div className={`flex-1 flex flex-col items-center text-center group ${config.containerClass}`}>
@@ -127,7 +125,7 @@ function TopPredictorsList({
             {pred.name}
           </Link>
           <span className="text-[8px] sm:text-[9px] text-slate-500 truncate max-w-full font-semibold">
-            {displayCollege}
+            {displayTeam}
           </span>
           <span className={`inline-block px-1.5 py-0.5 mt-1 rounded text-[7px] font-black uppercase tracking-wider border shrink-0 ${
             pred.domain?.toLowerCase() === "cybersecurity"

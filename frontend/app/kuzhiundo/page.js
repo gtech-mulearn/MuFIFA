@@ -319,7 +319,7 @@ export default function KuzhiundoLeaderboard() {
           currentPoints: item.points,
         };
       })
-      .sort((a, b) => b.submissions - a.submissions);
+      .sort((a, b) => b.currentPoints - a.currentPoints);
   }, [teamsData]);
 
   // Filtered teams list based on search

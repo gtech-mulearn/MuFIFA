@@ -57,6 +57,7 @@ export default function LeaderboardPage() {
   const [playersSearchQuery, setPlayersSearchQuery] = useState("");
   const [debouncedSearchQuery, setDebouncedSearchQuery] = useState("");
   const [playersSortOrder, setPlayersSortOrder] = useState("desc"); // "desc" | "asc"
+  const [teamFilter, setTeamFilter] = useState("All");
   const [playersLoading, setPlayersLoading] = useState(false);
   const [hasMorePlayers, setHasMorePlayers] = useState(false);
 
@@ -126,7 +127,7 @@ export default function LeaderboardPage() {
     setPlayersLoading(true);
     try {
       const res = await fetch(
-        `/api/v1/leaderboard/individuals?limit=12&offset=${offset}&search=${encodeURIComponent(debouncedSearchQuery)}&sort=${playersSortOrder}`,
+        `/api/v1/leaderboard/individuals?limit=12&offset=${offset}&search=${encodeURIComponent(debouncedSearchQuery)}&sort=${playersSortOrder}&team=${encodeURIComponent(teamFilter)}`,
       );
       const data = await res.json();
       if (res.ok && data.success) {
@@ -142,7 +143,7 @@ export default function LeaderboardPage() {
     } finally {
       setPlayersLoading(false);
     }
-  }, [debouncedSearchQuery, playersSortOrder]);
+  }, [debouncedSearchQuery, playersSortOrder, teamFilter]);
 
   // Load players on tab switch, sort order change, or query change
   useEffect(() => {
@@ -241,6 +242,7 @@ export default function LeaderboardPage() {
                 setActiveTab("individual");
                 setPlayersSearchQuery("");
                 setDebouncedSearchQuery("");
+                setTeamFilter("All");
               }}
               className={`flex-1 text-center py-2 text-xs font-bold uppercase tracking-wider rounded-lg transition-all cursor-pointer ${
                 activeTab === "individual"
@@ -281,14 +283,25 @@ export default function LeaderboardPage() {
                 className="bg-black/40 border border-white/10 rounded-lg px-3 py-2 text-xs text-slate-200 placeholder-slate-600 focus:outline-none focus:border-[#06B6D4] w-full transition-colors"
               />
             ) : (
-              <div className="flex gap-2 w-full">
+              <div className="flex gap-2 w-full flex-wrap sm:flex-nowrap">
                 <input
                   type="text"
                   placeholder="Search player name or @username..."
                   value={playersSearchQuery}
                   onChange={(e) => setPlayersSearchQuery(e.target.value)}
-                  className="bg-black/40 border border-white/10 rounded-lg px-3 py-2 text-xs text-slate-200 placeholder-slate-600 focus:outline-none focus:border-[#06B6D4] flex-1 transition-colors"
+                  className="bg-black/40 border border-white/10 rounded-lg px-3 py-2 text-xs text-slate-200 placeholder-slate-600 focus:outline-none focus:border-[#06B6D4] flex-1 transition-colors min-w-[200px]"
                 />
+                
+                <select
+                  value={teamFilter}
+                  onChange={(e) => setTeamFilter(e.target.value)}
+                  className="px-4 py-2 bg-gradient-to-r from-[#1a1438]/80 to-[#110e20]/80 border border-violet-500/30 hover:border-violet-400/50 rounded-lg text-xs font-black uppercase tracking-wider text-violet-300 focus:outline-none focus:border-violet-500 focus:ring-1 focus:ring-violet-500/50 transition-all cursor-pointer shrink-0 shadow-[0_0_15px_rgba(139,92,246,0.1)] outline-none"
+                >
+                  <option value="All" className="bg-[#0f0c1b] text-violet-300 font-black">ALL SQUADS</option>
+                  {TEAMS.map((t) => (
+                    <option key={t} value={t} className="bg-[#0f0c1b] text-slate-200 font-bold uppercase">{t}</option>
+                  ))}
+                </select>
                 <button
                   onClick={() =>
                     setPlayersSortOrder((prev) =>
@@ -467,7 +480,7 @@ export default function LeaderboardPage() {
                         </div>
 
                         {/* Team Flag & Name */}
-                        <span className="text-xs font-semibold text-slate-200 group-hover:text-white transition-colors flex items-center gap-2">
+                        <span className="text-xs sm:text-base font-semibold text-slate-200 group-hover:text-white transition-colors flex items-center gap-2">
                           <span
                             className={`fi fi-${team.flag} rounded-sm shadow-sm border border-white/10 shrink-0`}
                             style={{ width: "18px", height: "13.5px" }}
@@ -481,7 +494,7 @@ export default function LeaderboardPage() {
                       {/* Points & Members */}
                       <div className="flex items-center gap-3">
                         <div className="flex items-center gap-1">
-                          <span className="text-xs font-bold text-[#06B6D4]">
+                          <span className="text-xs sm:text-base font-bold text-[#06B6D4]">
                             {team.points}
                           </span>
                           <span className="text-[12px] text-slate-400 uppercase tracking-wider">
@@ -532,7 +545,7 @@ export default function LeaderboardPage() {
                         </span>
 
                         {/* Avatar */}
-                        <div className="relative w-7 h-7 rounded-full bg-slate-800 border border-white/5 overflow-hidden flex items-center justify-center shrink-0">
+                        <div className="relative w-7 h-7 md:w-10 md:h-10 rounded-full bg-slate-800 border border-white/5 overflow-hidden flex items-center justify-center shrink-0">
                           {player.avatar_url ? (
                             <Image
                               src={player.avatar_url}
@@ -551,11 +564,11 @@ export default function LeaderboardPage() {
                         <div className="flex flex-col min-w-0 text-left">
                           <Link
                             href={`/profile/${player.user_id}`}
-                            className="text-xs font-semibold text-slate-200 group-hover:text-white hover:underline transition-colors truncate"
+                            className="text-xs sm:text-sm md:text-base font-semibold text-slate-200 group-hover:text-white hover:underline transition-colors truncate"
                           >
                             {player.name}
                           </Link>
-                          <span className="text-[9px] font-medium text-slate-500 truncate">
+                          <span className="text-[9px] sm:text-[10px] font-medium text-slate-500 truncate">
                             @{player.user_id}
                           </span>
                         </div>
@@ -579,10 +592,10 @@ export default function LeaderboardPage() {
 
                         {/* Points */}
                         <div className="flex items-center gap-0.5 min-w-[50px] justify-end">
-                          <span className="text-xs font-bold text-[#06B6D4]">
+                          <span className="text-xs sm:text-base md:text-lg font-bold text-[#06B6D4]">
                             {player.mu_points || 0}
                           </span>
-                          <span className="text-[10px] text-slate-500 uppercase tracking-wider font-semibold">
+                          <span className="text-[10px] sm:text-xs text-slate-500 uppercase tracking-wider font-semibold">
                             pts
                           </span>
                         </div>

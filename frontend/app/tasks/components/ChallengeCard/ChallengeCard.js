@@ -6,6 +6,14 @@ export default function ChallengeCard({ task, onViewDetails, dbTasks }) {
 
   // Icons mapping based on task ID
   const renderIcon = () => {
+    if (task.logo_url) {
+      return (
+        <div className={`w-14 h-14 rounded-full border border-white/20 flex items-center justify-center overflow-hidden bg-white/5 ${isLocked ? "opacity-50 grayscale" : "shadow-[0_0_15px_rgba(255,255,255,0.15)]"}`}>
+          <img src={task.logo_url} alt="" className="w-full h-full object-cover" />
+        </div>
+      );
+    }
+
     if (isLocked) {
       return (
         <div className="w-14 h-14 rounded-full bg-slate-900/60 border border-slate-700/20 flex items-center justify-center text-slate-500 shadow-inner">

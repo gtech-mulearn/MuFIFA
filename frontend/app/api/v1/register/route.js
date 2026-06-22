@@ -16,7 +16,8 @@ const PLAYER_COOKIE = "player_token";
 
 function buildPlayerTokenCookie(token) {
   const maxAge = 30 * 24 * 60 * 60; // 30 days
-  return `${PLAYER_COOKIE}=${token}; Path=/; HttpOnly; SameSite=Lax; Max-Age=${maxAge}`;
+  const secure = process.env.NODE_ENV === "production" ? " Secure;" : "";
+  return `${PLAYER_COOKIE}=${token}; Path=/; HttpOnly; SameSite=Lax;${secure} Max-Age=${maxAge}`;
 }
 
 function jsonError(status, code, message, details = null) {
@@ -221,11 +222,12 @@ export async function POST(request) {
       const { name, email: sessionEmail, phone, domain, team, referralId } = session.payload;
       const userId = sessionEmail.split("@")[0];
 
-      // Generate random 8-character password for the registrant
+      // Generate random 8-character password using crypto-safe randomness
       const chars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+      const randomBuf = crypto.randomBytes(8);
       let plainPassword = "";
       for (let i = 0; i < 8; i++) {
-        plainPassword += chars.charAt(Math.floor(Math.random() * chars.length));
+        plainPassword += chars.charAt(randomBuf[i] % chars.length);
       }
       const hashedPassword = await hashPassword(plainPassword);
 
@@ -379,10 +381,13 @@ export async function POST(request) {
         role: "player",
       });
 
+      // Strip sensitive fields before sending to client
+      const { password_hash: _ph, plainPassword: _pp, phone: _phn, referred_by: _rb, ...safePlayer } = player;
+
       const response = NextResponse.json({
         success: true,
         message: "Registration completed successfully.",
-        data: player,
+        data: safePlayer,
       }, { status: 201 });
 
       response.headers.set("Set-Cookie", buildPlayerTokenCookie(token));

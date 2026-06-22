@@ -33,14 +33,16 @@ export default function TaskCard({
       >
         <div className="flex items-center gap-4 min-w-0 flex-1">
           {/* Circle badge */}
-          <div className={`w-11 h-11 rounded-full flex items-center justify-center shrink-0 transition-all ${
+          <div className={`w-11 h-11 rounded-full flex items-center justify-center shrink-0 transition-all overflow-hidden ${
             task.isLocked
               ? "bg-slate-800/30 border border-slate-700/20"
               : task.completed
               ? "bg-emerald-500/10 border border-emerald-500/30 shadow-[0_0_12px_rgba(16,185,129,0.15)]"
               : "bg-indigo-500/10 border border-indigo-500/30 shadow-[0_0_12px_rgba(99,102,241,0.15)]"
           }`}>
-            {task.isLocked ? (
+            {task.logo_url ? (
+              <img src={task.logo_url} alt="" className={`w-full h-full object-cover ${task.isLocked ? "grayscale opacity-50" : ""}`} />
+            ) : task.isLocked ? (
               <svg className="w-4.5 h-4.5 text-slate-500" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z" />
               </svg>

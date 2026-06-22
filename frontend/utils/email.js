@@ -21,9 +21,6 @@ function getTransporter() {
     port,
     secure: port === 465,
     auth: { user, pass },
-    tls: {
-      rejectUnauthorized: false,
-    },
   });
 }
 
@@ -241,7 +238,7 @@ Best regards,
           <div style="margin-top: 32px; border-top: 1px solid rgba(255, 255, 255, 0.06); padding-top: 24px; text-align: center;">
             <div style="font-size: 12px; font-weight: 700; color: #94a3b8; margin-bottom: 6px;">μLearn Foundation</div>
             <p style="font-size: 9px; color: #475569; margin: 0;">
-              μLearn Foundation | Copyright &copy; 2025 All rights reserved.<br>
+              μLearn Foundation | Copyright &copy; 2026 All rights reserved.<br>
               Technopark Phase 1, Thiruvananthapuram, Kerala - 695581.
             </p>
           </div>
@@ -397,7 +394,7 @@ Best regards,
             <div class="footer">
               <div class="footer-title">μLearn Foundation</div>
               <p class="footer-copyright">
-                μLearn Foundation | Copyright &copy; 2025 All rights reserved.<br>
+                μLearn Foundation | Copyright &copy; 2026 All rights reserved.<br>
                 Technopark Phase 1, Thiruvananthapuram, Kerala - 695581.
               </p>
             </div>
@@ -537,7 +534,7 @@ Best regards,
             <div class="footer">
               <div class="footer-title">μLearn Foundation</div>
               <p class="footer-copyright">
-                μLearn Foundation | Copyright &copy; 2025 All rights reserved.<br>
+                μLearn Foundation | Copyright &copy; 2026 All rights reserved.<br>
                 Technopark Phase 1, Thiruvananthapuram, Kerala - 695581.
               </p>
             </div>

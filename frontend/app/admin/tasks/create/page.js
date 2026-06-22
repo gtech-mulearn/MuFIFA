@@ -30,8 +30,39 @@ export default function AdminCreateTaskPage() {
     xp_execution: 0,
     tier: 1,
     category: "",
+    logo_url: "",
+    compulsory: false,
   });
   const [creatingTask, setCreatingTask] = useState(false);
+  const [uploadingLogo, setUploadingLogo] = useState(false);
+  const [logoError, setLogoError] = useState("");
+
+  const handleLogoUpload = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploadingLogo(true);
+    setLogoError("");
+
+    const formData = new FormData();
+    formData.append("logo", file);
+
+    try {
+      const res = await fetch("/api/v1/tasks/upload-logo", {
+        method: "POST",
+        body: formData,
+      });
+      const data = await res.json();
+      if (res.ok && data.success) {
+        setTaskForm((prev) => ({ ...prev, logo_url: data.logo_url }));
+      } else {
+        setLogoError(data.error || "Upload failed");
+      }
+    } catch (err) {
+      setLogoError("Network error. Upload failed");
+    } finally {
+      setUploadingLogo(false);
+    }
+  };
 
   // Editing states
   const [isEditing, setIsEditing] = useState(false);
@@ -99,6 +130,8 @@ export default function AdminCreateTaskPage() {
           xp_execution: 0,
           tier: 1,
           category: "",
+          logo_url: "",
+          compulsory: false,
         });
         setIsEditing(false);
         setEditingTaskId(null);
@@ -134,6 +167,8 @@ export default function AdminCreateTaskPage() {
       xp_execution: task.xp_execution || 0,
       tier: task.tier || 1,
       category: task.category || "",
+      logo_url: task.logo_url || "",
+      compulsory: task.compulsory || false,
     });
     
     // Smooth scroll to form
@@ -164,6 +199,8 @@ export default function AdminCreateTaskPage() {
       xp_execution: 0,
       tier: 1,
       category: "",
+      logo_url: "",
+      compulsory: false,
     });
   };
 
@@ -249,6 +286,30 @@ export default function AdminCreateTaskPage() {
 
               <div className="flex flex-col gap-1.5">
                 <label className="text-[10px] font-black uppercase tracking-wider text-slate-500">
+                  Task Logo (Optional)
+                </label>
+                <div className="flex items-center gap-4">
+                  {taskForm.logo_url && (
+                    <div className="w-12 h-12 rounded-full overflow-hidden bg-white/5 border border-slate-200 shrink-0">
+                      <img src={taskForm.logo_url} alt="Logo preview" className="w-full h-full object-cover" />
+                    </div>
+                  )}
+                  <div className="flex flex-col gap-1 w-full">
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={handleLogoUpload}
+                      disabled={uploadingLogo}
+                      className={`w-full text-xs text-slate-400 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-sky-50 file:text-sky-700 hover:file:bg-sky-100 ${uploadingLogo ? "opacity-50 cursor-not-allowed" : "cursor-pointer"}`}
+                    />
+                    {uploadingLogo && <span className="text-[9px] text-sky-500 font-bold">Uploading logo...</span>}
+                    {logoError && <span className="text-[9px] text-rose-500 font-bold">{logoError}</span>}
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex flex-col gap-1.5">
+                <label className="text-[10px] font-black uppercase tracking-wider text-slate-500">
                   Description
                 </label>
                 <textarea
@@ -284,6 +345,21 @@ export default function AdminCreateTaskPage() {
                   placeholder="e.g. UI/UX, Cyber"
                   className={`rounded-xl px-4 py-2.5 focus:outline-none ${THEME.input}`}
                 />
+              </div>
+
+              <div className="flex flex-col gap-1.5 mt-1">
+                <label className="flex items-center gap-2 text-[10px] font-black uppercase tracking-wider text-slate-500 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={taskForm.compulsory}
+                    onChange={(e) => setTaskForm({ ...taskForm, compulsory: e.target.checked })}
+                    className="w-4 h-4 rounded border-slate-300 text-sky-500 focus:ring-sky-500 cursor-pointer"
+                  />
+                  Mark as Compulsory Task
+                </label>
+                <p className="text-[9px] text-slate-400 pl-6">
+                  If ticked, players cannot access tasks with a higher ID until this one is completed.
+                </p>
               </div>
 
               <div className="flex flex-col gap-1.5">
@@ -442,7 +518,12 @@ export default function AdminCreateTaskPage() {
                       <tr key={task.id} className="border-b border-slate-200/50 hover:bg-slate-50 transition-colors">
                         <td className="px-4 py-3 font-mono font-bold text-slate-900">{task.id}</td>
                         <td className="px-4 py-3 whitespace-nowrap">
-                          <div className="font-semibold text-slate-800">{task.title}</div>
+                          <div className="flex items-center gap-2">
+                            {task.logo_url && (
+                              <img src={task.logo_url} alt="" className="w-6 h-6 rounded-full object-cover shrink-0" />
+                            )}
+                            <div className="font-semibold text-slate-800">{task.title}</div>
+                          </div>
                           <div className="text-[10px] text-slate-400 max-w-xs truncate">{task.description}</div>
                           {task.category && (
                             <div className="mt-1 flex gap-1 flex-wrap">
@@ -454,7 +535,10 @@ export default function AdminCreateTaskPage() {
                             </div>
                           )}
                         </td>
-                        <td className="px-4 py-3 text-slate-600">Tier {task.tier}</td>
+                        <td className="px-4 py-3 text-slate-600">
+                          Tier {task.tier}
+                          {task.compulsory && <span className="ml-2 bg-rose-100 text-rose-700 text-[8px] font-bold px-1.5 py-0.5 rounded uppercase block mt-1 w-max">Compulsory</span>}
+                        </td>
                         <td className="px-4 py-3 font-mono font-semibold text-sky-700">+{task.mupoint}</td>
                         <td className="px-4 py-3 font-mono text-[10px] text-slate-500 whitespace-nowrap">
                           C:{task.xp_creativity} | B:{task.xp_branding} | I:{task.xp_innovation} | T:{task.xp_teamwork} | E:{task.xp_execution}

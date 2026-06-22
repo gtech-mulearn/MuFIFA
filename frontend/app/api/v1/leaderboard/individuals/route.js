@@ -107,6 +107,7 @@ export async function GET(request) {
     const offset = parseInt(searchParams.get("offset") || "0", 10);
     const search = searchParams.get("search") || "";
     const sort = searchParams.get("sort") || "desc";
+    const team = searchParams.get("team") || "All";
 
     const supabaseUrl = process.env.SUPABASE_URL;
     const supabaseKey = process.env.SUPABASE_KEY;
@@ -133,6 +134,10 @@ export async function GET(request) {
     if (search.trim()) {
       const cleanSearch = search.trim();
       queryUrl += `&or=(name.ilike.*${encodeURIComponent(cleanSearch)}*,user_id.ilike.*${encodeURIComponent(cleanSearch)}*)`;
+    }
+
+    if (team && team !== "All") {
+      queryUrl += `&team=eq.${encodeURIComponent(team)}`;
     }
 
     // Fetch paginated players and rank map in parallel

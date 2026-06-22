@@ -1,7 +1,10 @@
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 
-const JWT_SECRET = process.env.ADMIN_JWT_SECRET || "mufifa26_fallback_secret";
+const JWT_SECRET = process.env.ADMIN_JWT_SECRET;
+if (!JWT_SECRET) {
+  throw new Error("ADMIN_JWT_SECRET environment variable is required. Refusing to start with no JWT secret.");
+}
 const TOKEN_COOKIE = "admin_token";
 const TOKEN_EXPIRY = "24h";
 
@@ -73,12 +76,14 @@ export function requireRole(request, ...roles) {
  */
 export function buildTokenCookie(token) {
   const maxAge = 24 * 60 * 60; // 24 hours in seconds
-  return `${TOKEN_COOKIE}=${token}; Path=/; HttpOnly; SameSite=Lax; Max-Age=${maxAge}`;
+  const secure = process.env.NODE_ENV === "production" ? " Secure;" : "";
+  return `${TOKEN_COOKIE}=${token}; Path=/; HttpOnly; SameSite=Lax;${secure} Max-Age=${maxAge}`;
 }
 
 /**
  * Build a Set-Cookie header string to clear the admin token.
  */
 export function clearTokenCookie() {
-  return `${TOKEN_COOKIE}=; Path=/; HttpOnly; SameSite=Lax; Max-Age=0`;
+  const secure = process.env.NODE_ENV === "production" ? " Secure;" : "";
+  return `${TOKEN_COOKIE}=; Path=/; HttpOnly; SameSite=Lax;${secure} Max-Age=0`;
 }

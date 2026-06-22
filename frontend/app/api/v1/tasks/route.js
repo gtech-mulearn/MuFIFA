@@ -74,12 +74,28 @@ export async function GET(request) {
       }
     }
 
-    // 4. Map completions to tasks
+    // 4. Map completions and locking logic to tasks
+    let firstUncompletedCompulsoryTaskId = null;
+
     const processedTasks = tasks.map((t) => {
       const completion = completionsMap[t.id];
+      const completed = !!completion;
+      
+      let isLocked = false;
+      // If we found an uncompleted compulsory task, lock any task with a higher ID
+      if (firstUncompletedCompulsoryTaskId !== null && t.id > firstUncompletedCompulsoryTaskId) {
+        isLocked = true;
+      }
+      
+      // If this task is compulsory and not completed, mark it as the lock barrier for subsequent tasks
+      if (t.compulsory && !completed && firstUncompletedCompulsoryTaskId === null) {
+        firstUncompletedCompulsoryTaskId = t.id;
+      }
+
       return {
         ...t,
-        completed: !!completion,
+        completed,
+        isLocked,
         completed_at: completion ? completion.completed_at : null,
         points_awarded: completion ? completion.points_awarded : 0,
         xp_earned: completion
@@ -191,6 +207,8 @@ export async function POST(request) {
       xp_execution,
       tier,
       category,
+      logo_url,
+      compulsory,
     } = body;
 
     if (!id || !title || !description) {
@@ -222,6 +240,8 @@ export async function POST(request) {
         xp_execution: parseInt(xp_execution || 0, 10),
         tier: parseInt(tier || 1, 10),
         category: category ? category.split(",").map(c => c.trim()).filter(Boolean).join(",") : "",
+        logo_url: logo_url || null,
+        compulsory: compulsory || false,
       }),
     });
 

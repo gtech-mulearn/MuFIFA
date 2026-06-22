@@ -13,6 +13,7 @@
     "@flags-sdk/vercel": "^1.4.2",
     "@vercel/speed-insights": "^2.0.0",
     "bcryptjs": "^3.0.3",
+    "dompurify": "^3.4.11",
     "flag-icons": "^7.5.0",
     "flags": "^4.2.0",
     "html2canvas": "^1.4.1",

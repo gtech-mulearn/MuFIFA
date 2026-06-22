@@ -5,11 +5,15 @@ const nextConfig = {
     remotePatterns: [
       {
         protocol: "https",
-        hostname: "**",
+        hostname: "flagcdn.com",
       },
       {
-        protocol: "http",
-        hostname: "**",
+        protocol: "https",
+        hostname: "api.qrserver.com",
+      },
+      {
+        protocol: "https",
+        hostname: "ncqnqrxchgthpauhtnce.supabase.co",
       },
     ],
   },

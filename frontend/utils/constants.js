@@ -43,3 +43,48 @@ export const TEAM_FLAG_BGS = {
   France: "/playerCard/flag/france.webp",
   Croatia: "/playerCard/flag/crotia.webp",
 };
+
+export const LEVEL_THRESHOLDS = [
+  0,      // Level 1
+  800,    // Level 2
+  1200,   // Level 3
+  1800,   // Level 4
+  2600,   // Level 5
+  3000,   // Level 6
+  3500,   // Level 7
+  4000,   // Level 8
+  4500,   // Level 9
+  5000,   // Level 10
+  5500,   // Level 11
+  6000    // Level 12
+];
+
+export const calculateLevel = (xp) => {
+  let level = 1;
+  let nextXp = LEVEL_THRESHOLDS[1];
+  let currentLevelXp = xp;
+
+  for (let i = 0; i < LEVEL_THRESHOLDS.length; i++) {
+    if (xp >= LEVEL_THRESHOLDS[i]) {
+      level = i + 1;
+      const nextThreshold = LEVEL_THRESHOLDS[i + 1];
+      if (nextThreshold) {
+        nextXp = nextThreshold - LEVEL_THRESHOLDS[i];
+        currentLevelXp = xp - LEVEL_THRESHOLDS[i];
+      } else {
+        // Max level reached
+        nextXp = 0;
+        currentLevelXp = xp - LEVEL_THRESHOLDS[i];
+      }
+    } else {
+      break;
+    }
+  }
+
+  return {
+    level,
+    currentLevelXp,
+    nextXp,
+    xpPercent: nextXp > 0 ? Math.min(Math.round((currentLevelXp / nextXp) * 100), 100) : 100,
+  };
+};

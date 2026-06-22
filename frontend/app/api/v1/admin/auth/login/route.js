@@ -54,7 +54,7 @@ export async function POST(request) {
     }
 
     const url = `${supabaseUrl}/rest/v1/admin_users?username=eq.${encodeURIComponent(username)}&select=id,username,email,password_hash,role`;
-    console.log(url);
+
 
     const res = await fetch(url, {
       method: "GET",
@@ -69,7 +69,7 @@ export async function POST(request) {
     }
 
     const rows = await res.json();
-    console.log(rows);
+
     if (!rows || rows.length === 0) {
       return NextResponse.json(
         {

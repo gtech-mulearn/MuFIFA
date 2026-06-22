@@ -128,6 +128,14 @@ function GiftIcon() {
   );
 }
 
+function SyncIcon() {
+  return (
+    <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
+      <path strokeLinecap="round" strokeLinejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182m0-4.991v4.99" />
+    </svg>
+  );
+}
+
 
 function Sidebar({ admin, collapsed, setCollapsed }) {
   const pathname = usePathname();
@@ -138,6 +146,7 @@ function Sidebar({ admin, collapsed, setCollapsed }) {
     { name: "Predictions", href: "/admin/predictions", icon: <PredictionsIcon /> },
     { name: "Tasks", href: "/admin/tasks", icon: <TasksIcon /> },
     { name: "Create Task", href: "/admin/tasks/create", icon: <CreateTaskIcon /> },
+    { name: "Sync Points", href: "/admin/tasks/sync", icon: <SyncIcon /> },
     { name: "Test Stat", href: "/admin/test-stat", icon: <TestStatIcon /> },
     { name: "Rewards Store", href: "/admin/rewards", icon: <GiftIcon /> },
     { name: "Send Email", href: "/admin/email", icon: <EmailIcon /> },
@@ -224,7 +233,7 @@ function Sidebar({ admin, collapsed, setCollapsed }) {
 
       {/* Mobile Bottom Tab Nav */}
       <nav
-        className={`md:hidden fixed bottom-0 left-0 right-0 h-16 border-t ${THEME.line} bg-white/95 backdrop-blur-md flex items-center justify-around px-2 py-1 z-40 shadow-[0_-8px_30px_rgba(15,23,42,0.08)]`}
+        className={`md:hidden fixed bottom-0 left-0 right-0 h-16 border-t ${THEME.line} bg-white/95 backdrop-blur-md flex items-center overflow-x-auto [&::-webkit-scrollbar]:hidden px-2 py-1 z-40 shadow-[0_-8px_30px_rgba(15,23,42,0.08)] gap-1 snap-x`}
       >
         {links.map((link) => {
           const isActive =
@@ -242,7 +251,7 @@ function Sidebar({ admin, collapsed, setCollapsed }) {
             <Link
               key={link.name}
               href={link.href}
-              className={`flex flex-col items-center justify-center flex-1 py-1 gap-1 text-[10px] font-medium transition-all duration-200 ${
+              className={`flex flex-col items-center justify-center shrink-0 min-w-[76px] py-1 gap-1 text-[10px] font-medium transition-all duration-200 snap-center ${
                 isActive
                   ? "text-sky-600 font-semibold"
                   : "text-slate-500 hover:text-slate-800"

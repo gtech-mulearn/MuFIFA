@@ -3,13 +3,57 @@ import { signToken, comparePassword } from "@/utils/auth";
 
 const PLAYER_COOKIE = "player_token";
 
+// --- Rate Limiter (per-instance, resets on cold start) ---
+const LOGIN_ATTEMPTS = new Map(); // key: IP, value: { count, resetAt }
+const MAX_ATTEMPTS = 5;
+const WINDOW_MS = 15 * 60 * 1000; // 15 minutes
+
+function checkRateLimit(ip) {
+  const now = Date.now();
+  const entry = LOGIN_ATTEMPTS.get(ip);
+  if (!entry || now > entry.resetAt) {
+    LOGIN_ATTEMPTS.set(ip, { count: 1, resetAt: now + WINDOW_MS });
+    return { limited: false };
+  }
+  entry.count++;
+  if (entry.count > MAX_ATTEMPTS) {
+    const retryAfter = Math.ceil((entry.resetAt - now) / 1000);
+    return { limited: true, retryAfter };
+  }
+  return { limited: false };
+}
+// Evict stale entries periodically (max 500 tracked IPs)
+if (LOGIN_ATTEMPTS.size > 500) {
+  const now = Date.now();
+  for (const [key, val] of LOGIN_ATTEMPTS) {
+    if (now > val.resetAt) LOGIN_ATTEMPTS.delete(key);
+  }
+}
+
 function buildPlayerTokenCookie(token) {
   const maxAge = 30 * 24 * 60 * 60; // 30 days
-  return `${PLAYER_COOKIE}=${token}; Path=/; HttpOnly; SameSite=Lax; Max-Age=${maxAge}`;
+  const secure = process.env.NODE_ENV === "production" ? " Secure;" : "";
+  return `${PLAYER_COOKIE}=${token}; Path=/; HttpOnly; SameSite=Lax;${secure} Max-Age=${maxAge}`;
 }
 
 export async function POST(request) {
   try {
+    // Rate limit check
+    const clientIp = request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "unknown";
+    const rateCheck = checkRateLimit(clientIp);
+    if (rateCheck.limited) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: {
+            code: "TOO_MANY_REQUESTS",
+            message: `Too many login attempts. Please try again in ${rateCheck.retryAfter} seconds.`,
+          },
+        },
+        { status: 429 }
+      );
+    }
+
     let body;
     try {
       body = await request.json();
@@ -133,9 +177,12 @@ export async function POST(request) {
       role: "player",
     });
 
+    // Strip sensitive fields before sending to client
+    const { password_hash, phone: _phone, referred_by, ...safePlayer } = player;
+
     const response = NextResponse.json({
       success: true,
-      data: player,
+      data: safePlayer,
     });
 
     response.headers.set("Set-Cookie", buildPlayerTokenCookie(token));

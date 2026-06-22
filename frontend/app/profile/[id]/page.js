@@ -5,7 +5,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import PlayerCard from "@/components/PlayerCard";
-import { TEAM_FLAGS, TEAM_WHATSAPP_LINKS, TEAM_FLAG_BGS } from "@/utils/constants";
+import { TEAM_FLAGS, TEAM_WHATSAPP_LINKS, TEAM_FLAG_BGS, calculateLevel } from "@/utils/constants";
 import { usePlayer } from "@/components/PlayerContext";
 
 function ProfilePageContent({ params }) {
@@ -381,10 +381,12 @@ function ProfilePageContent({ params }) {
     (xp.innovation || 0) +
     (xp.teamwork || 0) +
     (xp.execution || 0);
-  const xpPerLevel = 1500;
-  const level = Math.floor(totalXp / xpPerLevel) + 1;
-  const xpInLevel = totalXp % xpPerLevel;
-  const xpPercent = Math.round((xpInLevel / xpPerLevel) * 100) || 0;
+  
+  const levelData = calculateLevel(totalXp);
+  const level = levelData.level;
+  const xpInLevel = levelData.currentLevelXp;
+  const nextXp = levelData.nextXp;
+  const xpPercent = levelData.xpPercent;
 
   // Nation standing data
   const nationRank = player.rank ? Math.max(1, (player.rank % 6) + 1) : 4;
@@ -720,7 +722,7 @@ function ProfilePageContent({ params }) {
                   </span>
                 </div>
                 <span className="text-xs font-semibold text-slate-300">
-                  {xpInLevel} / {xpPerLevel} XP
+                  {xpInLevel} / {nextXp > 0 ? nextXp : 'MAX'} XP
                 </span>
               </div>
             </div>
@@ -933,7 +935,7 @@ function ProfilePageContent({ params }) {
                 <div className="flex items-center justify-between text-sm font-extrabold mt-1">
                   <span className="text-[#8B5CF6]">Level {level}</span>
                   <span className="text-slate-400 font-medium">
-                    {xpPerLevel - xpInLevel} XP to Level {level + 1}
+                    {nextXp > 0 ? `${nextXp - xpInLevel} XP to Level ${level + 1}` : 'Max Level Reached'}
                   </span>
                 </div>
                 <div className="flex items-center gap-4 mt-1">

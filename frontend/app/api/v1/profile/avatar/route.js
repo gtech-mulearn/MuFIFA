@@ -1,10 +1,22 @@
 import { NextResponse } from "next/server";
 import { verifyToken } from "@/utils/auth";
+import { createRateLimiter, getClientIp } from "@/utils/rateLimit";
 
 const PLAYER_COOKIE = "player_token";
+const checkRate = createRateLimiter("avatar-upload", 10, 5 * 60 * 1000);
+let avatarBucketReady = false;
 
 export async function POST(request) {
   try {
+    // Rate limit check
+    const rateCheck = checkRate(getClientIp(request));
+    if (rateCheck.limited) {
+      return NextResponse.json(
+        { success: false, error: `Too many uploads. Try again in ${rateCheck.retryAfter}s.` },
+        { status: 429 }
+      );
+    }
+
     // 1. Authenticate user
     const cookieHeader = request.headers.get("cookie") || "";
     const match = cookieHeader.match(new RegExp(`(?:^|;\\s*)${PLAYER_COOKIE}=([^;]*)`));
@@ -62,32 +74,35 @@ export async function POST(request) {
       );
     }
 
-    // 5. Create "avatars" bucket if it doesn't exist (fail-safe)
-    try {
-      await fetch(`${supabaseUrl}/storage/v1/bucket`, {
-        method: "POST",
-        headers: {
-          apikey: supabaseKey,
-          Authorization: `Bearer ${supabaseKey}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          id: "avatars",
-          name: "avatars",
-          public: true,
-        }),
-      });
-    } catch (err) {
-      console.warn("Storage bucket 'avatars' creation attempt skipped/already exists:", err.message);
+    // 5. Create "avatars" bucket if it doesn't exist (one-time per cold start)
+    if (!avatarBucketReady) {
+      try {
+        await fetch(`${supabaseUrl}/storage/v1/bucket`, {
+          method: "POST",
+          headers: {
+            apikey: supabaseKey,
+            Authorization: `Bearer ${supabaseKey}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            id: "avatars",
+            name: "avatars",
+            public: true,
+          }),
+        });
+      } catch (err) {
+        // Bucket likely already exists
+      }
+      avatarBucketReady = true;
     }
 
     // 6. Convert file to binary buffer
     const arrayBuffer = await file.arrayBuffer();
     const buffer = Buffer.from(arrayBuffer);
 
-    // Generate unique name
+    // Generate stable name per user (overwrites previous avatar)
     const extension = file.name.split(".").pop() || "png";
-    const filePath = `avatars/${decoded.id}-${Date.now()}.${extension}`;
+    const filePath = `avatars/${decoded.id}.${extension}`;
 
     // 7. Upload file to Supabase Storage
     const uploadUrl = `${supabaseUrl}/storage/v1/object/avatars/${filePath}`;
@@ -111,8 +126,8 @@ export async function POST(request) {
       );
     }
 
-    // 8. Construct Public URL
-    const publicUrl = `${supabaseUrl}/storage/v1/object/public/avatars/${filePath}`;
+    // 8. Construct Public URL with cache-bust param
+    const publicUrl = `${supabaseUrl}/storage/v1/object/public/avatars/${filePath}?t=${Date.now()}`;
 
     // 9. Update Database Row
     const dbRes = await fetch(`${supabaseUrl}/rest/v1/registrations?id=eq.${decoded.id}`, {

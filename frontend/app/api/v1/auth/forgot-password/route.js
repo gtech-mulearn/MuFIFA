@@ -1,6 +1,28 @@
 import { NextResponse } from "next/server";
+import crypto from "crypto";
 import { hashPassword } from "@/utils/auth";
 import { sendPlayerForgotPasswordEmail } from "@/utils/email";
+
+// --- Rate Limiter (per-instance, resets on cold start) ---
+const RESET_ATTEMPTS = new Map(); // key: email, value: { count, resetAt }
+const MAX_RESETS = 3;
+const WINDOW_MS = 15 * 60 * 1000; // 15 minutes
+
+function checkResetRateLimit(email) {
+  const now = Date.now();
+  const key = email.toLowerCase().trim();
+  const entry = RESET_ATTEMPTS.get(key);
+  if (!entry || now > entry.resetAt) {
+    RESET_ATTEMPTS.set(key, { count: 1, resetAt: now + WINDOW_MS });
+    return { limited: false };
+  }
+  entry.count++;
+  if (entry.count > MAX_RESETS) {
+    const retryAfter = Math.ceil((entry.resetAt - now) / 1000);
+    return { limited: true, retryAfter };
+  }
+  return { limited: false };
+}
 
 export async function POST(request) {
   try {
@@ -32,6 +54,21 @@ export async function POST(request) {
           },
         },
         { status: 400 }
+      );
+    }
+
+    // Rate limit check
+    const rateCheck = checkResetRateLimit(email);
+    if (rateCheck.limited) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: {
+            code: "TOO_MANY_REQUESTS",
+            message: `Too many password reset requests. Please try again in ${rateCheck.retryAfter} seconds.`,
+          },
+        },
+        { status: 429 }
       );
     }
 
@@ -101,11 +138,12 @@ export async function POST(request) {
       );
     }
 
-    // Generate random 8-character password
+    // Generate random 8-character password using crypto-safe randomness
     const chars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+    const randomBuf = crypto.randomBytes(8);
     let newPassword = "";
     for (let i = 0; i < 8; i++) {
-      newPassword += chars.charAt(Math.floor(Math.random() * chars.length));
+      newPassword += chars.charAt(randomBuf[i] % chars.length);
     }
 
     // Hash the password

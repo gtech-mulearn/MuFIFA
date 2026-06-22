@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { verifyToken } from "@/utils/auth";
 import { adjustSquadPoints } from "@/utils/squad";
+import { createRateLimiter, getClientIp } from "@/utils/rateLimit";
 import {
   KUZHIUNDO_BASE_POINTS,
   KUZHIUNDO_PER_SUBMISSION,
@@ -8,9 +9,19 @@ import {
 } from "@/utils/kuzhiundo";
 
 const PLAYER_COOKIE = "player_token";
+const checkRate = createRateLimiter("task-verify", 15, 5 * 60 * 1000);
 
 export async function POST(request) {
   try {
+    // Rate limit check
+    const rateCheck = checkRate(getClientIp(request));
+    if (rateCheck.limited) {
+      return NextResponse.json(
+        { success: false, error: `Too many requests. Try again in ${rateCheck.retryAfter}s.` },
+        { status: 429 }
+      );
+    }
+
     const supabaseUrl = process.env.SUPABASE_URL;
     const supabaseKey = process.env.SUPABASE_KEY;
 
@@ -75,7 +86,7 @@ export async function POST(request) {
     const player = users[0];
 
     const taskRes = await fetch(
-      `${supabaseUrl}/rest/v1/tasks?id=eq.${taskIdInt}&select=*`,
+      `${supabaseUrl}/rest/v1/tasks?id=eq.${taskIdInt}&select=id,mupoint,xp_creativity,xp_branding,xp_innovation,xp_teamwork,xp_execution`,
       {
         headers: {
           apikey: supabaseKey,

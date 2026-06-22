@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useRef } from "react";
 import Link from "next/link";
+import DOMPurify from "dompurify";
 import { usePlayer } from "@/components/PlayerContext";
 
 // Redesigned components
@@ -288,16 +289,10 @@ export default function TasksPage() {
         const completed = !!dbTask.completed;
 
         const longDesc = dbTask.guidelines ? (() => {
-          // Sanitize HTML: strip dangerous tags and event handler attributes
-          let safe = dbTask.guidelines;
-          // Remove script, iframe, object, embed, form, link, style tags and their contents
-          safe = safe.replace(/<(script|iframe|object|embed|form|link|style)\b[^<]*(?:(?!<\/\1>)<[^<]*)*<\/\1>/gi, "");
-          // Remove self-closing versions of dangerous tags
-          safe = safe.replace(/<(script|iframe|object|embed|form|link|style)\b[^>]*\/?>/gi, "");
-          // Remove all on* event handler attributes (onclick, onerror, onload, etc.)
-          safe = safe.replace(/\s+on\w+\s*=\s*(?:"[^"]*"|'[^']*'|[^\s>]+)/gi, "");
-          // Remove javascript: and data: URLs from href/src attributes
-          safe = safe.replace(/(href|src)\s*=\s*(?:"(?:javascript|data):[^"]*"|'(?:javascript|data):[^']*')/gi, "$1=\"\"");
+          const safe = DOMPurify.sanitize(dbTask.guidelines, {
+            ALLOWED_TAGS: ['p', 'br', 'b', 'i', 'strong', 'em', 'ul', 'ol', 'li', 'a', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'span', 'div', 'img', 'code', 'pre', 'blockquote'],
+            ALLOWED_ATTR: ['href', 'target', 'rel', 'src', 'alt', 'class', 'style'],
+          });
           return <div dangerouslySetInnerHTML={{ __html: safe }} />;
         })() : (
           <p className="text-[10px] text-slate-300">{dbTask.description}</p>
@@ -322,6 +317,8 @@ export default function TasksPage() {
           mupoint: dbTask.mupoint || 0,
           category: dbTask.category || "",
           xpValue: (dbTask.xp_creativity || 0) + (dbTask.xp_branding || 0) + (dbTask.xp_innovation || 0) + (dbTask.xp_teamwork || 0) + (dbTask.xp_execution || 0),
+          isLocked: dbTask.isLocked || false,
+          logo_url: dbTask.logo_url || null,
         };
       })
       .sort((a, b) => a.id - b.id);
@@ -395,7 +392,7 @@ export default function TasksPage() {
             </div>
 
             {/* Category Filter Tabs Selector */}
-            <div className="flex gap-3 overflow-x-auto no-scrollbar scroll-smooth whitespace-nowrap bg-white/5 border border-white/5 p-1 rounded-xl">
+            <div className="w-full sm:w-auto flex flex-wrap gap-2 sm:gap-3 bg-white/5 border border-white/5 p-1 rounded-xl">
               {["All", "UIUX", "Cyber", "Web", "Other", "Social", "IoT", "DSA"].map((cat) => (
                 <button
                   key={cat}

@@ -1,18 +1,29 @@
 import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
 import Image from "next/image";
+import { calculateLevel } from "@/utils/constants";
 
 export default function Sidebar({ player, handleLogout }) {
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const currentTab = searchParams ? searchParams.get("tab") : null;
 
-  // Dynamic Level & XP calculations based on mu_points to make it feel alive
+  // Calculate Level & XP using unified totalXp
+  const xp = player?.xp_breakdown || {};
+  const totalXp =
+    (xp.creativity || 0) +
+    (xp.branding || 0) +
+    (xp.innovation || 0) +
+    (xp.teamwork || 0) +
+    (xp.execution || 0);
+
+  const levelData = calculateLevel(totalXp);
+  const level = levelData.level;
+  const currentLevelXp = levelData.currentLevelXp;
+  const nextLevelXp = levelData.nextXp;
+  const xpPercentage = levelData.xpPercent;
+
   const points = player?.mu_points || 0;
-  const level = Math.floor(points / 15) + 1;
-  const currentLevelXp = (points % 15) * 100;
-  const nextLevelXp = 1500;
-  const xpPercentage = Math.min((currentLevelXp / nextLevelXp) * 100, 100);
 
   const menuItems = [
     {
@@ -268,7 +279,7 @@ export default function Sidebar({ player, handleLogout }) {
                   LVL {level}
                 </span>
                 <span className="text-[8px] font-semibold text-slate-500 leading-none">
-                  {currentLevelXp}/{nextLevelXp} XP
+                  {currentLevelXp}/{nextLevelXp > 0 ? nextLevelXp : 'MAX'} XP
                 </span>
               </div>
             </div>

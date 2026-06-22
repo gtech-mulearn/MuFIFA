@@ -4,6 +4,7 @@ import React, { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import Header from "@/app/tasks/components/Header/Header";
 import { usePlayer } from "@/components/PlayerContext";
+import { calculateLevel } from "@/utils/constants";
 
 export default function RewardsPage() {
   const { player, loading: playerLoading, refreshPlayer } = usePlayer();
@@ -42,12 +43,12 @@ export default function RewardsPage() {
     (xp.innovation || 0) +
     (xp.teamwork || 0) +
     (xp.execution || 0);
-  const xpPerLevel = 1500;
-  const level = player ? Math.floor(totalXp / xpPerLevel) + 1 : 1;
-  const xpInLevel = player ? totalXp % xpPerLevel : 0;
-  const xpPercent = player
-    ? Math.round((xpInLevel / xpPerLevel) * 100) || 0
-    : 0;
+  
+  const levelData = calculateLevel(totalXp);
+  const level = player ? levelData.level : 1;
+  const xpInLevel = player ? levelData.currentLevelXp : 0;
+  const nextXp = levelData.nextXp;
+  const xpPercent = player ? levelData.xpPercent : 0;
   const muPoints = player?.mu_points || 0;
 
   // Fetch paginated rewards
@@ -229,7 +230,11 @@ export default function RewardsPage() {
                   <div className="flex flex-col gap-1">
                     <div className="flex justify-between text-[9px] text-slate-400 font-medium">
                       <span>XP Progress</span>
-                      <span>{xpInLevel} / 1500 XP</span>
+                      {nextXp > 0 ? (
+                        <span>{xpInLevel} / {nextXp} XP</span>
+                      ) : (
+                        <span>MAX LEVEL</span>
+                      )}
                     </div>
                     <div className="w-full h-1.5 bg-slate-800 rounded-full overflow-hidden border border-white/5">
                       <div
