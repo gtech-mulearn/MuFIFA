@@ -8,18 +8,18 @@ import "./PlayerCard.css";
  * The /playerCard/flag/ directory contains large stadium+flag photos per team.
  */
 const TEAM_FLAG_BG = {
-  Argentina: "/playerCard/flag/argentina.jpeg",
-  Brazil: "/playerCard/flag/brazil.jpeg",
-  England: "/playerCard/flag/england.jpeg",
-  Japan: "/playerCard/flag/japan.jpeg",
-  Portugal: "/playerCard/flag/portugal.jpeg",
-  Netherlands: "/playerCard/flag/netherlands.png",
-  Belgium: "/playerCard/flag/belgium.jpeg",
-  Spain: "/playerCard/flag/spain.jpeg",
-  Uruguay: "/playerCard/flag/uruguay.jpeg",
-  Germany: "/playerCard/flag/germany.jpeg",
-  France: "/playerCard/flag/france.jpeg",
-  Croatia: "/playerCard/flag/croatia.jpeg",
+  Argentina: "/playerCard/flag/argentina.webp",
+  Brazil: "/playerCard/flag/brazil.webp",
+  England: "/playerCard/flag/england.webp",
+  Japan: "/playerCard/flag/japan.webp",
+  Portugal: "/playerCard/flag/portugal.webp",
+  Netherlands: "/playerCard/flag/netherlands.webp",
+  Belgium: "/playerCard/flag/belgium.webp",
+  Spain: "/playerCard/flag/spain.webp",
+  Uruguay: "/playerCard/flag/uruguay.webp",
+  Germany: "/playerCard/flag/germany.webp",
+  France: "/playerCard/flag/france.webp",
+  Croatia: "/playerCard/flag/crotia.webp",
 };
 
 /**
@@ -62,17 +62,17 @@ const DOMAIN_POSITIONS = {
  * people  = people badge
  */
 const STAT_ICONS = {
-  creativity: "/playerCard/badge/Object-6.png",
-  branding: "/playerCard/badge/Object-5.png",
-  innovation: "/playerCard/badge/Object-4.png",
-  teamwork: "/playerCard/badge/Object-3.png",
-  execution: "/playerCard/badge/Object-7.png",
+  creativity: "/playerCard/badge/Object-6.webp",
+  branding: "/playerCard/badge/Object-5.webp",
+  innovation: "/playerCard/badge/Object-4.webp",
+  teamwork: "/playerCard/badge/Object-3.webp",
+  execution: "/playerCard/badge/Object-7.webp",
 };
 
 const ACHIEVEMENT_ICONS = {
-  star: "/playerCard/badge/Object-2.png",
-  pencil: "/playerCard/badge/Object-1.png",
-  people: "/playerCard/badge/Object.png",
+  star: "/playerCard/badge/Object-2.webp",
+  pencil: "/playerCard/badge/Object-1.webp",
+  people: "/playerCard/badge/Object.webp",
 };
 
 /**
@@ -242,7 +242,7 @@ export default function PlayerCard({
             <div className="pc-header-year">★ 2026 ★</div>
           </div>
           <img
-            src="/Logos/logo.png"
+            src="/Logos/logo.webp"
             alt="logo"
             className="pc-header-shield-logo"
           />

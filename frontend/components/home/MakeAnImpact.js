@@ -9,19 +9,19 @@ export default function MakeAnImpact() {
     {
       title: "Grow the Game",
       desc: "Supporting youth and grassroots football.",
-      icon: "/make_an_impact/lock.png",
+      icon: "/make_an_impact/lock.webp",
       glow: "border-[#A78BFA]/10 bg-[#0D0B21]/40 hover:border-[#A78BFA]/30 shadow-[0_0_12px_rgba(167,139,250,0.02)]",
     },
     {
       title: "Stronger Communities",
       desc: "Building opportunities through football.",
-      icon: "/make_an_impact/people.png",
+      icon: "/make_an_impact/people.webp",
       glow: "border-[#06B6D4]/10 bg-[#071F29]/40 hover:border-[#06B6D4]/30 shadow-[0_0_12px_rgba(6,182,212,0.02)]",
     },
     {
       title: "Better Tomorrow",
       desc: "Creating a positive impact for future generations.",
-      icon: "/make_an_impact/atom.png",
+      icon: "/make_an_impact/atom.webp",
       glow: "border-[#10B981]/10 bg-[#07241A]/40 hover:border-[#10B981]/30 shadow-[0_0_12px_rgba(16,185,129,0.02)]",
     },
   ];

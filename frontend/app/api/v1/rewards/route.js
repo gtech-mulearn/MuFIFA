@@ -32,16 +32,19 @@ export async function GET(request) {
     const merchItems = await merchRes.json();
     const totalCount = parseInt(merchRes.headers.get("content-range")?.split("/")[1] || "0", 10);
 
-    // 2. Identify logged-in player
+    // 2. Authenticate user
     let userId = null;
     const cookieHeader = request.headers.get("cookie") || "";
     const cookieMatch = cookieHeader.match(new RegExp(`(?:^|;\\s*)${PLAYER_COOKIE}=([^;]*)`));
-    if (cookieMatch) {
-      const decoded = verifyToken(cookieMatch[1]);
-      if (decoded && decoded.role === "player") {
-        userId = decoded.user_id;
-      }
+    if (!cookieMatch) {
+      return NextResponse.json({ success: false, error: "Authentication required." }, { status: 401 });
     }
+
+    const decoded = verifyToken(cookieMatch[1]);
+    if (!decoded || decoded.role !== "player") {
+      return NextResponse.json({ success: false, error: "Invalid session." }, { status: 401 });
+    }
+    userId = decoded.user_id;
 
     // 3. Fetch claims if logged in
     let claimedIds = new Set();

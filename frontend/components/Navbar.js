@@ -79,7 +79,7 @@ export default function Navbar() {
             className="h-8 md:h-10 w-auto object-contain filter drop-shadow-[0_0_8px_rgba(0,229,255,0.45)] hover:scale-110 transition-transform duration-300"
           />
           <Image
-            src="/Logos/logo.png"
+            src="/Logos/logo.webp"
             alt="μLearn Logo"
             width={89}
             height={40}

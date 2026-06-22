@@ -3,26 +3,10 @@
 import React, { useState, useEffect, Suspense } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 import PlayerCard from "@/components/PlayerCard";
-import { TEAM_FLAGS, TEAM_WHATSAPP_LINKS } from "@/utils/constants";
-import Header from "@/app/tasks/components/Header/Header";
+import { TEAM_FLAGS, TEAM_WHATSAPP_LINKS, TEAM_FLAG_BGS } from "@/utils/constants";
 import { usePlayer } from "@/components/PlayerContext";
-
-const TEAM_FLAG_BGS = {
-  Argentina: "/playerCard/flag/argentina.jpeg",
-  Brazil: "/playerCard/flag/brazil.jpeg",
-  England: "/playerCard/flag/england.jpeg",
-  Japan: "/playerCard/flag/japan.jpeg",
-  Portugal: "/playerCard/flag/portugal.jpeg",
-  Netherlands: "/playerCard/flag/netherlands.png",
-  Belgium: "/playerCard/flag/belgium.jpeg",
-  Spain: "/playerCard/flag/spain.jpeg",
-  Uruguay: "/playerCard/flag/uruguay.jpeg",
-  Germany: "/playerCard/flag/germany.jpeg",
-  France: "/playerCard/flag/france.jpeg",
-  Croatia: "/playerCard/flag/crotia.jpeg",
-};
 
 function ProfilePageContent({ params }) {
   const router = useRouter();
@@ -531,49 +515,49 @@ function ProfilePageContent({ params }) {
       name: "Referral Master",
       desc: "Earned on 12 May 2026",
       earned: referralCount > 0,
-      icon: "/playerCard/badge/Object-2.png",
+      icon: "/playerCard/badge/Object-2.webp",
     },
     {
       id: "pred",
       name: "Prediction Pro",
       desc: "Earned on 10 May 2026",
       earned: (player.predictions_count || 0) > 0,
-      icon: "/playerCard/badge/Object-1.png",
+      icon: "/playerCard/badge/Object-1.webp",
     },
     {
       id: "streak",
       name: "7 Day Streak",
       desc: "Earned on 8 May 2026",
       earned: player.mu_points >= 10,
-      icon: "/playerCard/badge/Object.png",
+      icon: "/playerCard/badge/Object.webp",
     },
     {
       id: "goal",
       name: "First Goal",
       desc: "Earned on 5 May 2026",
       earned: (player.completed_tasks_count || 0) > 0,
-      icon: "/playerCard/badge/Object-6.png",
+      icon: "/playerCard/badge/Object-6.webp",
     },
     {
       id: "nation",
       name: "Nation Builder",
       desc: "Earned on 1 May 2026",
       earned: !!player.team,
-      icon: "/playerCard/badge/Object-3.png",
+      icon: "/playerCard/badge/Object-3.webp",
     },
     {
       id: "champ",
       name: "World Champion",
       desc: "Locked",
       earned: player.rank === 1,
-      icon: "/playerCard/badge/Object-5.png",
+      icon: "/playerCard/badge/Object-5.webp",
     },
     {
       id: "top10",
       name: "Top 10 Predictor",
       desc: "Locked",
       earned: player.rank <= 10,
-      icon: "/playerCard/badge/Object-4.png",
+      icon: "/playerCard/badge/Object-4.webp",
     },
   ];
 

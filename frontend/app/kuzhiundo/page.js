@@ -11,9 +11,9 @@ import { usePlayer } from "@/components/PlayerContext";
 const getPodiumFlagBg = (teamName) => {
   if (!teamName) return "";
   const name = teamName.toLowerCase();
-  if (name === "netherlands") return "/playerCard/flag/netherlands.png";
-  if (name === "croatia") return "/playerCard/flag/crotia.jpeg";
-  return `/playerCard/flag/${name}.jpeg`;
+  if (name === "netherlands") return "/playerCard/flag/netherlands.webp";
+  if (name === "croatia") return "/playerCard/flag/crotia.webp";
+  return `/playerCard/flag/${name}.webp`;
 };
 // Helper function to resolve the team player image path (using back/jersey SVG)
 const getTeamPlayerImage = (teamName) => {
@@ -889,7 +889,7 @@ export default function KuzhiundoLeaderboard() {
               className="w-full border border-violet-500/20 hover:border-violet-500/35 rounded-2xl p-6 md:p-8 backdrop-blur-md shadow-2xl relative overflow-hidden flex flex-col justify-between group transition-all duration-300"
               style={{
                 backgroundImage:
-                  "linear-gradient(to bottom, rgba(27, 21, 56, 0.85), rgba(9, 11, 21, 0.95)), url('/challenges/kuzhiundo/kuzhiundo_logo.png')",
+                  "linear-gradient(to bottom, rgba(27, 21, 56, 0.85), rgba(9, 11, 21, 0.95)), url('/challenges/kuzhiundo/kuzhiundo_logo.webp')",
                 backgroundSize: "cover",
                 backgroundPosition: "center",
               }}

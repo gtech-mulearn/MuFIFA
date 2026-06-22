@@ -64,9 +64,9 @@ export default function TopNations() {
 
   const getFlagBg = (name) => {
     const key = name.toLowerCase();
-    if (key === "croatia") return "/playerCard/flag/crotia.jpeg";
-    if (key === "netherlands") return "/playerCard/flag/netherlands.png";
-    return `/playerCard/flag/${key}.jpeg`;
+    if (key === "croatia") return "/playerCard/flag/crotia.webp";
+    if (key === "netherlands") return "/playerCard/flag/netherlands.webp";
+    return `/playerCard/flag/${key}.webp`;
   };
 
   const getRankText = (rank) => {

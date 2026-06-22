@@ -6,7 +6,7 @@ import Image from "next/image";
 const PARTNERS = [
   {
     name: "µLearn Foundation",
-    logo: "/Logos/mulearnFoundation.png",
+    logo: "/Logos/mulearnFoundation.webp",
     url: "https://mulearn.org",
   },
   {
@@ -16,12 +16,12 @@ const PARTNERS = [
   },
   {
     name: "µLearn MCE",
-    logo: "/Logos/mulearnMce.png",
+    logo: "/Logos/mulearnMce.webp",
     url: "https://mulearn.org",
   },
   {
     name: "GTech",
-    logo: "/Logos/gtech.png",
+    logo: "/Logos/gtech.webp",
     url: "https://gtech.org",
   },
   {

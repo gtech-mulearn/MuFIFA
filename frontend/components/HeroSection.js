@@ -20,8 +20,8 @@ export default function HeroSection() {
         <div className="absolute top-[20%] w-[100px] h-[100px] bg-white/20 rounded-full blur-2xl animate-pulse" />
       </div>
 
-      <div className="relative z-20 flex flex-col items-start text-left mb-8 pt-80 lg:pt-12">
-        <h1 className="text-4xl md:text-5xl lg:text-6xl font-black tracking-tight text-white mb-6 md:mb-8 uppercase drop-shadow-[0_4px_12px_rgba(0,0,0,0.5)]">
+      <div className="relative z-20 flex flex-col items-start text-left mb-8 pt-12 lg:pt-12">
+        <h1 className="text-[3rem] sm:text-[3.5rem] md:text-5xl lg:text-6xl font-black tracking-tight text-white mb-6 md:mb-8 uppercase drop-shadow-[0_4px_12px_rgba(0,0,0,0.5)]">
           FOR THE GAME. FOR THE SPIRIT.
         </h1>
         <p className="text-sm md:text-base text-slate-300 font-medium italic tracking-wide mb-8 lg:mb-12">

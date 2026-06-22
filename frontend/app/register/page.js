@@ -6,7 +6,7 @@ import { useSearchParams, useRouter } from "next/navigation";
 import BackgroundVideo from "@/components/BackgroundVideo";
 import BallLoader from "@/components/BallLoader";
 import { getBackendUrl } from "@/utils/api";
-import { TEAM_WHATSAPP_LINKS, DOMAINS, TEAM_FLAGS } from "@/utils/constants";
+import { DOMAINS, TEAM_FLAGS } from "@/utils/constants";
 
 const TEAMS = Object.keys(TEAM_FLAGS);
 
@@ -323,8 +323,16 @@ function RegisterForm() {
           otp: "",
           error: "",
           message: data.message || "OTP sent to your email.",
-          resendAvailableAt: Date.now() + (data.data.resendAvailableInMs !== undefined ? data.data.resendAvailableInMs : 120000),
-          expiresAt: Date.now() + (data.data.expiresInMs !== undefined ? data.data.expiresInMs : 300000),
+          resendAvailableAt:
+            Date.now() +
+            (data.data.resendAvailableInMs !== undefined
+              ? data.data.resendAvailableInMs
+              : 120000),
+          expiresAt:
+            Date.now() +
+            (data.data.expiresInMs !== undefined
+              ? data.data.expiresInMs
+              : 300000),
         });
       } else {
         if (applyApiErrors(data)) {
@@ -474,8 +482,16 @@ function RegisterForm() {
           otp: "",
           error: "",
           message: data.message || "A new OTP has been sent to your email.",
-          resendAvailableAt: Date.now() + (data.data.resendAvailableInMs !== undefined ? data.data.resendAvailableInMs : 120000),
-          expiresAt: Date.now() + (data.data.expiresInMs !== undefined ? data.data.expiresInMs : 300000),
+          resendAvailableAt:
+            Date.now() +
+            (data.data.resendAvailableInMs !== undefined
+              ? data.data.resendAvailableInMs
+              : 120000),
+          expiresAt:
+            Date.now() +
+            (data.data.expiresInMs !== undefined
+              ? data.data.expiresInMs
+              : 300000),
         }));
       } else {
         setOtpModal((prev) => ({
@@ -555,7 +571,15 @@ function RegisterForm() {
 
           {apiError && (
             <div className="bg-indigo-500/10 border border-indigo-500/30 text-indigo-400 text-xs py-3 px-4 rounded-xl font-medium flex items-center gap-2">
-              <svg className="w-4 h-4 text-indigo-400 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <svg
+                className="w-4 h-4 text-indigo-400 shrink-0"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
                 <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
                 <line x1="12" y1="9" x2="12" y2="13" />
                 <line x1="12" y1="17" x2="12.01" y2="17" />
@@ -1325,7 +1349,13 @@ function RegisterForm() {
               </h2>
               <p className="text-xs text-slate-400">
                 We sent a 6-digit OTP to{" "}
-                <span className="text-slate-200">{otpModal.email}</span>. Please check your inbox and <span className="text-slate-200 font-bold">spam/junk folder</span>. Your registration will be saved only after successful verification.
+                <span className="text-slate-200">{otpModal.email}</span>. Please
+                check your inbox and{" "}
+                <span className="text-slate-200 font-bold">
+                  spam/junk folder
+                </span>
+                . Your registration will be saved only after successful
+                verification.
               </p>
             </div>
 

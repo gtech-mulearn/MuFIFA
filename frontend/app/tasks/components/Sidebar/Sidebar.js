@@ -139,7 +139,7 @@ export default function Sidebar({ player, handleLogout }) {
       href: "/kuzhiundo",
       icon: (
         <Image
-          src="/challenges/kuzhiundo/kuzhiundo_logo.png"
+          src="/challenges/kuzhiundo/kuzhiundo_logo.webp"
           alt="Kuzhiundo"
           width={20}
           height={20}
@@ -159,7 +159,7 @@ export default function Sidebar({ player, handleLogout }) {
         >
           <div className="relative w-full h-16 flex items-center justify-center group-hover:scale-105 transition-transform duration-300">
             <Image
-              src="/Logos/logo.png"
+              src="/Logos/logo.webp"
               alt="Logo"
               fill
               className="object-contain"

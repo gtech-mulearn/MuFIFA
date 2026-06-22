@@ -31,20 +31,20 @@ export default function ChallengeModal({
   // Map task ID to playercard badge logos
   const getTaskLogo = (taskId) => {
     const logos = [
-      "/playerCard/badge/Object.png", // 0
-      "/playerCard/badge/Object.png", // 1 (referral)
-      "/playerCard/badge/Object-6.png", // 2 (creativity)
-      "/playerCard/badge/Object-1.png", // 3 (pencil)
-      "/playerCard/badge/Object-4.png", // 4 (innovation)
-      "/playerCard/badge/Object-2.png", // 5 (star)
-      "/playerCard/badge/Object-3.png", // 6 (teamwork)
-      "/playerCard/badge/Object-7.png", // 7 (execution)
-      "/playerCard/badge/Object-5.png", // 8 (branding)
+      "/playerCard/badge/Object.webp", // 0
+      "/playerCard/badge/Object.webp", // 1 (referral)
+      "/playerCard/badge/Object-6.webp", // 2 (creativity)
+      "/playerCard/badge/Object-1.webp", // 3 (pencil)
+      "/playerCard/badge/Object-4.webp", // 4 (innovation)
+      "/playerCard/badge/Object-2.webp", // 5 (star)
+      "/playerCard/badge/Object-3.webp", // 6 (teamwork)
+      "/playerCard/badge/Object-7.webp", // 7 (execution)
+      "/playerCard/badge/Object-5.webp", // 8 (branding)
     ];
     return (
       logos[taskId] ||
       logos[taskId % logos.length] ||
-      "/playerCard/badge/Object.png"
+      "/playerCard/badge/Object.webp"
     );
   };
 

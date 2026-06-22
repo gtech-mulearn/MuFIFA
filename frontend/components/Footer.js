@@ -23,7 +23,7 @@ export default function Footer() {
                 className="h-8 md:h-10 w-auto object-contain filter drop-shadow-[0_0_8px_rgba(6, 182, 212,0.45)] group-hover:scale-110 transition-transform duration-300"
               />
               <Image
-                src="/Logos/logo.png"
+                src="/Logos/logo.webp"
                 alt="μLearn Logo"
                 width={189}
                 height={60}
@@ -192,14 +192,14 @@ export default function Footer() {
           </p>
           <div className="flex items-center gap-5">
             <Image
-              src="/Logos/gtech.png"
+              src="/Logos/gtech.webp"
               alt="GTech Logo"
               width={90}
               height={28}
               className="h-7 w-auto object-contain opacity-60 hover:opacity-100 transition-opacity duration-300"
             />
             <Image
-              src="/Logos/mulearnFoundation.png"
+              src="/Logos/mulearnFoundation.webp"
               alt="μLearn Foundation Logo"
               width={90}
               height={28}

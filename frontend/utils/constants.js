@@ -28,3 +28,18 @@ export const TEAM_FLAGS = {
   Uruguay: "uy",
   Japan: "jp",
 };
+
+export const TEAM_FLAG_BGS = {
+  Argentina: "/playerCard/flag/argentina.webp",
+  Brazil: "/playerCard/flag/brazil.webp",
+  England: "/playerCard/flag/england.webp",
+  Japan: "/playerCard/flag/japan.webp",
+  Portugal: "/playerCard/flag/portugal.webp",
+  Netherlands: "/playerCard/flag/netherlands.webp",
+  Belgium: "/playerCard/flag/belgium.webp",
+  Spain: "/playerCard/flag/spain.webp",
+  Uruguay: "/playerCard/flag/uruguay.webp",
+  Germany: "/playerCard/flag/germany.webp",
+  France: "/playerCard/flag/france.webp",
+  Croatia: "/playerCard/flag/crotia.webp",
+};

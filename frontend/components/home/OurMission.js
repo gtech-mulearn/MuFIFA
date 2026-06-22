@@ -67,7 +67,7 @@ export default function OurMission() {
   return (
     <section
       className="relative z-10 w-full py-24 border-t border-b border-white/5 bg-cover bg-center overflow-hidden flex items-center justify-center"
-      style={{ backgroundImage: "url('/hero/mission.png')" }}
+      style={{ backgroundImage: "url('/hero/mission.webp')" }}
     >
       {/* Dark overlay for readability */}
       <div className="absolute inset-0 bg-[#060413]/75 pointer-events-none z-0" />

@@ -52,16 +52,16 @@ export default function Hero() {
 
   return (
     <section
-      className="relative z-10 w-full lg:h-screen min-h-screen lg:max-h-screen flex items-center justify-center bg-cover bg-center overflow-hidden py-24 lg:py-0"
-      style={{ backgroundImage: "url('/hero/hero.png')" }}
+      className="relative z-10 w-full lg:h-screen min-h-screen lg:max-h-screen flex items-center justify-center bg-cover bg-center overflow-hidden py-12 lg:py-0"
+      style={{ backgroundImage: "url('/hero/hero.webp')" }}
     >
       {/* Dark overlay for readability */}
       <div className="absolute inset-0 bg-[#060413]/30 pointer-events-none z-0" />
 
-      <div className="w-full max-w-7xl mx-auto px-6 md:px-12 pt-24 pb-12 grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-8 items-center lg:h-full z-10 relative">
+      <div className="w-full max-w-7xl mx-auto px-6 md:px-12 pt-20 md:pt-24 pb-12 grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-8 items-center lg:h-full z-10 relative">
         {/* Left Column: CTA */}
         <div className="lg:col-span-5 flex flex-col justify-center text-left">
-          <h1 className="text-4xl md:text-5xl lg:text-5xl xl:text-6xl font-black tracking-tighter leading-[0.95] uppercase mb-5 text-white">
+          <h1 className="text-[3rem] sm:text-[3.5rem] md:text-5xl lg:text-6xl font-black tracking-tighter leading-[0.95] uppercase mb-5 text-white">
             <span className="block">Represent</span>
             <span className="block text-slate-100">Your Nation.</span>
             <span className="block bg-gradient-to-r from-[#A78BFA] to-[#C084FC] bg-clip-text text-transparent drop-shadow-[0_0_30px_rgba(167,139,250,0.35)] mt-1">

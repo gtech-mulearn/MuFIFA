@@ -7,22 +7,22 @@ export default function WhatIsMuFifa() {
     {
       title: "Global Competition",
       desc: "Compete with fans from around the world.",
-      icon: "/hero/heart.png",
+      icon: "/hero/heart.webp",
     },
     {
       title: "Fun Challenges",
       desc: "Play, predict matches and complete challenges.",
-      icon: "/hero/game.png",
+      icon: "/hero/game.webp",
     },
     {
       title: "Earn µPoints",
       desc: "Climb the ranks and earn amazing rewards.",
-      icon: "/hero/bell.png",
+      icon: "/hero/bell.webp",
     },
     {
       title: "Lift the Cup",
       desc: "Help your nation become world champion.",
-      icon: "/hero/video.png",
+      icon: "/hero/video.webp",
     },
   ];
 

@@ -214,7 +214,7 @@ function ArenaLayout({
       href: "/kuzhiundo",
       icon: (
         <Image
-          src="/challenges/kuzhiundo/kuzhiundo_logo.png"
+          src="/challenges/kuzhiundo/kuzhiundo_logo.webp"
           alt="Kuzhiundo"
           width={22}
           height={22}
@@ -264,10 +264,10 @@ function ArenaLayout({
         }`}
       >
         {/* MOBILE NAVBAR WITH PROFILE AVATAR */}
-        <div className="md:hidden flex items-center justify-between bg-[#0b0916]/85 border-b border-white/5 p-4 backdrop-blur-md sticky top-0 z-40">
+        <div className="md:hidden flex items-center justify-between bg-[#0b0916]/85 border-b border-white/5 py-2.5 px-4 backdrop-blur-md sticky top-0 z-40">
           <Link href="/" className="h-8 flex items-center justify-center">
             <Image
-              src="/Logos/logo.png"
+              src="/Logos/logo.webp"
               alt="Logo"
               width={120}
               height={32}

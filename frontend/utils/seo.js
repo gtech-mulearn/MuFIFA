@@ -104,7 +104,7 @@ export function getSEOMetadata({
       },
     },
     other: {
-      "og:logo": "https://mufifa.mulearn.org/Logos/logo.png",
+      "og:logo": "https://mufifa.mulearn.org/Logos/logo.webp",
     },
   };
 }

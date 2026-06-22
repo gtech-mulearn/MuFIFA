@@ -106,7 +106,7 @@ export default function WhyJoin() {
           <div className="absolute top-[20%] right-[10%] w-[300px] h-[300px] bg-gradient-to-tr from-[#6366F1]/10 to-transparent rounded-full blur-3xl pointer-events-none z-0" />
 
           <Image
-            src="/hero/why.png"
+            src="/hero/why.webp"
             alt="Stadium Fans"
             fill
             className="object-cover object-center z-0 transition-transform duration-700 group-hover:scale-105"
@@ -119,23 +119,6 @@ export default function WhyJoin() {
             <span className="text-xs font-black text-[#06B6D4] uppercase tracking-wider">
               Players Worldwide
             </span>
-
-            {/* Mock overlapping avatars row */}
-            <div className="flex items-center gap-1 my-2">
-              <div className="flex -space-x-2 overflow-hidden">
-                {Array.from({ length: 4 }).map((_, idx) => (
-                  <div
-                    key={idx}
-                    className="inline-block h-6 w-6 rounded-full ring-2 ring-black bg-slate-800 flex items-center justify-center text-[9px] font-black text-slate-400"
-                  >
-                    ⚽
-                  </div>
-                ))}
-              </div>
-              <span className="text-[10px] font-bold text-slate-400 ml-1">
-                + Many More
-              </span>
-            </div>
 
             <p className="text-xs text-slate-300 leading-relaxed max-w-md">
               Join a massive global community of passionate football fans. Team

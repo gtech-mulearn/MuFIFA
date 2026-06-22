@@ -8,33 +8,33 @@ export default function HowItWorks() {
     {
       title: "Choose Your Nation",
       desc: "Pick your favorite country and represent it.",
-      icon: "/how_it_works/flag.png",
+      icon: "/how_it_works/flag.webp",
     },
     {
       title: "Play & Predict",
       desc: "Take on challenges and predict match outcomes.",
-      icon: "/how_it_works/target.png",
+      icon: "/how_it_works/target.webp",
     },
     {
       title: "Earn µPoints",
       desc: "Score points, climb the ranks and unlock achievements.",
-      icon: "/how_it_works/points.png",
+      icon: "/how_it_works/points.webp",
     },
     {
       title: "Climb the Ranks",
       desc: "Compete with players worldwide.",
-      icon: "/how_it_works/ranks.png",
+      icon: "/how_it_works/ranks.webp",
     },
     {
       title: "Lift the Cup",
       desc: "Help your nation become World Cup champions.",
-      icon: "/how_it_works/cup.png",
+      icon: "/how_it_works/cup.webp",
     },
   ];
 
   return (
     <section className="relative z-10 w-full max-w-7xl mx-auto px-6 py-20 border-t border-white/5">
-      <h2 className="text-2xl md:text-3xl font-black uppercase tracking-wider mb-14 text-center text-white">
+      <h2 className="text-2xl md:text-3xl font-black tracking-wider mb-14 text-center text-white">
         HOW{" "}
         <span className="text-[#A78BFA] drop-shadow-[0_0_15px_rgba(167,139,250,0.25)]">
           µFIFA
