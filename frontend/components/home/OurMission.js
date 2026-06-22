@@ -6,30 +6,11 @@ import Link from "next/link";
 export default function OurMission() {
   const pillars = [
     {
-      title: "Inspire",
-      desc: "Inspiring millions through the game.",
+      title: "66K+ Community",
+      desc: "Kerala's largest community of student innovators.",
       icon: (
         <svg
           className="w-7 h-7 text-violet-400"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="2"
-          viewBox="0 0 24 24"
-        >
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            d="M13 10V3L4 14h7v7l9-11h-7z"
-          />
-        </svg>
-      ),
-    },
-    {
-      title: "Empower",
-      desc: "Empowering communities through opportunities.",
-      icon: (
-        <svg
-          className="w-7 h-7 text-cyan-400"
           fill="none"
           stroke="currentColor"
           strokeWidth="2"
@@ -44,8 +25,27 @@ export default function OurMission() {
       ),
     },
     {
-      title: "Impact",
-      desc: "Creating a lasting positive impact.",
+      title: "Clear Direction",
+      desc: "Structured paths and domains to grow capabilities.",
+      icon: (
+        <svg
+          className="w-7 h-7 text-cyan-400"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2"
+          viewBox="0 0 24 24"
+        >
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            d="M13 10V3L4 14h7v7l9-11h-7z"
+          />
+        </svg>
+      ),
+    },
+    {
+      title: "Industry Bridge",
+      desc: "Direct connections to companies and hiring teams.",
       icon: (
         <svg
           className="w-7 h-7 text-emerald-400"
@@ -76,18 +76,20 @@ export default function OurMission() {
         {/* Left Column: Mission Content */}
         <div className="lg:col-span-5 flex flex-col gap-6 text-left">
           <h2 className="text-2xl md:text-3xl font-black uppercase tracking-wider text-white">
-            OUR MISSION
+            Why μLearn is behind this
           </h2>
-          <p className="text-sm text-slate-200 leading-relaxed mb-2">
-            We believe in the power of football to change lives. Our mission is
-            to create a platform that combines passion, competition, and purpose
-            to build a better future for communities worldwide.
+          <p className="text-sm text-slate-200 leading-relaxed mb-2 font-medium">
+            Across Kerala, youth potential remains largely unrealized with no clear 
+            direction and no real bridge to industry. μFIFA is how μLearn closes 
+            that gap: a structured path that channels potential the right way, giving 
+            students a domain to grow in and a clear direction toward where that 
+            potential is actually needed.
           </p>
           <Link
             href="/community-guidelines"
             className="cursor-pointer bg-gradient-to-r from-[#4F46E5] to-[#6366F1] hover:from-[#5A52FF] hover:to-[#7478FF] text-white px-6 py-3 rounded-xl text-xs font-black uppercase tracking-widest transition-all duration-300 shadow-[0_4px_15px_rgba(79,70,229,0.3)] hover:shadow-[0_4px_25px_rgba(79,70,229,0.55)] border border-[#6366F1]/30 inline-block w-fit"
           >
-            DISCOVER OUR IMPACT
+            DISCOVER OUR COMMUNITY
           </Link>
         </div>
 

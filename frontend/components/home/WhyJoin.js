@@ -6,8 +6,8 @@ import Image from "next/image";
 export default function WhyJoin() {
   const cards = [
     {
-      title: "For Fans",
-      desc: "Experience football like never before.",
+      title: "No Borrowed Glory",
+      desc: "Stop yelling at a screen. Get on the leaderboard and earn points yourself.",
       icon: (
         <svg
           className="w-5 h-5 text-[#A78BFA]"
@@ -26,8 +26,8 @@ export default function WhyJoin() {
       glow: "border-[#A78BFA]/10 bg-[#0D0B21]/40 hover:border-[#A78BFA]/30 shadow-[0_0_12px_rgba(167,139,250,0.02)]",
     },
     {
-      title: "For Competitors",
-      desc: "Prove your skills and rise to the top.",
+      title: "Get Noticed",
+      desc: "Solve real-world challenges, build skills, and get noticed by top companies.",
       icon: (
         <svg
           className="w-5 h-5 text-[#06B6D4]"
@@ -46,8 +46,8 @@ export default function WhyJoin() {
       glow: "border-[#06B6D4]/10 bg-[#071F29]/40 hover:border-[#06B6D4]/30 shadow-[0_0_12px_rgba(6,182,212,0.02)]",
     },
     {
-      title: "For Nations",
-      desc: "Unite, compete and bring glory to your country.",
+      title: "Collaborative Squads",
+      desc: "Join a national squad, pick your domain, and climb to the top together.",
       icon: (
         <svg
           className="w-5 h-5 text-[#FBBF24]"
@@ -70,7 +70,7 @@ export default function WhyJoin() {
   return (
     <section className="relative z-10 w-full max-w-7xl mx-auto px-6 md:px-12 py-16 border-t border-white/5">
       <h2 className="text-3xl md:text-4xl font-black tracking-wider mb-10 text-left text-white">
-        Why join <span className="text-[#A78BFA]">µFIFA</span>?
+        Why <span className="text-[#A78BFA]">µFIFA</span> Matters
       </h2>
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-stretch">
@@ -114,16 +114,16 @@ export default function WhyJoin() {
 
           <div className="relative z-20 flex flex-col gap-2 max-w-lg">
             <span className="text-4xl md:text-5xl font-black text-white leading-none">
-              1.5K+
+              66K+
             </span>
             <span className="text-xs font-black text-[#06B6D4] uppercase tracking-wider">
-              Players Worldwide
+              Kerala Innovators
             </span>
 
             <p className="text-xs text-slate-300 leading-relaxed max-w-md">
-              Join a massive global community of passionate football fans. Team
-              up with compatriots, take on rival squads, and experience the game
-              on a grand, interactive scale.
+              Youth talent across Kerala is largely untapped. μFIFA gives this potential 
+              a collaborative structure to surface in front of the companies and institutions 
+              that need it most.
             </p>
           </div>
         </div>

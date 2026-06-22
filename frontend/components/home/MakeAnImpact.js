@@ -7,20 +7,20 @@ import Image from "next/image";
 export default function MakeAnImpact() {
   const cards = [
     {
-      title: "Grow the Game",
-      desc: "Supporting youth and grassroots football.",
+      title: "Real-world Challenges",
+      desc: "Put your engineering or design challenges directly in front of student talent.",
       icon: "/make_an_impact/lock.webp",
       glow: "border-[#A78BFA]/10 bg-[#0D0B21]/40 hover:border-[#A78BFA]/30 shadow-[0_0_12px_rgba(167,139,250,0.02)]",
     },
     {
-      title: "Stronger Communities",
-      desc: "Building opportunities through football.",
+      title: "Spot Talent Early",
+      desc: "Identify top problem-solvers early and build direct relationships with potential hires.",
       icon: "/make_an_impact/people.webp",
       glow: "border-[#06B6D4]/10 bg-[#071F29]/40 hover:border-[#06B6D4]/30 shadow-[0_0_12px_rgba(6,182,212,0.02)]",
     },
     {
-      title: "Better Tomorrow",
-      desc: "Creating a positive impact for future generations.",
+      title: "Active Visibility",
+      desc: "Earn genuine visibility inside an active and highly engaged student ecosystem.",
       icon: "/make_an_impact/atom.webp",
       glow: "border-[#10B981]/10 bg-[#07241A]/40 hover:border-[#10B981]/30 shadow-[0_0_12px_rgba(16,185,129,0.02)]",
     },
@@ -32,10 +32,12 @@ export default function MakeAnImpact() {
         {/* Left Column: CTA */}
         <div className="lg:col-span-4 text-left flex flex-col justify-start items-start">
           <h2 className="text-3xl md:text-4xl font-black uppercase tracking-wider mb-4 leading-tight text-white">
-            Make an Impact
+            What's In It for Companies
           </h2>
-          <p className="text-sm text-slate-400 mb-8 leading-relaxed max-w-sm">
-            Football unites the world, µFIFA turns your passion into purpose. A part of every reward pool supports grassroots football and community development.
+          <p className="text-sm text-slate-400 mb-8 leading-relaxed max-w-sm font-medium">
+            Joining μFIFA means direct access to one of the region's largest and most 
+            active student communities. Put real-world challenges in front of diverse talent 
+            and spot emerging problem-solvers before anyone else does.
           </p>
           <Link
             href="/community-guidelines"

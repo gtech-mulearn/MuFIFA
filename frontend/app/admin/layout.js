@@ -181,7 +181,7 @@ function Sidebar({ admin, collapsed, setCollapsed }) {
           )}
         </div>
 
-        <nav className="relative flex-1 flex flex-col gap-1.5 p-3 mt-2">
+        <nav className="relative flex-1 flex flex-col gap-1.5 p-3 mt-2 overflow-y-auto">
           {links.map((link) => {
             const isActive =
               link.href === "/admin"

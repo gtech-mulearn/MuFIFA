@@ -34,10 +34,11 @@ export default function WhatIsMuFifa() {
           <h2 className="text-3xl md:text-4xl font-black tracking-wider mb-4 leading-tight text-white">
             What is <span className="text-[#A78BFA]">µFIFA</span>?
           </h2>
-          <p className="text-sm md:text-base text-slate-400 leading-relaxed max-w-sm">
-            µFIFA is a gamified football platform where fans represent their
-            nations, compete in challenges, predict matches, earn rewards, and
-            push their country to the top of the World Cup leaderboard.
+          <p className="text-sm md:text-base text-slate-400 leading-relaxed max-w-sm font-medium">
+            μFIFA is a large-scale innovation movement by μLearn that turns learning 
+            into a collaborative, gamified experience inspired by the FIFA World Cup. 
+            Participants join national squads, pick a domain of expertise, and work with 
+            peers on real-world challenges while representing their team.
           </p>
         </div>
 

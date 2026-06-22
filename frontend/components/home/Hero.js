@@ -65,19 +65,18 @@ export default function Hero() {
             <span className="block">Represent</span>
             <span className="block text-slate-100">Your Nation.</span>
             <span className="block bg-gradient-to-r from-[#A78BFA] to-[#C084FC] bg-clip-text text-transparent drop-shadow-[0_0_30px_rgba(167,139,250,0.35)] mt-1">
-              Compete
+              Solve
             </span>
             <span className="block bg-gradient-to-r from-[#A78BFA] to-[#C084FC] bg-clip-text text-transparent drop-shadow-[0_0_30px_rgba(167,139,250,0.35)]">
-              Together.
+              Challenges.
             </span>
             <span className="block bg-gradient-to-r from-[#FBBF24] to-[#F59E0B] bg-clip-text text-transparent mt-1 drop-shadow-[0_0_30px_rgba(251,191,36,0.2)]">
               Lift The Cup.
             </span>
           </h1>
           <p className="text-sm md:text-base text-slate-300 max-w-md mb-8 leading-relaxed font-medium">
-            Join millions of players worldwide in the ultimate football
-            challenge. Earn µPoints, climb the leaderboard, and make your nation
-            world champions.
+            We are turning the competitive energy of the World Cup into real-world skill building.
+            Pick your domain, join a squad, and earn your place on the leaderboard.
           </p>
           <div className="flex flex-col sm:flex-row items-center gap-4">
             <Link
