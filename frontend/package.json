@@ -11,6 +11,7 @@
   },
   "dependencies": {
     "@flags-sdk/vercel": "^1.4.2",
+    "@sentry/nextjs": "^10.60.0",
     "@vercel/speed-insights": "^2.0.0",
     "bcryptjs": "^3.0.3",
     "dompurify": "^3.4.11",
