@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { verifyToken } from "@/utils/auth";
+import { verifyToken, isPlayerBanned } from "@/utils/auth";
 import { z } from "zod";
 
 const PLAYER_COOKIE = "player_token";
@@ -86,7 +86,7 @@ export async function POST(request) {
 
     // Check points limit: if points are below 0, player cannot predict
     const userRes = await fetch(
-      `${supabaseUrl}/rest/v1/registrations?user_id=eq.${encodeURIComponent(decoded.user_id)}&select=mu_points&limit=1`,
+      `${supabaseUrl}/rest/v1/registrations?user_id=eq.${encodeURIComponent(decoded.user_id)}&select=mu_points,banned&limit=1`,
       {
         method: "GET",
         headers: {
@@ -101,7 +101,25 @@ export async function POST(request) {
     }
 
     const users = await userRes.json();
-    const userPoints = Number(users?.[0]?.mu_points ?? 0);
+    const playerRow = users?.[0];
+
+    if (playerRow) {
+      const banCheck = isPlayerBanned(playerRow.banned);
+      if (banCheck.isBanned) {
+        return NextResponse.json(
+          {
+            success: false,
+            error: {
+              code: "BANNED",
+              message: banCheck.message,
+            },
+          },
+          { status: 403 }
+        );
+      }
+    }
+
+    const userPoints = Number(playerRow?.mu_points ?? 0);
 
     if (userPoints < 0) {
       return NextResponse.json(

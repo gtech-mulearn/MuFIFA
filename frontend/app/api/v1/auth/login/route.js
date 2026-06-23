@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { signToken, comparePassword } from "@/utils/auth";
+import { signToken, comparePassword, isPlayerBanned } from "@/utils/auth";
 
 const PLAYER_COOKIE = "player_token";
 
@@ -166,6 +166,21 @@ export async function POST(request) {
           },
         },
         { status: 401 }
+      );
+    }
+
+    // Verify ban status
+    const banCheck = isPlayerBanned(player.banned);
+    if (banCheck.isBanned) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: {
+            code: "BANNED",
+            message: banCheck.message,
+          },
+        },
+        { status: 403 }
       );
     }
 

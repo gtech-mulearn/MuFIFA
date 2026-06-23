@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { verifyToken } from "@/utils/auth";
+import { verifyToken, isPlayerBanned } from "@/utils/auth";
 import { adjustSquadPoints } from "@/utils/squad";
 import { createRateLimiter, getClientIp } from "@/utils/rateLimit";
 import {
@@ -67,7 +67,7 @@ export async function POST(request) {
 
     // 2. Fetch User & Task to verify they exist
     const userRes = await fetch(
-      `${supabaseUrl}/rest/v1/registrations?user_id=eq.${encodeURIComponent(userId)}&select=id,user_id,team,mu_points,tasks,bio,referal_id,avatar_url,muid`,
+      `${supabaseUrl}/rest/v1/registrations?user_id=eq.${encodeURIComponent(userId)}&select=id,user_id,team,mu_points,tasks,bio,referal_id,avatar_url,muid,banned`,
       {
         headers: {
           apikey: supabaseKey,
@@ -84,6 +84,15 @@ export async function POST(request) {
         { status: 404 },
       );
     const player = users[0];
+
+    // Check if player is banned
+    const banCheck = isPlayerBanned(player.banned);
+    if (banCheck.isBanned) {
+      return NextResponse.json(
+        { success: false, error: banCheck.message },
+        { status: 403 }
+      );
+    }
 
     const taskRes = await fetch(
       `${supabaseUrl}/rest/v1/tasks?id=eq.${taskIdInt}&select=id,mupoint,xp_creativity,xp_branding,xp_innovation,xp_teamwork,xp_execution`,

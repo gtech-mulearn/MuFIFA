@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { verifyToken } from "@/utils/auth";
+import { verifyToken, isPlayerBanned } from "@/utils/auth";
 
 const PLAYER_COOKIE = "player_token";
 
@@ -135,7 +135,7 @@ export async function POST(request) {
     }
 
     // 4. Fetch User Details
-    const userRes = await fetch(`${supabaseUrl}/rest/v1/registrations?user_id=eq.${encodeURIComponent(userId)}&select=id,user_id,mu_points`, { headers });
+    const userRes = await fetch(`${supabaseUrl}/rest/v1/registrations?user_id=eq.${encodeURIComponent(userId)}&select=id,user_id,mu_points,banned`, { headers });
     if (!userRes.ok) {
       throw new Error(`Fetch user failed: ${await userRes.text()}`);
     }
@@ -144,6 +144,12 @@ export async function POST(request) {
       return NextResponse.json({ success: false, error: "Player profile not found." }, { status: 404 });
     }
     const player = users[0];
+
+    // Verify ban status
+    const banCheck = isPlayerBanned(player.banned);
+    if (banCheck.isBanned) {
+      return NextResponse.json({ success: false, error: banCheck.message }, { status: 403 });
+    }
 
     // Compute player level from completed tasks XP breakdown
     const compQuery = `${supabaseUrl}/rest/v1/user_completed_tasks?user_id=eq.${encodeURIComponent(player.user_id)}&select=xp_creativity,xp_branding,xp_innovation,xp_teamwork,xp_execution`;

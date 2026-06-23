@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { usePathname, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
@@ -100,6 +100,12 @@ function ArenaLayout({
   children,
 }) {
   const { player, loading } = usePlayer();
+
+  useEffect(() => {
+    if (!loading && !player) {
+      window.location.href = "/login";
+    }
+  }, [player, loading]);
 
   const xp = player?.xp_breakdown || {};
   const totalXp =

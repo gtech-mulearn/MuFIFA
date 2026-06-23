@@ -25,6 +25,82 @@ function TeamBadge({ team }) {
   );
 }
 
+function getBanBadge(banned) {
+  if (!banned) return null;
+  if (banned === "red" || banned === "permanent") {
+    return (
+      <span className="ml-2 inline-flex items-center gap-1 rounded bg-rose-50 px-1.5 py-0.5 text-[9px] font-black text-rose-700 border border-rose-200 uppercase tracking-wider select-none shrink-0" title="Permanently Banned">
+        <span className="w-1.5 h-2.5 bg-rose-600 rounded-[1px] inline-block shadow-sm" />
+        Red Card
+      </span>
+    );
+  }
+  if (banned.startsWith("yellow:")) {
+    const expiry = Number(banned.split(":")[1]);
+    if (!isNaN(expiry)) {
+      if (expiry > Date.now()) {
+        return (
+          <span className="ml-2 inline-flex items-center gap-1 rounded bg-amber-50 px-1.5 py-0.5 text-[9px] font-black text-amber-700 border border-amber-200 uppercase tracking-wider select-none shrink-0" title={`Banned until ${new Date(expiry).toLocaleString()}`}>
+            <span className="w-1.5 h-2.5 bg-amber-500 rounded-[1px] inline-block shadow-sm" />
+            Yellow Card
+          </span>
+        );
+      } else {
+        return (
+          <span className="ml-2 inline-flex items-center gap-1 rounded bg-slate-50 px-1.5 py-0.5 text-[9px] font-black text-slate-500 border border-slate-200 uppercase tracking-wider select-none shrink-0" title="Previous yellow card ban (Expired)">
+            <span className="w-1.5 h-2.5 bg-amber-500/40 rounded-[1px] inline-block shadow-sm" />
+            Yellow (Expired)
+          </span>
+        );
+      }
+    }
+  }
+  return null;
+}
+
+function getDetailedBanStatus(banned) {
+  if (!banned) return null;
+  if (banned === "red" || banned === "permanent") {
+    return (
+      <span className="text-xs font-bold text-rose-600 flex items-center gap-1.5 select-none">
+        <span className="w-2.5 h-4 bg-rose-600 rounded-[1px] inline-block shadow-sm" />
+        Banned: Red Card (Permanent)
+      </span>
+    );
+  }
+  if (banned.startsWith("yellow:")) {
+    const expiry = Number(banned.split(":")[1]);
+    if (!isNaN(expiry)) {
+      if (expiry > Date.now()) {
+        return (
+          <div className="flex flex-col gap-0.5 select-none animate-fadeIn">
+            <span className="text-xs font-bold text-amber-600 flex items-center gap-1.5">
+              <span className="w-2.5 h-4 bg-amber-500 rounded-[1px] inline-block shadow-sm" />
+              Banned: Yellow Card (1 Week Ban)
+            </span>
+            <span className="text-[10px] text-slate-400 font-medium">
+              Expires: {new Date(expiry).toLocaleString()}
+            </span>
+          </div>
+        );
+      } else {
+        return (
+          <div className="flex flex-col gap-0.5 select-none opacity-80">
+            <span className="text-xs font-bold text-slate-500 flex items-center gap-1.5">
+              <span className="w-2.5 h-4 bg-amber-500/40 rounded-[1px] inline-block shadow-sm" />
+              Inactive: Yellow Card (Expired)
+            </span>
+            <span className="text-[10px] text-slate-400 font-medium">
+              Expired on: {new Date(expiry).toLocaleString()}
+            </span>
+          </div>
+        );
+      }
+    }
+  }
+  return null;
+}
+
 export default function AdminUserDetailPage({ params }) {
   const { id } = use(params);
   const router = useRouter();
@@ -53,6 +129,10 @@ export default function AdminUserDetailPage({ params }) {
   const [pwdSuccess, setPwdSuccess] = useState("");
   const [pwdResetting, setPwdResetting] = useState(false);
   const [copied, setCopied] = useState(false);
+
+  const [banError, setBanError] = useState("");
+  const [banSuccess, setBanSuccess] = useState("");
+  const [banUpdating, setBanUpdating] = useState(false);
 
   const fetchUser = async () => {
     try {
@@ -169,6 +249,44 @@ export default function AdminUserDetailPage({ params }) {
     }
   };
 
+  const handleApplyBan = async (type) => {
+    setBanUpdating(true);
+    setBanError("");
+    setBanSuccess("");
+    let value = "";
+    if (type === "red") {
+      value = "red";
+    } else if (type === "yellow") {
+      value = "yellow:" + (Date.now() + 7 * 24 * 60 * 60 * 1000);
+    }
+
+    try {
+      const res = await fetch(`/api/v1/admin/users/${id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ banned: value }),
+      });
+
+      const data = await res.json();
+
+      if (data.success) {
+        setUser(data.user);
+        setBanSuccess(
+          type === "none"
+            ? "Ban status cleared."
+            : `User has been issued a ${type === "red" ? "Red" : "Yellow"} Card.`
+        );
+        setTimeout(() => setBanSuccess(""), 4000);
+      } else {
+        setBanError(data.error?.message || data.error || "Failed to update ban status.");
+      }
+    } catch {
+      setBanError("Network error.");
+    } finally {
+      setBanUpdating(false);
+    }
+  };
+
   const handleDelete = async () => {
     setDeleting(true);
     try {
@@ -247,6 +365,7 @@ export default function AdminUserDetailPage({ params }) {
               <span className="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-full bg-slate-100 border border-slate-200 text-slate-500">
                 {user?.user_id}
               </span>
+              {getBanBadge(user?.banned)}
             </div>
             <p className="text-xs text-slate-500 flex items-center gap-1.5 mt-0.5">
               <span>{user?.domain}</span>
@@ -709,6 +828,97 @@ export default function AdminUserDetailPage({ params }) {
                     >
                       {pwdResetting ? "Updating..." : "Update"}
                     </button>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* CARD & BAN MANAGEMENT MODULE */}
+            {!isViewer && (
+              <div
+                className={`${THEME.panel} rounded-2xl p-6 flex flex-col gap-4`}
+              >
+                <div className="flex items-center gap-2 border-b border-slate-100 pb-3">
+                  <svg
+                    className="w-4 h-4 text-slate-500"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+                    />
+                  </svg>
+                  <h3 className="text-xs font-black uppercase tracking-wider text-slate-700">
+                    Card & Ban Management
+                  </h3>
+                </div>
+
+                <p className="text-xs text-slate-500">
+                  Issue disciplinary cards to this player. A Yellow Card bans the user for 1 week. A Red Card permanently bans the user.
+                </p>
+
+                {banError && (
+                  <div className="bg-rose-500/10 border border-rose-500/30 text-rose-500 text-xs py-2 px-3 rounded-xl">
+                    {banError}
+                  </div>
+                )}
+
+                {banSuccess && (
+                  <div className="bg-emerald-500/10 border border-emerald-500/30 text-emerald-700 text-xs py-2 px-3 rounded-xl">
+                    {banSuccess}
+                  </div>
+                )}
+
+                <div className="flex flex-col sm:flex-row gap-4 items-center justify-between bg-slate-50 border border-slate-200/50 rounded-xl p-4">
+                  <div className="flex flex-col gap-1">
+                    <span className="text-[10px] font-black uppercase tracking-wider text-slate-400">
+                      Current Status
+                    </span>
+                    <div className="flex items-center gap-2 mt-1">
+                      {user?.banned ? (
+                        getDetailedBanStatus(user.banned)
+                      ) : (
+                        <span className="text-xs font-bold text-emerald-600 flex items-center gap-1.5">
+                          <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 inline-block animate-ping shrink-0" style={{ animationDuration: "3s" }} />
+                          Active (No Cards)
+                        </span>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="flex flex-wrap gap-2">
+                    <button
+                      type="button"
+                      onClick={() => handleApplyBan("yellow")}
+                      disabled={banUpdating}
+                      className="cursor-pointer bg-amber-500 hover:bg-amber-400 text-white font-bold py-2 px-4 rounded-xl text-xs tracking-wider uppercase transition-colors flex items-center gap-1.5 disabled:opacity-50"
+                    >
+                      <span className="w-2.5 h-4 bg-amber-200 rounded-[1px] inline-block shadow-sm" />
+                      Yellow Card
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleApplyBan("red")}
+                      disabled={banUpdating}
+                      className="cursor-pointer bg-rose-600 hover:bg-rose-500 text-white font-bold py-2 px-4 rounded-xl text-xs tracking-wider uppercase transition-colors flex items-center gap-1.5 disabled:opacity-50"
+                    >
+                      <span className="w-2.5 h-4 bg-rose-300 rounded-[1px] inline-block shadow-sm" />
+                      Red Card
+                    </button>
+                    {user?.banned && (
+                      <button
+                        type="button"
+                        onClick={() => handleApplyBan("none")}
+                        disabled={banUpdating}
+                        className="cursor-pointer bg-slate-100 hover:bg-slate-200 border border-slate-300 text-slate-700 font-bold py-2 px-4 rounded-xl text-xs tracking-wider uppercase transition-colors flex items-center gap-1.5 disabled:opacity-50"
+                      >
+                        Lift Ban
+                      </button>
+                    )}
                   </div>
                 </div>
               </div>

@@ -87,3 +87,31 @@ export function clearTokenCookie() {
   const secure = process.env.NODE_ENV === "production" ? " Secure;" : "";
   return `${TOKEN_COOKIE}=; Path=/; HttpOnly; SameSite=Lax;${secure} Max-Age=0`;
 }
+
+/**
+ * Checks if a player's banned status is active.
+ * banned field can be:
+ * - "" or null: not banned
+ * - "red": permanently banned
+ * - "yellow:<expiry_timestamp>": banned until the timestamp (e.g. yellow:1782014385000)
+ */
+export function isPlayerBanned(banned) {
+  if (!banned) return { isBanned: false };
+  if (banned === "red" || banned === "permanent") {
+    return { isBanned: true, type: "red", message: "Your account is permanently banned (Red Card)." };
+  }
+  if (banned.startsWith("yellow:")) {
+    const parts = banned.split(":");
+    const expiry = Number(parts[1]);
+    if (!isNaN(expiry) && expiry > Date.now()) {
+      return {
+        isBanned: true,
+        type: "yellow",
+        expiry,
+        message: `Your account is temporarily banned (Yellow Card) until ${new Date(expiry).toLocaleString("en-IN", { timeZone: "Asia/Kolkata" })}.`
+      };
+    }
+  }
+  return { isBanned: false };
+}
+

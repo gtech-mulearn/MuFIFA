@@ -27,6 +27,7 @@ const userPatchSchema = z.object({
   team: z.enum(TEAMS, { errorMap: () => ({ message: "Invalid team selected." }) }).optional(),
   mu_points: z.number().int().min(0, "Points must be a positive integer.").optional(),
   password: z.string().min(6, "Password must be at least 6 characters long.").optional(),
+  banned: z.string().optional(),
 });
 
 export async function GET(request, { params }) {

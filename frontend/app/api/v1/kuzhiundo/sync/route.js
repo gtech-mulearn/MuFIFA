@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { verifyToken } from "@/utils/auth";
+import { verifyToken, isPlayerBanned } from "@/utils/auth";
 import { adjustSquadPoints } from "@/utils/squad";
 import {
   KUZHIUNDO_PER_SUBMISSION,
@@ -63,6 +63,15 @@ export async function POST(request) {
       );
     }
     const player = users[0];
+
+    // Verify ban status
+    const banCheck = isPlayerBanned(player.banned);
+    if (banCheck.isBanned) {
+      return NextResponse.json(
+        { success: false, error: banCheck.message },
+        { status: 403 }
+      );
+    }
 
     const uuid = player.id;
 

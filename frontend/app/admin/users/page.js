@@ -18,6 +18,39 @@ function TeamBadge({ team }) {
   );
 }
 
+function getBanBadge(banned) {
+  if (!banned) return null;
+  if (banned === "red" || banned === "permanent") {
+    return (
+      <span className="ml-2 inline-flex items-center gap-1 rounded bg-rose-50 px-1.5 py-0.5 text-[9px] font-black text-rose-700 border border-rose-200 uppercase tracking-wider select-none shrink-0" title="Permanently Banned">
+        <span className="w-1.5 h-2.5 bg-rose-600 rounded-[1px] inline-block shadow-sm" />
+        Red Card
+      </span>
+    );
+  }
+  if (banned.startsWith("yellow:")) {
+    const expiry = Number(banned.split(":")[1]);
+    if (!isNaN(expiry)) {
+      if (expiry > Date.now()) {
+        return (
+          <span className="ml-2 inline-flex items-center gap-1 rounded bg-amber-50 px-1.5 py-0.5 text-[9px] font-black text-amber-700 border border-amber-200 uppercase tracking-wider select-none shrink-0" title={`Banned until ${new Date(expiry).toLocaleString()}`}>
+            <span className="w-1.5 h-2.5 bg-amber-500 rounded-[1px] inline-block shadow-sm" />
+            Yellow Card
+          </span>
+        );
+      } else {
+        return (
+          <span className="ml-2 inline-flex items-center gap-1 rounded bg-slate-50 px-1.5 py-0.5 text-[9px] font-black text-slate-500 border border-slate-200 uppercase tracking-wider select-none shrink-0" title="Previous yellow card ban (Expired)">
+            <span className="w-1.5 h-2.5 bg-amber-500/40 rounded-[1px] inline-block shadow-sm" />
+            Yellow (Expired)
+          </span>
+        );
+      }
+    }
+  }
+  return null;
+}
+
 export default function AdminUsersPage() {
   const [users, setUsers] = useState([]);
   const [pagination, setPagination] = useState({ page: 1, limit: 20, total: 0, totalPages: 0 });
@@ -143,7 +176,12 @@ export default function AdminUsersPage() {
                     key={user.id}
                     className="border-b border-slate-200/70 hover:bg-slate-50 transition-colors"
                   >
-                    <td className="px-4 py-3 text-slate-800 font-semibold whitespace-nowrap">{user.name}</td>
+                    <td className="px-4 py-3 text-slate-800 font-semibold whitespace-nowrap">
+                      <div className="flex items-center gap-1.5">
+                        <span>{user.name}</span>
+                        {getBanBadge(user.banned)}
+                      </div>
+                    </td>
                     <td className="px-4 py-3 text-slate-400 whitespace-nowrap">{user.email}</td>
                     <td className="px-4 py-3 text-slate-400 font-mono whitespace-nowrap">{user.phone}</td>
                     <td className="px-4 py-3 text-slate-600">{user.domain}</td>
