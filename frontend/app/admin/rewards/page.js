@@ -2,6 +2,8 @@
 
 import React, { useState, useEffect, useCallback } from "react";
 import { THEME } from "../layout";
+import Link from "next/link";
+
 
 export default function AdminRewardsPage() {
   const [rewards, setRewards] = useState([]);
@@ -213,15 +215,26 @@ export default function AdminRewardsPage() {
             Create, update, release, and manage arcade reward items for players.
           </p>
         </div>
-        <button
-          onClick={handleAddNew}
-          className="self-start sm:self-center flex items-center gap-1.5 px-4 py-2.5 text-xs font-semibold uppercase tracking-wider text-white bg-sky-600 hover:bg-sky-700 rounded-xl transition-all cursor-pointer shadow-sm hover:shadow-md"
-        >
-          <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
-          </svg>
-          Add Reward Item
-        </button>
+        <div className="flex items-center gap-3">
+          <Link
+            href="/admin/rewards/claims"
+            className="self-start sm:self-center flex items-center gap-1.5 px-4 py-2.5 text-xs font-semibold uppercase tracking-wider text-slate-700 hover:text-slate-950 bg-slate-100 hover:bg-slate-200 border border-slate-300 rounded-xl transition-all cursor-pointer shadow-sm hover:shadow-md"
+          >
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
+            </svg>
+            View Claims
+          </Link>
+          <button
+            onClick={handleAddNew}
+            className="self-start sm:self-center flex items-center gap-1.5 px-4 py-2.5 text-xs font-semibold uppercase tracking-wider text-white bg-sky-600 hover:bg-sky-700 rounded-xl transition-all cursor-pointer shadow-sm hover:shadow-md"
+          >
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+            </svg>
+            Add Reward Item
+          </button>
+        </div>
       </div>
 
       {/* Messages */}

@@ -5,7 +5,7 @@ import { adjustSquadPoints } from "@/utils/squad";
 export async function POST(request) {
   try {
     // 1. Authenticate Admin
-    const auth = requireRole(request, "admin", "superadmin");
+    const auth = requireRole(request, "admin", "superadmin", "iglead");
     if (auth.error) {
       return NextResponse.json({ success: false, error: auth.message }, { status: auth.status });
     }

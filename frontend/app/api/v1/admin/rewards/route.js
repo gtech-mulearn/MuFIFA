@@ -3,7 +3,7 @@ import { requireRole } from "@/utils/auth";
 
 export async function GET(request) {
   try {
-    const auth = requireRole(request, "admin", "superadmin", "viewer");
+    const auth = requireRole(request, "admin", "superadmin", "viewer", "merch_partner");
     if (auth.error) {
       return NextResponse.json(
         {
@@ -77,7 +77,7 @@ export async function GET(request) {
 
 export async function POST(request) {
   try {
-    const auth = requireRole(request, "admin", "superadmin");
+    const auth = requireRole(request, "admin", "superadmin", "merch_partner");
     if (auth.error) {
       return NextResponse.json(
         {
@@ -189,7 +189,7 @@ export async function POST(request) {
 
 export async function PATCH(request) {
   try {
-    const auth = requireRole(request, "admin", "superadmin");
+    const auth = requireRole(request, "admin", "superadmin", "merch_partner");
     if (auth.error) {
       return NextResponse.json(
         {
@@ -291,7 +291,7 @@ export async function PATCH(request) {
 
 export async function DELETE(request) {
   try {
-    const auth = requireRole(request, "superadmin", "admin");
+    const auth = requireRole(request, "superadmin", "admin", "merch_partner");
     if (auth.error) {
       return NextResponse.json(
         {

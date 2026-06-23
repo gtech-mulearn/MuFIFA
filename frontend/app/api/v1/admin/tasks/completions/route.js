@@ -4,7 +4,7 @@ import { requireRole } from "@/utils/auth";
 export async function GET(request) {
   try {
     // 1. Authenticate Admin
-    const auth = requireRole(request, "admin", "superadmin", "viewer");
+    const auth = requireRole(request, "admin", "superadmin", "viewer", "iglead");
     if (auth.error) {
       return NextResponse.json({ success: false, error: auth.message }, { status: auth.status });
     }

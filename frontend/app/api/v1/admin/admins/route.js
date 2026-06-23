@@ -6,7 +6,7 @@ const adminSchema = z.object({
   username: z.string({ required_error: "Username is required." }).trim().min(1, "Username is required."),
   email: z.string({ required_error: "Email is required." }).trim().email("Please enter a valid email address."),
   password: z.string({ required_error: "Password is required." }).trim().min(6, "Password must be at least 6 characters."),
-  role: z.enum(["superadmin", "admin", "viewer"], { errorMap: () => ({ message: "Invalid role selected." }) }).optional(),
+  role: z.enum(["superadmin", "admin", "viewer", "iglead", "merch_partner"], { errorMap: () => ({ message: "Invalid role selected." }) }).optional(),
 });
 
 export async function GET(request) {
@@ -186,6 +186,103 @@ export async function POST(request) {
           code: "INTERNAL_SERVER_ERROR",
           message: "Failed to create admin.",
           details: null,
+        },
+      },
+      { status: 500 }
+    );
+  }
+}
+
+export async function DELETE(request) {
+  try {
+    const auth = requireRole(request, "superadmin");
+    if (auth.error) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: {
+            code: auth.status === 401 ? "UNAUTHORIZED" : "FORBIDDEN",
+            message: auth.message,
+            details: null,
+          },
+        },
+        { status: auth.status }
+      );
+    }
+
+    const supabaseUrl = process.env.SUPABASE_URL;
+    const supabaseKey = process.env.SUPABASE_KEY;
+
+    if (!supabaseUrl || !supabaseKey) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: {
+            code: "SERVICE_UNAVAILABLE",
+            message: "Database not configured.",
+            details: null,
+          },
+        },
+        { status: 503 }
+      );
+    }
+
+    const { searchParams } = new URL(request.url);
+    const id = searchParams.get("id");
+
+    if (!id) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: {
+            code: "BAD_REQUEST",
+            message: "Admin ID is required in query params.",
+            details: null,
+          },
+        },
+        { status: 400 }
+      );
+    }
+
+    // Do not allow superadmins to delete their own account
+    if (auth.admin.id === id) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: {
+            code: "BAD_REQUEST",
+            message: "You cannot delete your own administrator account.",
+            details: null,
+          },
+        },
+        { status: 400 }
+      );
+    }
+
+    const headers = {
+      apikey: supabaseKey,
+      Authorization: `Bearer ${supabaseKey}`,
+    };
+
+    const res = await fetch(`${supabaseUrl}/rest/v1/admin_users?id=eq.${id}`, {
+      method: "DELETE",
+      headers,
+    });
+
+    if (!res.ok) {
+      throw new Error(`Failed to delete admin: ${await res.text()}`);
+    }
+
+    return NextResponse.json({ success: true, message: "Admin account deleted successfully." });
+  } catch (error) {
+    console.error("Admin delete error:", error);
+    return NextResponse.json(
+      {
+        success: false,
+        error: {
+          code: "INTERNAL_SERVER_ERROR",
+          message: "Failed to delete admin account.",
+          details: error.message,
         },
       },
       { status: 500 }

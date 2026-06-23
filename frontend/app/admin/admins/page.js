@@ -1,11 +1,22 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { ROLE_COLORS, THEME } from "../layout";
+import { useAdmin, ROLE_COLORS, THEME } from "../layout";
 
-const VALID_ROLES = ["superadmin", "admin", "viewer"];
+const VALID_ROLES = ["superadmin", "admin", "viewer", "iglead", "merch_partner"];
+
+const ROLE_LABELS = {
+  superadmin: "Super Admin",
+  admin: "Admin",
+  viewer: "Viewer",
+  iglead: "IG Lead",
+  merch_partner: "Merch Partner",
+};
 
 export default function AdminManagementPage() {
+  const admin = useAdmin();
+  const loggedInAdminId = admin?.id;
+
   const [admins, setAdmins] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -13,6 +24,7 @@ export default function AdminManagementPage() {
   const [form, setForm] = useState({ username: "", email: "", password: "", role: "viewer" });
   const [creating, setCreating] = useState(false);
   const [createError, setCreateError] = useState("");
+  const [deletingId, setDeletingId] = useState(null);
 
   const fetchAdmins = async () => {
     setLoading(true);
@@ -34,6 +46,29 @@ export default function AdminManagementPage() {
   useEffect(() => {
     fetchAdmins();
   }, []);
+
+  const handleDelete = async (id, username) => {
+    if (!window.confirm(`Are you sure you want to delete administrator "${username}"?`)) {
+      return;
+    }
+
+    setDeletingId(id);
+    try {
+      const res = await fetch(`/api/v1/admin/admins?id=${id}`, {
+        method: "DELETE",
+      });
+      const data = await res.json();
+      if (data.success) {
+        fetchAdmins();
+      } else {
+        alert(data.error?.message || data.error || "Failed to delete admin.");
+      }
+    } catch {
+      alert("Network error.");
+    } finally {
+      setDeletingId(null);
+    }
+  };
 
   const handleCreate = async (e) => {
     e.preventDefault();
@@ -152,7 +187,7 @@ export default function AdminManagementPage() {
                 className={`rounded-xl px-4 py-2.5 text-xs transition-colors cursor-pointer appearance-none focus:outline-none ${THEME.input}`}
               >
                 {VALID_ROLES.map((r) => (
-                  <option key={r} value={r}>{r}</option>
+                  <option key={r} value={r}>{ROLE_LABELS[r] || r}</option>
                 ))}
               </select>
             </div>
@@ -192,6 +227,7 @@ export default function AdminManagementPage() {
                   <th className="text-left px-5 py-3 font-bold uppercase tracking-wider whitespace-nowrap">Email</th>
                   <th className="text-left px-5 py-3 font-bold uppercase tracking-wider whitespace-nowrap">Role</th>
                   <th className="text-left px-5 py-3 font-bold uppercase tracking-wider whitespace-nowrap">Created</th>
+                  <th className="text-right px-5 py-3 font-bold uppercase tracking-wider whitespace-nowrap">Actions</th>
                 </tr>
               </thead>
               <tbody>
@@ -208,11 +244,24 @@ export default function AdminManagementPage() {
                           ROLE_COLORS[a.role] || ROLE_COLORS.viewer
                         }`}
                       >
-                        {a.role}
+                        {ROLE_LABELS[a.role] || a.role}
                       </span>
                     </td>
                     <td className="px-5 py-3 text-slate-500 font-mono text-[10px] whitespace-nowrap">
                       {a.created_at ? new Date(a.created_at).toLocaleDateString() : "-"}
+                    </td>
+                    <td className="px-5 py-3 text-right whitespace-nowrap">
+                      {a.id !== loggedInAdminId ? (
+                        <button
+                          onClick={() => handleDelete(a.id, a.username)}
+                          disabled={deletingId === a.id}
+                          className="cursor-pointer text-xs font-bold uppercase tracking-wider px-2.5 py-1 rounded-lg border border-rose-200 bg-rose-50 hover:bg-rose-100 text-rose-600 transition-all disabled:opacity-50"
+                        >
+                          {deletingId === a.id ? "Deleting..." : "Delete"}
+                        </button>
+                      ) : (
+                        <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider select-none pr-2">Current Account</span>
+                      )}
                     </td>
                   </tr>
                 ))}

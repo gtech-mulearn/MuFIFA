@@ -12,7 +12,7 @@ export async function POST(request) {
     }
 
     // 1. Authenticate Admin
-    const authResult = requireRole(request, "admin", "superadmin");
+    const authResult = requireRole(request, "admin", "superadmin", "iglead");
     if (authResult.error) {
       return NextResponse.json({ success: false, error: authResult.message }, { status: authResult.status });
     }

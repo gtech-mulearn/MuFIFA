@@ -3,7 +3,7 @@ import { requireRole } from "@/utils/auth";
 
 export async function GET(request) {
   try {
-    const auth = requireRole(request, "viewer", "admin", "superadmin");
+    const auth = requireRole(request, "viewer", "admin", "superadmin", "iglead", "merch_partner");
     if (auth.error) {
       return NextResponse.json(
         {

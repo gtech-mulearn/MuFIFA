@@ -43,6 +43,8 @@ const ROLE_COLORS = {
   superadmin: "bg-amber-50 text-amber-700 border-amber-200",
   admin: "bg-sky-50 text-sky-700 border-sky-200",
   viewer: "bg-slate-100 text-slate-600 border-slate-200",
+  iglead: "bg-violet-50 text-violet-700 border-violet-200",
+  merch_partner: "bg-emerald-50 text-emerald-700 border-emerald-200",
 };
 
 export { ROLE_COLORS };
@@ -136,6 +138,50 @@ function SyncIcon() {
   );
 }
 
+function ClipboardIcon() {
+  return (
+    <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
+      <path strokeLinecap="round" strokeLinejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
+    </svg>
+  );
+}
+
+
+
+function isPathAllowedForRole(pathname, role) {
+  if (!role) return false;
+  if (role === "superadmin") return true;
+
+  const cleanPath = pathname.replace(/\/$/, "");
+
+  // Viewer / Admin access
+  if (role === "admin" || role === "viewer") {
+    if (cleanPath === "/admin/admins" || cleanPath.startsWith("/admin/admins/")) {
+      return false;
+    }
+    return true;
+  }
+
+  // IG Lead access
+  if (role === "iglead") {
+    return (
+      cleanPath === "/admin" ||
+      cleanPath === "/admin/tasks" ||
+      cleanPath.startsWith("/admin/tasks/")
+    );
+  }
+
+  // Merchandise Partner access
+  if (role === "merch_partner") {
+    return (
+      cleanPath === "/admin" ||
+      cleanPath === "/admin/rewards" ||
+      cleanPath.startsWith("/admin/rewards/")
+    );
+  }
+
+  return false;
+}
 
 function Sidebar({ admin, collapsed, setCollapsed }) {
   const pathname = usePathname();
@@ -149,13 +195,24 @@ function Sidebar({ admin, collapsed, setCollapsed }) {
     { name: "Sync Points", href: "/admin/tasks/sync", icon: <SyncIcon /> },
     { name: "Test Stat", href: "/admin/test-stat", icon: <TestStatIcon /> },
     { name: "Rewards Store", href: "/admin/rewards", icon: <GiftIcon /> },
+    { name: "Merch Claims", href: "/admin/rewards/claims", icon: <ClipboardIcon /> },
     { name: "Send Email", href: "/admin/email", icon: <EmailIcon /> },
     { name: "API Search Test", href: "/admin/external-test", icon: <SearchTestIcon /> },
   ];
 
 
+  let allowedLinks = [...links];
+
+  if (admin?.role === "iglead") {
+    const igLeadAllowed = ["/admin", "/admin/tasks", "/admin/tasks/create", "/admin/tasks/sync"];
+    allowedLinks = links.filter((link) => igLeadAllowed.includes(link.href));
+  } else if (admin?.role === "merch_partner") {
+    const merchAllowed = ["/admin", "/admin/rewards", "/admin/rewards/claims"];
+    allowedLinks = links.filter((link) => merchAllowed.includes(link.href));
+  }
+
   if (admin?.role === "superadmin") {
-    links.push({ name: "Admins", href: "/admin/admins", icon: <ShieldIcon /> });
+    allowedLinks.push({ name: "Admins", href: "/admin/admins", icon: <ShieldIcon /> });
   }
 
   return (
@@ -182,7 +239,7 @@ function Sidebar({ admin, collapsed, setCollapsed }) {
         </div>
 
         <nav className="relative flex-1 flex flex-col gap-1.5 p-3 mt-2 overflow-y-auto">
-          {links.map((link) => {
+          {allowedLinks.map((link) => {
             const isActive =
               link.href === "/admin"
                 ? pathname === "/admin"
@@ -235,7 +292,7 @@ function Sidebar({ admin, collapsed, setCollapsed }) {
       <nav
         className={`md:hidden fixed bottom-0 left-0 right-0 h-16 border-t ${THEME.line} bg-white/95 backdrop-blur-md flex items-center overflow-x-auto [&::-webkit-scrollbar]:hidden px-2 py-1 z-40 shadow-[0_-8px_30px_rgba(15,23,42,0.08)] gap-1 snap-x`}
       >
-        {links.map((link) => {
+        {allowedLinks.map((link) => {
           const isActive =
             link.href === "/admin"
               ? pathname === "/admin"
@@ -387,6 +444,8 @@ export default function AdminLayout({ children }) {
     return null;
   }
 
+  const isAllowed = isPathAllowedForRole(pathname, admin?.role);
+
   return (
     <AdminContext.Provider value={admin}>
       <div className={`min-h-screen relative overflow-hidden font-sans ${THEME.page}`}>
@@ -398,7 +457,27 @@ export default function AdminLayout({ children }) {
             collapsed ? "md:pl-16" : "md:pl-60"
           }`}
         >
-          <div className="p-4 sm:p-6 md:p-8">{children}</div>
+          <div className="p-4 sm:p-6 md:p-8">
+            {isAllowed ? (
+              children
+            ) : (
+              <div className="flex flex-col items-center justify-center min-h-[50vh] gap-4 select-none animate-fadeIn">
+                <svg className="w-12 h-12 text-rose-500 animate-bounce" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                </svg>
+                <div className="flex flex-col items-center gap-1">
+                  <h3 className="text-sm font-bold text-slate-800 uppercase tracking-wider">Access Denied</h3>
+                  <p className="text-xs text-slate-400">Your account role does not have permission to view this page.</p>
+                </div>
+                <Link
+                  href="/admin"
+                  className="mt-2 text-xs font-bold uppercase tracking-wider px-4 py-2 bg-sky-500 hover:bg-sky-400 text-white rounded-xl transition-all shadow-[0_4px_12px_rgba(14,165,233,0.15)]"
+                >
+                  Go to Dashboard
+                </Link>
+              </div>
+            )}
+          </div>
         </main>
       </div>
     </AdminContext.Provider>
