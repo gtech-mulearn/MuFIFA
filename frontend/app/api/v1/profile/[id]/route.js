@@ -41,7 +41,7 @@ export async function GET(request, { params }) {
     }
 
     const selectFields =
-      "id,name,user_id,team,domain,mu_points,avatar_url,created_at,email,phone,referal_id,tasks,ticket_url,referred_by,bio,muid";
+      "id,name,user_id,team,domain,mu_points,avatar_url,created_at,email,phone,referal_id,tasks,ticket_url,referred_by,bio,muid,role";
 
     // 1. Try to find the user by user_id (username)
     let query = `${supabaseUrl}/rest/v1/registrations?user_id=eq.${encodeURIComponent(cleanId)}&select=${selectFields}&limit=1`;
@@ -178,7 +178,7 @@ export async function GET(request, { params }) {
     let xp_teamwork = 0;
     let xp_execution = 0;
     try {
-      const compQuery = `${supabaseUrl}/rest/v1/user_completed_tasks?user_id=eq.${encodeURIComponent(profile.user_id)}&select=xp_creativity,xp_branding,xp_innovation,xp_teamwork,xp_execution`;
+      const compQuery = `${supabaseUrl}/rest/v1/user_completed_tasks?user_id=eq.${encodeURIComponent(profile.user_id)}&select=task_id,xp_creativity,xp_branding,xp_innovation,xp_teamwork,xp_execution`;
       const compRes = await fetch(compQuery, {
         method: "GET",
         headers: {
@@ -188,7 +188,8 @@ export async function GET(request, { params }) {
       });
       if (compRes.ok) {
         const completions = await compRes.json();
-        responseData.completed_tasks_count = completions.length;
+        const visibleCompletions = completions.filter((c) => c.task_id !== 100);
+        responseData.completed_tasks_count = visibleCompletions.length;
         completions.forEach((c) => {
           xp_creativity += c.xp_creativity || 0;
           xp_branding += c.xp_branding || 0;
@@ -325,7 +326,7 @@ export async function PATCH(request, { params }) {
     }
 
     // 2. Fetch the target profile to check ownership
-    const selectFields = "id,user_id";
+    const selectFields = "id,user_id,muid";
     let query = `${supabaseUrl}/rest/v1/registrations?user_id=eq.${encodeURIComponent(cleanId)}&select=${selectFields}&limit=1`;
     let res = await fetch(query, {
       method: "GET",
@@ -388,7 +389,39 @@ export async function PATCH(request, { params }) {
     if (bio !== undefined) updateData.bio = bio.trim();
     if (phone !== undefined) updateData.phone = phone.trim();
     if (tasks !== undefined) updateData.tasks = tasks;
-    if (muid !== undefined) updateData.muid = muid.trim();
+    if (muid !== undefined) {
+      const cleanMuid = muid.trim();
+      if (cleanMuid !== "") {
+        if (profile.muid && profile.muid.trim() !== "") {
+          if (profile.muid.trim().toLowerCase() !== cleanMuid.toLowerCase()) {
+            return NextResponse.json(
+              { success: false, error: "µID cannot be changed once set. Please contact an Admin." },
+              { status: 400 }
+            );
+          }
+        }
+
+        // Check if the same muid is already registered by another player
+        const muidQuery = `${supabaseUrl}/rest/v1/registrations?muid=ilike.${encodeURIComponent(cleanMuid)}&id=neq.${profile.id}&select=id`;
+        const muidCheckRes = await fetch(muidQuery, {
+          method: "GET",
+          headers: {
+            apikey: supabaseKey,
+            Authorization: `Bearer ${supabaseKey}`,
+          },
+        });
+        if (muidCheckRes.ok) {
+          const muidRows = await muidCheckRes.json();
+          if (muidRows && muidRows.length > 0) {
+            return NextResponse.json(
+              { success: false, error: "This µID is already registered by another player." },
+              { status: 400 }
+            );
+          }
+        }
+      }
+      updateData.muid = cleanMuid;
+    }
 
     if (Object.keys(updateData).length === 0) {
       return NextResponse.json(

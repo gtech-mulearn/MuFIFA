@@ -62,7 +62,7 @@ export async function GET(request) {
     }
 
     const tasksRes = await fetch(
-      `${supabaseUrl}/rest/v1/tasks?select=id,title`,
+      `${supabaseUrl}/rest/v1/tasks?select=id,title&id=neq.100`,
       { method: "GET", headers, next: { revalidate: 0 } }
     );
     let tasksList = [];
@@ -71,7 +71,7 @@ export async function GET(request) {
     }
 
     const compRes = await fetch(
-      `${supabaseUrl}/rest/v1/user_completed_tasks?select=task_id`,
+      `${supabaseUrl}/rest/v1/user_completed_tasks?select=task_id&task_id=neq.100`,
       { method: "GET", headers, next: { revalidate: 0 } }
     );
     let completionsList = [];

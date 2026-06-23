@@ -11,7 +11,6 @@ export default function ChallengeModal({
   verifyError,
   verifySuccess,
 }) {
-
   useEffect(() => {
     const handleKeyDown = (e) => {
       if (e.key === "Escape") {
@@ -49,6 +48,121 @@ export default function ChallengeModal({
   };
 
   const xpValue = task.xpValue || 0;
+
+  const getVerificationDetails = () => {
+    const v = task.verification;
+    if (v) {
+      if (v === "none") {
+        return {
+          type: "Manual",
+          description:
+            "Requires manual verification and crediting by an admin.",
+          colorClass: "text-rose-400 border-rose-500/20 bg-rose-500/5",
+          icon: (
+            <svg
+              className="w-4.5 h-4.5"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2.5"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+              />
+            </svg>
+          ),
+        };
+      }
+      if (v === "custom") {
+        return {
+          type: "Automated",
+          description: "Automated check via website action.",
+          colorClass: "text-cyan-400 border-cyan-500/20 bg-cyan-500/5",
+          icon: (
+            <svg
+              className="w-4.5 h-4.5"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2.5"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"
+              />
+            </svg>
+          ),
+        };
+      }
+      if (v.startsWith("discord_api:")) {
+        const hashtag = v.substring("discord_api:".length);
+        return {
+          type: "Discord API",
+          description: `Verify via Discord by posting in the channel with hashtag: `,
+          hashtag: hashtag,
+          colorClass: "text-sky-400 border-sky-500/20 bg-sky-500/5",
+          icon: (
+            <svg
+              className="w-4.5 h-4.5"
+              fill="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path d="M20.317 4.37a19.791 19.791 0 00-4.885-1.515.074.074 0 00-.079.037c-.21.375-.444.864-.608 1.25a18.27 18.27 0 00-5.487 0 12.64 12.64 0 00-.617-1.25.077.077 0 00-.079-.037A19.736 19.736 0 003.677 4.37a.07.07 0 00-.032.027C.533 9.046-.32 13.58.099 18.057a.082.082 0 00.031.057 19.9 19.9 0 005.993 3.03.078.078 0 00.084-.028c.462-.63.874-1.295 1.226-1.994a.076.076 0 00-.041-.106 13.107 13.107 0 01-1.873-.894.077.077 0 01-.008-.128c.126-.093.252-.19.372-.287a.075.075 0 01.077-.011c3.92 1.793 8.18 1.793 12.061 0a.073.073 0 01.078.009c.12.099.246.195.373.289a.077.077 0 01-.006.127 12.299 12.299 0 01-1.873.894.077.077 0 00-.041.107c.36.698.772 1.362 1.225 1.993a.076.076 0 00.084.028 19.839 19.839 0 006.002-3.03.077.077 0 00.032-.054c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 00-.031-.03z" />
+            </svg>
+          ),
+        };
+      }
+    }
+    // Fallback based on task ID for backwards compatibility
+    if ([1, 2, 4, 5, 6].includes(task.id)) {
+      return {
+        type: "Automated",
+        description: "Automated check via website action.",
+        colorClass: "text-cyan-400 border-cyan-500/20 bg-cyan-500/5",
+        icon: (
+          <svg
+            className="w-4.5 h-4.5"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2.5"
+            viewBox="0 0 24 24"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"
+            />
+          </svg>
+        ),
+      };
+    }
+    return {
+      type: "Manual",
+      description: "Requires manual verification and crediting by an admin.",
+      colorClass: "text-rose-400 border-rose-500/20 bg-rose-500/5",
+      icon: (
+        <svg
+          className="w-4.5 h-4.5"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2.5"
+          viewBox="0 0 24 24"
+        >
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+          />
+        </svg>
+      ),
+    };
+  };
+
+  const vDetails = getVerificationDetails();
+  const isVerifiable = vDetails.type !== "Manual";
 
   return (
     <div
@@ -92,165 +206,107 @@ export default function ChallengeModal({
         }`}
       >
         {/* Left Panel: Slides in from left on desktop, static stack on mobile */}
-        <div className={`md:absolute md:left-0 md:top-0 md:bottom-0 md:w-1/2 w-full md:h-full h-auto bg-gradient-to-br from-[#1b1544] via-[#0f0b27] to-[#04030a] p-6 py-10 md:p-8 flex flex-col items-center justify-center border-b md:border-b-0 md:border-r border-white/5 relative overflow-hidden shrink-0 select-none transition-transform duration-500 ease-out z-10 ${
-          isOpen ? "md:translate-x-0" : "md:-translate-x-full"
-        }`}>
-        {/* Stadium BG pattern */}
         <div
-          className="absolute inset-0 z-0 bg-cover bg-center opacity-[0.15] pointer-events-none"
-          style={{ backgroundImage: `url('/bg_img.webp')` }}
-        />
-        {/* Glow */}
-        <div className="absolute w-64 h-64 bg-violet-600/10 rounded-full blur-3xl pointer-events-none z-0" />
+          className={`md:absolute md:left-0 md:top-0 md:bottom-0 md:w-1/2 w-full md:h-full h-auto bg-gradient-to-br from-[#1b1544] via-[#0f0b27] to-[#04030a] p-6 py-10 md:p-8 flex flex-col items-center justify-center border-b md:border-b-0 md:border-r border-white/5 relative overflow-hidden shrink-0 select-none transition-transform duration-500 ease-out z-10 ${
+            isOpen ? "md:translate-x-0" : "md:-translate-x-full"
+          }`}
+        >
+          {/* Stadium BG pattern */}
+          <div
+            className="absolute inset-0 z-0 bg-cover bg-center opacity-[0.15] pointer-events-none"
+            style={{ backgroundImage: `url('/bg_img.webp')` }}
+          />
+          {/* Glow */}
+          <div className="absolute w-64 h-64 bg-violet-600/10 rounded-full blur-3xl pointer-events-none z-0" />
 
-        <div className="relative z-10 flex flex-col items-center text-center gap-4 md:gap-8">
-          <span className="text-[10px] md:text-xs font-black uppercase tracking-[0.25em] text-violet-400">
-            Challenge Reward
-          </span>
-
-          {/* Logo Badge (Playercard Badge) */}
-          <div className="relative w-24 h-24 md:w-36 md:h-36 shrink-0 flex items-center justify-center">
-            <div className="absolute -inset-1 md:-inset-1.5 rounded-full bg-gradient-to-br from-violet-500 to-indigo-600 blur opacity-45 animate-pulse" />
-            <div className="w-20 h-20 md:w-32 md:h-32 rounded-full bg-[#121021] border border-violet-500/30 flex items-center justify-center shadow-2xl relative z-10">
-              <div className="relative w-12 h-12 md:w-18 md:h-18">
-                <Image
-                  src={getTaskLogo(task.id)}
-                  alt="Logo Badge"
-                  fill
-                  className="object-contain drop-shadow-[0_0_15px_rgba(139,92,246,0.6)]"
-                />
-              </div>
-            </div>
-          </div>
-
-          {/* Reward breakdown values */}
-          <div className="flex flex-row gap-3 md:gap-4 mt-1 md:mt-2 justify-center items-center">
-            {/* points */}
-            <div className="bg-[#120e2b]/80 border border-violet-500/15 rounded-2xl p-3 md:p-5 flex flex-col items-center justify-center shadow-lg w-28 md:w-36 select-none">
-              <span className="text-2xl md:text-3xl font-black text-amber-400 leading-none">
-                +{task.mupoint || 0}
-              </span>
-              <span className="text-[8px] md:text-[10px] font-black tracking-widest text-slate-400 mt-1 md:mt-2">
-                μPoints
-              </span>
-            </div>
-
-            {/* XP */}
-            <div className="bg-[#120e2b]/80 border border-violet-500/15 rounded-2xl p-3 md:p-5 flex flex-col items-center justify-center shadow-lg w-28 md:w-36 select-none">
-              <span className="text-2xl md:text-3xl font-black text-violet-400 leading-none">
-                +{xpValue}
-              </span>
-              <span className="text-[8px] md:text-[10px] font-black uppercase tracking-widest text-slate-400 mt-1 md:mt-2">
-                XP Points
-              </span>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Right Panel: Slides in from right on desktop, static stack on mobile */}
-      <div
-        className={`md:absolute md:right-0 md:top-0 md:bottom-0 md:w-1/2 w-full md:h-full h-auto p-6 pb-24 md:p-12 flex flex-col justify-between md:overflow-y-auto bg-[#0c0a18]/95 backdrop-blur-md transition-transform duration-500 ease-out z-10 ${
-          isOpen ? "md:translate-x-0" : "md:translate-x-full"
-        }`}
-      >
-
-        <div className="flex flex-col gap-8 text-left pr-2 mt-4 md:mt-8">
-          {/* Header detail */}
-          <div className="flex flex-col gap-2 mt-2">
-            <div className="flex items-center gap-2.5">
-              <span className="text-xs font-black uppercase tracking-[0.2em] text-violet-400">
-                Tier {task.tier}
-              </span>
-              <span className="text-[10px] text-slate-500">•</span>
-              <span className="text-xs font-black uppercase tracking-[0.2em] text-slate-400">
-                Challenge {task.id}
-              </span>
-            </div>
-            <h2 className="text-3xl md:text-4xl font-black text-white uppercase tracking-wider leading-tight">
-              {task.title}
-            </h2>
-          </div>
-
-          {/* Guidelines */}
-          <div className="flex flex-col gap-4">
-            <span className="text-sm font-black uppercase tracking-[0.25em] text-violet-400 border-b border-white/5 pb-2.5">
-              GUIDELINES & CRITERIA
+          <div className="relative z-10 flex flex-col items-center text-center gap-4 md:gap-8">
+            <span className="text-[10px] md:text-xs font-black uppercase tracking-[0.25em] text-violet-400">
+              Challenge Reward
             </span>
-            <div className="guidelines-content text-base text-slate-200 leading-relaxed font-semibold space-y-4 max-h-none md:max-h-[300px] overflow-y-visible md:overflow-y-auto pr-2 custom-scrollbar">
-              {task.longDesc}
-            </div>
-          </div>
 
-          {/* Status indicator */}
-          <div className="flex flex-col gap-3">
-            <span className="text-sm font-black uppercase tracking-[0.25em] text-amber-500 border-b border-white/5 pb-2.5">
-              STATUS
-            </span>
-            {task.completed ? (
-              <div className="flex items-center gap-2 text-emerald-400 text-xs font-black uppercase tracking-wider">
-                <svg
-                  className="w-4.5 h-4.5"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="4"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    d="M4.5 12.75l6 6 9-13.5"
+            {/* Logo Badge (Playercard Badge) */}
+            <div className="relative w-24 h-24 md:w-36 md:h-36 shrink-0 flex items-center justify-center">
+              <div className="absolute -inset-1 md:-inset-1.5 rounded-full bg-gradient-to-br from-violet-500 to-indigo-600 blur opacity-45 animate-pulse" />
+              <div className="w-20 h-20 md:w-32 md:h-32 rounded-full bg-[#121021] border border-violet-500/30 flex items-center justify-center shadow-2xl relative z-10">
+                <div className="relative w-12 h-12 md:w-18 md:h-18">
+                  <Image
+                    src={getTaskLogo(task.id)}
+                    alt="Logo Badge"
+                    fill
+                    className="object-contain drop-shadow-[0_0_15px_rgba(139,92,246,0.6)]"
                   />
-                </svg>
-                <span>Completed - Reward Claimed</span>
-              </div>
-            ) : (
-              <div className="flex flex-col gap-2">
-                <div className="flex justify-between text-xs font-black text-slate-500 uppercase tracking-wider">
-                  <span>Progress</span>
-                  <span>
-                    {task.completed ? "1/1" : "0/1"}
-                  </span>
-                </div>
-                <div className="w-full bg-[#151225] h-2 rounded-full overflow-hidden">
-                  <div className={`bg-violet-500 h-full rounded-full transition-all duration-500 ${task.completed ? "w-full" : "w-0"}`} />
                 </div>
               </div>
-            )}
+            </div>
+
+            {/* Reward breakdown values */}
+            <div className="flex flex-row gap-3 md:gap-4 mt-1 md:mt-2 justify-center items-center">
+              {/* points */}
+              <div className="bg-[#120e2b]/80 border border-violet-500/15 rounded-2xl p-3 md:p-5 flex flex-col items-center justify-center shadow-lg w-28 md:w-36 select-none">
+                <span className="text-2xl md:text-3xl font-black text-amber-400 leading-none">
+                  +{task.mupoint || 0}
+                </span>
+                <span className="text-[8px] md:text-[10px] font-black tracking-widest text-slate-400 mt-1 md:mt-2">
+                  μPoints
+                </span>
+              </div>
+
+              {/* XP */}
+              <div className="bg-[#120e2b]/80 border border-violet-500/15 rounded-2xl p-3 md:p-5 flex flex-col items-center justify-center shadow-lg w-28 md:w-36 select-none">
+                <span className="text-2xl md:text-3xl font-black text-violet-400 leading-none">
+                  +{xpValue}
+                </span>
+                <span className="text-[8px] md:text-[10px] font-black uppercase tracking-widest text-slate-400 mt-1 md:mt-2">
+                  XP Points
+                </span>
+              </div>
+            </div>
           </div>
-
-
-
-          {/* Verification output feedback messages */}
-          {verifyError && (
-            <div className="bg-rose-500/10 border border-rose-500/20 text-rose-400 text-xs font-bold py-2.5 px-4 rounded-xl text-center w-full">
-              {verifyError}
-            </div>
-          )}
-          {verifySuccess && (
-            <div className="bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs font-bold py-2.5 px-4 rounded-xl text-center w-full">
-              {verifySuccess}
-            </div>
-          )}
         </div>
 
-        {/* Action Buttons Row */}
-        <div className="flex flex-col sm:flex-row gap-4 mt-8 pt-6 border-t border-white/5">
-          {task.id !== 3 && (
-            <button
-              onClick={() => onVerify(task)}
-              disabled={verifyingTaskId === task.id || task.completed}
-              className="flex-1 py-4 bg-emerald-500/10 hover:bg-emerald-500/25 border border-emerald-500/40 text-emerald-400 hover:text-white font-black text-xs tracking-widest uppercase rounded-xl transition-all disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer flex items-center justify-center gap-2"
-            >
-              {verifyingTaskId === task.id ? (
-                <span>VERIFYING...</span>
-              ) : task.completed ? (
-                <>
+        {/* Right Panel: Slides in from right on desktop, static stack on mobile */}
+        <div
+          className={`md:absolute md:right-0 md:top-0 md:bottom-0 md:w-1/2 w-full md:h-full h-auto p-6 pb-24 md:p-12 flex flex-col justify-between md:overflow-y-auto bg-[#0c0a18]/95 backdrop-blur-md transition-transform duration-500 ease-out z-10 ${
+            isOpen ? "md:translate-x-0" : "md:translate-x-full"
+          }`}
+        >
+          <div className="flex flex-col gap-8 text-left pr-2 mt-4 md:mt-8">
+            {/* Header detail */}
+            <div className="flex flex-col gap-2 mt-2">
+              <div className="flex items-center gap-2.5">
+                <span className="text-xs font-black uppercase tracking-[0.2em] text-slate-400">
+                  Challenge {task.id}
+                </span>
+              </div>
+              <h2 className="text-3xl md:text-4xl font-black text-white uppercase tracking-wider leading-tight">
+                {task.title}
+              </h2>
+            </div>
+
+            {/* Guidelines */}
+            <div className="flex flex-col gap-4">
+              <span className="text-sm font-black uppercase tracking-[0.25em] text-violet-400 border-b border-white/5 pb-2.5">
+                GUIDELINES & CRITERIA
+              </span>
+              <div className="guidelines-content text-base text-slate-200 leading-relaxed font-semibold space-y-4 max-h-none md:max-h-[300px] overflow-y-visible md:overflow-y-auto pr-2 custom-scrollbar">
+                {task.longDesc}
+              </div>
+            </div>
+
+            {/* Verification details */}
+
+            {/* Status indicator */}
+            <div className="flex flex-col gap-3">
+              <span className="text-sm font-black uppercase tracking-[0.25em] text-amber-500 border-b border-white/5 pb-2.5">
+                STATUS
+              </span>
+              {task.completed ? (
+                <div className="flex items-center gap-2 text-emerald-400 text-xs font-black uppercase tracking-wider">
                   <svg
-                    className="w-4 h-4"
+                    className="w-4.5 h-4.5"
                     fill="none"
                     stroke="currentColor"
-                    strokeWidth="3.5"
+                    strokeWidth="4"
                     viewBox="0 0 24 24"
                   >
                     <path
@@ -259,36 +315,91 @@ export default function ChallengeModal({
                       d="M4.5 12.75l6 6 9-13.5"
                     />
                   </svg>
-                  <span>VERIFIED</span>
-                </>
+                  <span>Completed - Reward Claimed</span>
+                </div>
               ) : (
-                <span>VERIFY TASK</span>
+                <div className="flex flex-col gap-2">
+                  <div className="flex justify-between text-xs font-black text-slate-500 uppercase tracking-wider">
+                    <span>Progress</span>
+                    <span>{task.completed ? "1/1" : "0/1"}</span>
+                  </div>
+                  <div className="w-full bg-[#151225] h-2 rounded-full overflow-hidden">
+                    <div
+                      className={`bg-violet-500 h-full rounded-full transition-all duration-500 ${task.completed ? "w-full" : "w-0"}`}
+                    />
+                  </div>
+                </div>
               )}
-            </button>
-          )}
+            </div>
 
-          <Link
-            href={task.actionUrl}
-            className="flex-1 py-4 bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-500 hover:to-indigo-500 text-white font-black text-xs tracking-widest uppercase rounded-xl transition-all shadow-md text-center flex items-center justify-center gap-2 cursor-pointer"
-          >
-            <span>{task.actionLabel}</span>
-            <svg
-              className="w-4 h-4"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="3"
-              viewBox="0 0 24 24"
+            {/* Verification output feedback messages */}
+            {verifyError && (
+              <div className="bg-rose-500/10 border border-rose-500/20 text-rose-400 text-xs font-bold py-2.5 px-4 rounded-xl text-center w-full">
+                {verifyError}
+              </div>
+            )}
+            {verifySuccess && (
+              <div className="bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs font-bold py-2.5 px-4 rounded-xl text-center w-full">
+                {verifySuccess}
+              </div>
+            )}
+          </div>
+
+          {/* Action Buttons Row */}
+          <div className="flex flex-col sm:flex-row gap-4 mt-8 pt-6 border-t border-white/5">
+            {isVerifiable && (
+              <button
+                onClick={() => onVerify(task)}
+                disabled={verifyingTaskId === task.id || task.completed}
+                className="flex-1 py-4 bg-emerald-500/10 hover:bg-emerald-500/25 border border-emerald-500/40 text-emerald-400 hover:text-white font-black text-xs tracking-widest uppercase rounded-xl transition-all disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer flex items-center justify-center gap-2"
+              >
+                {verifyingTaskId === task.id ? (
+                  <span>VERIFYING...</span>
+                ) : task.completed ? (
+                  <>
+                    <svg
+                      className="w-4 h-4"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="3.5"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        d="M4.5 12.75l6 6 9-13.5"
+                      />
+                    </svg>
+                    <span>VERIFIED</span>
+                  </>
+                ) : (
+                  <span>VERIFY TASK</span>
+                )}
+              </button>
+            )}
+
+            <Link
+              href={task.actionUrl}
+              className="flex-1 py-4 bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-500 hover:to-indigo-500 text-white font-black text-xs tracking-widest uppercase rounded-xl transition-all shadow-md text-center flex items-center justify-center gap-2 cursor-pointer"
             >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                d="M8.25 4.5l7.5 7.5-7.5 7.5"
-              />
-            </svg>
-          </Link>
+              <span>{task.actionLabel}</span>
+              <svg
+                className="w-4 h-4"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="3"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M8.25 4.5l7.5 7.5-7.5 7.5"
+                />
+              </svg>
+            </Link>
+          </div>
         </div>
       </div>
     </div>
-  </div>
-);
+  );
 }

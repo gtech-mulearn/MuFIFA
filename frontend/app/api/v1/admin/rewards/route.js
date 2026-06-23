@@ -122,6 +122,7 @@ export async function POST(request) {
       sponsor_url,
       buy_url,
       image_url,
+      available_to_all,
     } = body;
 
     if (!title) {
@@ -157,6 +158,7 @@ export async function POST(request) {
       sponsor_url: sponsor_url || "https://www.zycoz.com/",
       buy_url: buy_url || "",
       image_url: image_url || "",
+      available_to_all: !!available_to_all,
     };
 
     const res = await fetch(`${supabaseUrl}/rest/v1/merch_items`, {
@@ -258,6 +260,7 @@ export async function PATCH(request) {
     if (body.sponsor_url !== undefined) payload.sponsor_url = body.sponsor_url;
     if (body.buy_url !== undefined) payload.buy_url = body.buy_url;
     if (body.image_url !== undefined) payload.image_url = body.image_url;
+    if (body.available_to_all !== undefined) payload.available_to_all = !!body.available_to_all;
 
     payload.updated_at = new Date().toISOString();
 

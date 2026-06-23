@@ -28,6 +28,7 @@ const userPatchSchema = z.object({
   mu_points: z.number().int().min(0, "Points must be a positive integer.").optional(),
   password: z.string().min(6, "Password must be at least 6 characters long.").optional(),
   banned: z.string().optional(),
+  role: z.enum(["player", "captain", "vicecaptain"], { errorMap: () => ({ message: "Invalid role selected." }) }).optional(),
 });
 
 export async function GET(request, { params }) {
@@ -165,7 +166,8 @@ export async function GET(request, { params }) {
         }
       );
       if (completedTasksRes.ok) {
-        completedTasks = await completedTasksRes.json();
+        const rawCompletions = await completedTasksRes.json();
+        completedTasks = rawCompletions.filter((ct) => ct.task_id !== 100);
       }
     }
 

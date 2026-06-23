@@ -151,6 +151,7 @@ export default function AdminUserDetailPage({ params }) {
           domain: data.user.domain || "",
           team: data.user.team || "",
           mu_points: data.user.mu_points || 0,
+          role: data.user.role || "player",
         });
       } else {
         setError(data.error?.message || data.error || "User not found.");
@@ -540,6 +541,17 @@ export default function AdminUserDetailPage({ params }) {
 
                   <div className="flex flex-col gap-1">
                     <span className="text-[10px] font-black uppercase tracking-wider text-slate-400">
+                      User Role
+                    </span>
+                    <span className="text-sm font-semibold text-slate-800 capitalize">
+                      {user?.role === "vicecaptain"
+                        ? "Vice Captain"
+                        : (user?.role || "player")}
+                    </span>
+                  </div>
+
+                  <div className="flex flex-col gap-1">
+                    <span className="text-[10px] font-black uppercase tracking-wider text-slate-400">
                       FIFA Squad Team
                     </span>
                     <span className="text-sm font-semibold text-slate-800 flex items-center gap-1.5">
@@ -682,6 +694,22 @@ export default function AdminUserDetailPage({ params }) {
                           {d}
                         </option>
                       ))}
+                    </select>
+                  </div>
+
+                  <div className="flex flex-col gap-1.5">
+                    <label className="text-[10px] font-black uppercase tracking-wider text-slate-500">
+                      User Role
+                    </label>
+                    <select
+                      name="role"
+                      value={form.role || "player"}
+                      onChange={handleChange}
+                      className={`rounded-xl px-4 py-2.5 text-xs transition-colors cursor-pointer appearance-none focus:outline-none ${THEME.input}`}
+                    >
+                      <option value="player">Player</option>
+                      <option value="captain">Captain</option>
+                      <option value="vicecaptain">Vice Captain</option>
                     </select>
                   </div>
 

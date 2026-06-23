@@ -43,7 +43,7 @@ export default function RewardsPage() {
     (xp.innovation || 0) +
     (xp.teamwork || 0) +
     (xp.execution || 0);
-  
+
   const levelData = calculateLevel(totalXp);
   const level = player ? levelData.level : 1;
   const xpInLevel = player ? levelData.currentLevelXp : 0;
@@ -51,12 +51,19 @@ export default function RewardsPage() {
   const xpPercent = player ? levelData.xpPercent : 0;
   const muPoints = player?.mu_points || 0;
 
+  const [selectedLevelFilter, setSelectedLevelFilter] = useState("all");
+
+  const handleLevelFilterChange = (levelVal) => {
+    setSelectedLevelFilter(levelVal);
+    setPage(1);
+  };
+
   // Fetch paginated rewards
   const fetchRewards = useCallback(async () => {
     setLoading(true);
     setError("");
     try {
-      const res = await fetch(`/api/v1/rewards?page=${page}&limit=6`);
+      const res = await fetch(`/api/v1/rewards?page=${page}&limit=6&min_level=${selectedLevelFilter}`);
       const data = await res.json();
       if (data.success) {
         setRewards(data.data || []);
@@ -72,7 +79,7 @@ export default function RewardsPage() {
     } finally {
       setLoading(false);
     }
-  }, [page]);
+  }, [page, selectedLevelFilter]);
 
   useEffect(() => {
     fetchRewards();
@@ -231,7 +238,9 @@ export default function RewardsPage() {
                     <div className="flex justify-between text-[9px] text-slate-400 font-medium">
                       <span>XP Progress</span>
                       {nextXp > 0 ? (
-                        <span>{xpInLevel} / {nextXp} XP</span>
+                        <span>
+                          {xpInLevel} / {nextXp} XP
+                        </span>
                       ) : (
                         <span>MAX LEVEL</span>
                       )}
@@ -317,6 +326,30 @@ export default function RewardsPage() {
           </span>
         </div>
 
+        {/* Level Filters */}
+        <div className="flex flex-wrap justify-center gap-2.5 sm:gap-3 bg-white/5 border border-white/5 p-1.5 rounded-2xl w-fit mx-auto">
+          {[
+            { value: "all", label: "All Items" },
+            { value: "global", label: "Global / Free" },
+            { value: "1", label: "Level 1 Choices" },
+            { value: "2", label: "Level 2 Choices" },
+            { value: "3", label: "Level 3 Choices" },
+            { value: "4", label: "Level 4 Choices" },
+          ].map((tab) => (
+            <button
+              key={tab.value}
+              onClick={() => handleLevelFilterChange(tab.value)}
+              className={`px-4 py-2 text-xs font-black uppercase tracking-wider transition-all cursor-pointer rounded-xl ${
+                selectedLevelFilter === tab.value
+                  ? "bg-violet-600 text-white shadow-md shadow-violet-600/30"
+                  : "text-slate-400 hover:text-slate-200 hover:bg-white/5"
+              }`}
+            >
+              {tab.label}
+            </button>
+          ))}
+        </div>
+
         {loading ? (
           <div className="flex items-center justify-center h-64">
             <div className="w-8 h-8 rounded-full border-2 border-violet-500 border-t-transparent animate-spin" />
@@ -345,8 +378,8 @@ export default function RewardsPage() {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {rewards.map((item) => {
               const claimed = !!item.claimed;
-              const outOfStock = item.quantity <= 0;
-              const levelEligible = level >= item.min_level;
+              const outOfStock = !item.available_to_all && item.quantity <= 0;
+              const levelEligible = item.available_to_all || level >= item.min_level;
               const pointsEligible = muPoints >= item.min_points;
 
               return (
@@ -390,6 +423,14 @@ export default function RewardsPage() {
                       )}
 
                       {/* Status Overlays */}
+                      <span className={`absolute top-2.5 left-2.5 text-[8px] font-black uppercase tracking-wider px-2 py-0.5 rounded z-10 backdrop-blur-sm ${
+                        item.available_to_all
+                          ? "text-blue-400 bg-blue-950/80 border border-blue-900/30"
+                          : "text-purple-400 bg-purple-950/80 border border-purple-900/30"
+                      }`}>
+                        {item.available_to_all ? "Global Reward" : `Lvl ${item.min_level} Choice`}
+                      </span>
+
                       {outOfStock && (
                         <span className="absolute top-2.5 right-2.5 text-[8px] font-black uppercase tracking-wider text-rose-400 bg-rose-950/80 border border-rose-900/30 px-2 py-0.5 rounded z-10 backdrop-blur-sm">
                           Out of Stock
@@ -776,7 +817,7 @@ export default function RewardsPage() {
                     <span className="text-[10px] font-black uppercase tracking-[0.25em] text-violet-400 bg-violet-500/10 border border-violet-500/20 px-2 py-0.5 rounded">
                       {selectedRewardForModal.tag || "Merchandise"}
                     </span>
-                    {selectedRewardForModal.quantity <= 0 && (
+                    {(!selectedRewardForModal.available_to_all && selectedRewardForModal.quantity <= 0) && (
                       <span className="text-[10px] font-black uppercase tracking-[0.2em] text-rose-400 bg-rose-500/10 border border-rose-500/20 px-2 py-0.5 rounded animate-pulse">
                         Out of Stock
                       </span>
@@ -792,18 +833,18 @@ export default function RewardsPage() {
                   </h2>
 
                   {/* Claims E-commerce Row */}
-                  <div className="flex items-center gap-2 mt-1">
+                  {/* <div className="flex items-center gap-2 mt-1">
                     <span className="text-[10px] text-violet-400 font-bold uppercase tracking-wider">
                       {((selectedRewardForModal.id * 13) % 50) + 20} Claims
                     </span>
-                  </div>
+                  </div> */}
                 </div>
 
                 {/* Stock Status details */}
                 <div className="flex items-center gap-2 bg-white/3 border border-white/5 px-3 py-2 rounded-xl w-fit">
                   <span
                     className={`w-2 h-2 rounded-full ${
-                      selectedRewardForModal.quantity > 5
+                      selectedRewardForModal.available_to_all || selectedRewardForModal.quantity > 5
                         ? "bg-emerald-400 animate-pulse"
                         : selectedRewardForModal.quantity > 0
                           ? "bg-amber-400 animate-pulse"
@@ -811,7 +852,9 @@ export default function RewardsPage() {
                     }`}
                   />
                   <span className="text-[10px] font-black uppercase tracking-wider text-slate-300">
-                    {selectedRewardForModal.quantity > 5 ? (
+                    {selectedRewardForModal.available_to_all ? (
+                      <span>In Stock (Unlimited)</span>
+                    ) : selectedRewardForModal.quantity > 5 ? (
                       <span>
                         In Stock{" "}
                         <span className="text-slate-400 font-normal">
@@ -904,17 +947,16 @@ export default function RewardsPage() {
                           • Level requirement is determined by total accumulated
                           XP across all task domains.
                         </p>
-                        <p>
-                          • Claiming this item will immediately deduct{" "}
-                          <span className="text-amber-400">
-                            {selectedRewardForModal.min_points} μPoints
-                          </span>{" "}
-                          from your balance.
-                        </p>
-                        <p>
-                          • Duplicate claims are automatically blocked by the
-                          database integrity layer.
-                        </p>
+                        {!selectedRewardForModal.available_to_all && (
+                          <p className="text-purple-400">
+                            • This is a Level {selectedRewardForModal.min_level} Choice Reward. You can only claim ONE choice reward for this level.
+                          </p>
+                        )}
+                        {selectedRewardForModal.available_to_all && (
+                          <p className="text-blue-400">
+                            • This is a Global Reward. It does not count towards your level choice limits.
+                          </p>
+                        )}
                       </div>
                     )}
                     {modalActiveTab === "shipping" && (
@@ -989,14 +1031,14 @@ export default function RewardsPage() {
                     </svg>
                     REDEEMED
                   </button>
-                ) : selectedRewardForModal.quantity <= 0 ? (
+                ) : (!selectedRewardForModal.available_to_all && selectedRewardForModal.quantity <= 0) ? (
                   <button
                     disabled
                     className="w-full h-[48px] bg-rose-950/40 border border-rose-500/20 text-rose-400 font-black text-xs tracking-widest uppercase rounded-xl cursor-not-allowed flex items-center justify-center"
                   >
                     OUT OF STOCK
                   </button>
-                ) : level >= selectedRewardForModal.min_level &&
+                ) : (selectedRewardForModal.available_to_all || level >= selectedRewardForModal.min_level) &&
                   muPoints >= selectedRewardForModal.min_points ? (
                   <button
                     onClick={() => {

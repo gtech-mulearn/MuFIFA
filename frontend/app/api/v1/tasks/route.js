@@ -40,7 +40,7 @@ export async function GET(request) {
     if (cachedTasks && now < cacheExpiry) {
       tasks = cachedTasks;
     } else {
-      const url = `${supabaseUrl}/rest/v1/tasks?select=*&tier=gt.0&order=id.asc`;
+      const url = `${supabaseUrl}/rest/v1/tasks?select=*&order=id.asc`;
       const headers = {
         apikey: supabaseKey,
         Authorization: `Bearer ${supabaseKey}`,
@@ -77,7 +77,9 @@ export async function GET(request) {
     // 4. Map completions and locking logic to tasks
     let firstUncompletedCompulsoryTaskId = null;
 
-    const processedTasks = tasks.map((t) => {
+    const visibleTasks = tasks.filter((t) => t.id !== 100);
+
+    const processedTasks = visibleTasks.map((t) => {
       const completion = completionsMap[t.id];
       const completed = !!completion;
       
@@ -205,10 +207,10 @@ export async function POST(request) {
       xp_innovation,
       xp_teamwork,
       xp_execution,
-      tier,
       category,
       logo_url,
       compulsory,
+      verification,
     } = body;
 
     if (!id || !title || !description) {
@@ -238,10 +240,11 @@ export async function POST(request) {
         xp_innovation: parseInt(xp_innovation || 0, 10),
         xp_teamwork: parseInt(xp_teamwork || 0, 10),
         xp_execution: parseInt(xp_execution || 0, 10),
-        tier: parseInt(tier || 1, 10),
+        tier: 1,
         category: category ? category.split(",").map(c => c.trim()).filter(Boolean).join(",") : "",
         logo_url: logo_url || null,
         compulsory: compulsory || false,
+        verification: verification || "none",
       }),
     });
 

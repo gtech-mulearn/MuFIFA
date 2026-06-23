@@ -68,7 +68,7 @@ export async function GET(request) {
       Prefer: "count=exact",
     };
 
-    const url = `${supabaseUrl}/rest/v1/registrations?select=id,name,email,user_id,phone,domain,team,mu_points,created_at,banned&order=created_at.desc&offset=${offset}&limit=${limit}${filterQuery}`;
+    const url = `${supabaseUrl}/rest/v1/registrations?select=id,name,email,user_id,phone,domain,team,mu_points,created_at,banned,role&order=created_at.desc&offset=${offset}&limit=${limit}${filterQuery}`;
 
     const res = await fetch(url, { method: "GET", headers, next: { revalidate: 0 } });
 

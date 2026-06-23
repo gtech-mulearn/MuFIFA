@@ -28,10 +28,11 @@ export default function AdminCreateTaskPage() {
     xp_innovation: 0,
     xp_teamwork: 0,
     xp_execution: 0,
-    tier: 1,
     category: "",
     logo_url: "",
     compulsory: false,
+    verificationType: "none",
+    discordHashtag: "",
   });
   const [creatingTask, setCreatingTask] = useState(false);
   const [uploadingLogo, setUploadingLogo] = useState(false);
@@ -105,10 +106,23 @@ export default function AdminCreateTaskPage() {
 
     setCreatingTask(true);
     try {
+      // Format verification field
+      let verificationValue = taskForm.verificationType;
+      if (taskForm.verificationType === "discord api") {
+        verificationValue = `discord_api:${taskForm.discordHashtag || ""}`;
+      }
+
+      const payload = {
+        ...taskForm,
+        verification: verificationValue,
+      };
+      delete payload.verificationType;
+      delete payload.discordHashtag;
+
       const res = await fetch("/api/v1/tasks", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(taskForm),
+        body: JSON.stringify(payload),
       });
       const data = await res.json();
 
@@ -128,10 +142,11 @@ export default function AdminCreateTaskPage() {
           xp_innovation: 0,
           xp_teamwork: 0,
           xp_execution: 0,
-          tier: 1,
           category: "",
           logo_url: "",
           compulsory: false,
+          verificationType: "none",
+          discordHashtag: "",
         });
         setIsEditing(false);
         setEditingTaskId(null);
@@ -151,6 +166,20 @@ export default function AdminCreateTaskPage() {
     setTaskSuccess("");
     setIsEditing(true);
     setEditingTaskId(task.id);
+
+    let vType = "none";
+    let hashtag = "";
+    if (task.verification) {
+      if (task.verification.startsWith("discord_api:")) {
+        vType = "discord api";
+        hashtag = task.verification.substring("discord_api:".length);
+      } else if (task.verification === "custom") {
+        vType = "custom";
+      } else {
+        vType = task.verification;
+      }
+    }
+
     setTaskForm({
       id: task.id.toString(),
       title: task.title || "",
@@ -165,10 +194,11 @@ export default function AdminCreateTaskPage() {
       xp_innovation: task.xp_innovation || 0,
       xp_teamwork: task.xp_teamwork || 0,
       xp_execution: task.xp_execution || 0,
-      tier: task.tier || 1,
       category: task.category || "",
       logo_url: task.logo_url || "",
       compulsory: task.compulsory || false,
+      verificationType: vType,
+      discordHashtag: hashtag,
     });
     
     // Smooth scroll to form
@@ -197,10 +227,11 @@ export default function AdminCreateTaskPage() {
       xp_innovation: 0,
       xp_teamwork: 0,
       xp_execution: 0,
-      tier: 1,
       category: "",
       logo_url: "",
       compulsory: false,
+      verificationType: "none",
+      discordHashtag: "",
     });
   };
 
@@ -240,35 +271,19 @@ export default function AdminCreateTaskPage() {
             )}
 
             <form onSubmit={handleCreateTask} className="flex flex-col gap-4 text-xs">
-              <div className="grid grid-cols-2 gap-4">
-                <div className="flex flex-col gap-1.5">
-                  <label className="text-[10px] font-black uppercase tracking-wider text-slate-500">
-                    Task ID (Number, unique)
-                  </label>
-                  <input
-                    type="number"
-                    value={taskForm.id}
-                    onChange={(e) => setTaskForm({ ...taskForm, id: e.target.value })}
-                    placeholder="e.g. 7"
-                    disabled={isEditing}
-                    readOnly={isEditing}
-                    className={`rounded-xl px-4 py-2.5 focus:outline-none ${isEditing ? "bg-slate-100 text-slate-400 border-slate-200 cursor-not-allowed" : THEME.input}`}
-                  />
-                </div>
-
-                <div className="flex flex-col gap-1.5">
-                  <label className="text-[10px] font-black uppercase tracking-wider text-slate-500">
-                    Tier Level (1 or 2)
-                  </label>
-                  <select
-                    value={taskForm.tier}
-                    onChange={(e) => setTaskForm({ ...taskForm, tier: parseInt(e.target.value, 10) || 1 })}
-                    className={`rounded-xl px-3 py-2.5 cursor-pointer focus:outline-none ${THEME.input}`}
-                  >
-                    <option value="1">Tier 1</option>
-                    <option value="2">Tier 2</option>
-                  </select>
-                </div>
+              <div className="flex flex-col gap-1.5">
+                <label className="text-[10px] font-black uppercase tracking-wider text-slate-500">
+                  Task ID (Number, unique)
+                </label>
+                <input
+                  type="number"
+                  value={taskForm.id}
+                  onChange={(e) => setTaskForm({ ...taskForm, id: e.target.value })}
+                  placeholder="e.g. 7"
+                  disabled={isEditing}
+                  readOnly={isEditing}
+                  className={`rounded-xl px-4 py-2.5 focus:outline-none ${isEditing ? "bg-slate-100 text-slate-400 border-slate-200 cursor-not-allowed" : THEME.input}`}
+                />
               </div>
 
               <div className="flex flex-col gap-1.5">
@@ -361,6 +376,39 @@ export default function AdminCreateTaskPage() {
                   If ticked, players cannot access tasks with a higher ID until this one is completed.
                 </p>
               </div>
+
+              <div className="flex flex-col gap-1.5 mt-2">
+                <label className="text-[10px] font-black uppercase tracking-wider text-slate-500">
+                  Verification Method
+                </label>
+                <select
+                  value={taskForm.verificationType}
+                  onChange={(e) => setTaskForm({ ...taskForm, verificationType: e.target.value })}
+                  className={`rounded-xl px-3 py-2.5 cursor-pointer focus:outline-none ${THEME.input}`}
+                >
+                  <option value="none">None (Manual Verification)</option>
+                  <option value="custom">Custom (Referral / Profile / Predictions logic)</option>
+                  <option value="discord api">Discord API</option>
+                </select>
+              </div>
+
+              {taskForm.verificationType === "discord api" && (
+                <div className="flex flex-col gap-1.5 mt-1">
+                  <label className="text-[10px] font-black uppercase tracking-wider text-slate-500">
+                    Discord Hashtag (Required for API)
+                  </label>
+                  <input
+                    type="text"
+                    value={taskForm.discordHashtag}
+                    onChange={(e) => setTaskForm({ ...taskForm, discordHashtag: e.target.value })}
+                    placeholder="e.g. #hackathon"
+                    className={`rounded-xl px-4 py-2.5 focus:outline-none ${THEME.input}`}
+                  />
+                  <p className="text-[9px] text-slate-400">
+                    Players will be instructed to include this hashtag in their Discord message to verify the task.
+                  </p>
+                </div>
+              )}
 
               <div className="flex flex-col gap-1.5">
                 <div className="flex justify-between">
@@ -507,7 +555,6 @@ export default function AdminCreateTaskPage() {
                     <tr className="border-b border-slate-200/90 text-slate-500">
                       <th className="px-4 py-3 font-bold uppercase tracking-wider">ID</th>
                       <th className="px-4 py-3 font-bold uppercase tracking-wider">Title</th>
-                      <th className="px-4 py-3 font-bold uppercase tracking-wider">Tier</th>
                       <th className="px-4 py-3 font-bold uppercase tracking-wider">MuPoints</th>
                       <th className="px-4 py-3 font-bold uppercase tracking-wider">XP Breakdown</th>
                       <th className="px-4 py-3 font-bold text-center uppercase tracking-wider">Actions</th>
@@ -523,6 +570,7 @@ export default function AdminCreateTaskPage() {
                               <img src={task.logo_url} alt="" className="w-6 h-6 rounded-full object-cover shrink-0" />
                             )}
                             <div className="font-semibold text-slate-800">{task.title}</div>
+                            {task.compulsory && <span className="bg-rose-100 text-rose-700 text-[8px] font-bold px-1.5 py-0.5 rounded uppercase w-max">Compulsory</span>}
                           </div>
                           <div className="text-[10px] text-slate-400 max-w-xs truncate">{task.description}</div>
                           {task.category && (
@@ -534,10 +582,6 @@ export default function AdminCreateTaskPage() {
                               ))}
                             </div>
                           )}
-                        </td>
-                        <td className="px-4 py-3 text-slate-600">
-                          Tier {task.tier}
-                          {task.compulsory && <span className="ml-2 bg-rose-100 text-rose-700 text-[8px] font-bold px-1.5 py-0.5 rounded uppercase block mt-1 w-max">Compulsory</span>}
                         </td>
                         <td className="px-4 py-3 font-mono font-semibold text-sky-700">+{task.mupoint}</td>
                         <td className="px-4 py-3 font-mono text-[10px] text-slate-500 whitespace-nowrap">

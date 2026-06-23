@@ -27,7 +27,8 @@ export default function LayoutContent({ children }) {
     pathname.startsWith("/match") ||
     pathname.startsWith("/profile") ||
     pathname.startsWith("/points-history") ||
-    pathname.startsWith("/kuzhiundo");
+    pathname.startsWith("/kuzhiundo") ||
+    pathname.startsWith("/captain");
 
   if (isAdmin || pathname === "/development") {
     // Admin and development routes render their own layout — no public chrome

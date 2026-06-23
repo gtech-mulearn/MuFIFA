@@ -15,6 +15,7 @@ export async function GET(request) {
     const { searchParams } = new URL(request.url);
     const page = parseInt(searchParams.get("page") || "1", 10);
     const limit = parseInt(searchParams.get("limit") || "6", 10);
+    const minLevelParam = searchParams.get("min_level");
     const offset = (page - 1) * limit;
 
     const headers = {
@@ -23,8 +24,15 @@ export async function GET(request) {
       Prefer: "count=exact",
     };
 
+    let queryFilter = "";
+    if (minLevelParam === "global") {
+      queryFilter = "&available_to_all=eq.true";
+    } else if (minLevelParam && minLevelParam !== "all") {
+      queryFilter = `&min_level=eq.${parseInt(minLevelParam, 10)}&available_to_all=eq.false`;
+    }
+
     // 1. Fetch released merchandise items (paginated)
-    const url = `${supabaseUrl}/rest/v1/merch_items?is_released=eq.true&order=id.asc&offset=${offset}&limit=${limit}`;
+    const url = `${supabaseUrl}/rest/v1/merch_items?is_released=eq.true${queryFilter}&order=id.asc&offset=${offset}&limit=${limit}`;
     const merchRes = await fetch(url, { headers, next: { revalidate: 0 } });
     if (!merchRes.ok) {
       throw new Error(`Failed to fetch merch items: ${await merchRes.text()}`);
@@ -130,7 +138,7 @@ export async function POST(request) {
       return NextResponse.json({ success: false, error: "This merchandise is not currently available." }, { status: 400 });
     }
 
-    if (merch.quantity <= 0) {
+    if (!merch.available_to_all && merch.quantity <= 0) {
       return NextResponse.json({ success: false, error: "This item is out of stock." }, { status: 400 });
     }
 
@@ -169,10 +177,12 @@ export async function POST(request) {
     const userPoints = player.mu_points || 0;
 
     // 5. Verify Eligibility
-    if (userLevel < merch.min_level || userPoints < merch.min_points) {
+    const levelEligible = merch.available_to_all || userLevel >= merch.min_level;
+    const pointsEligible = userPoints >= merch.min_points;
+    if (!levelEligible || !pointsEligible) {
       return NextResponse.json({
         success: false,
-        error: `Ineligible. Requires Level ${merch.min_level} and ${merch.min_points} μPoints.`,
+        error: `Ineligible. ${!levelEligible ? `Requires Level ${merch.min_level}. ` : ""}${!pointsEligible ? `Requires ${merch.min_points} μPoints.` : ""}`,
       }, { status: 400 });
     }
 
@@ -184,6 +194,43 @@ export async function POST(request) {
     const claims = await claimsCheckRes.json();
     if (claims.length > 0) {
       return NextResponse.json({ success: false, error: "You have already claimed this merchandise." }, { status: 400 });
+    }
+
+    // 6b. Check choice limit: respect admin configured choice limit per level
+    if (!merch.available_to_all) {
+      // 1. Fetch choice limit for this level from config table
+      let allowedChoiceLimit = 1;
+      const configRes = await fetch(
+        `${supabaseUrl}/rest/v1/level_rewards_config?level=eq.${merch.min_level}&select=choice_limit`,
+        { headers }
+      );
+      if (configRes.ok) {
+        const configs = await configRes.json();
+        if (configs.length > 0) {
+          allowedChoiceLimit = configs[0].choice_limit;
+        }
+      }
+
+      // 2. Fetch existing claims for the user
+      const choiceCheckRes = await fetch(
+        `${supabaseUrl}/rest/v1/user_merch_claims?user_id=eq.${encodeURIComponent(userId)}&select=id,merch_items(min_level,available_to_all)`,
+        { headers }
+      );
+      if (choiceCheckRes.ok) {
+        const userClaims = await choiceCheckRes.json();
+        const choiceClaimsCount = userClaims.filter(
+          (c) =>
+            c.merch_items &&
+            c.merch_items.min_level === merch.min_level &&
+            !c.merch_items.available_to_all
+        ).length;
+        if (choiceClaimsCount >= allowedChoiceLimit) {
+          return NextResponse.json({
+            success: false,
+            error: `Level choice limit reached. You can only claim ${allowedChoiceLimit} choice reward(s) for Level ${merch.min_level}.`,
+          }, { status: 400 });
+        }
+      }
     }
 
     // 7. Insert Claim into user_merch_claims
@@ -199,16 +246,18 @@ export async function POST(request) {
       throw new Error(`Failed to create claim record: ${await insertClaimRes.text()}`);
     }
 
-    // 8. Decrement quantity in merch_items
-    const patchMerchRes = await fetch(`${supabaseUrl}/rest/v1/merch_items?id=eq.${merchIdInt}`, {
-      method: "PATCH",
-      headers,
-      body: JSON.stringify({
-        quantity: merch.quantity - 1,
-      }),
-    });
-    if (!patchMerchRes.ok) {
-      throw new Error(`Failed to update merch item quantity: ${await patchMerchRes.text()}`);
+    // 8. Decrement quantity in merch_items if it's not a global/infinite stock item
+    if (!merch.available_to_all) {
+      const patchMerchRes = await fetch(`${supabaseUrl}/rest/v1/merch_items?id=eq.${merchIdInt}`, {
+        method: "PATCH",
+        headers,
+        body: JSON.stringify({
+          quantity: merch.quantity - 1,
+        }),
+      });
+      if (!patchMerchRes.ok) {
+        throw new Error(`Failed to update merch item quantity: ${await patchMerchRes.text()}`);
+      }
     }
 
     return NextResponse.json({

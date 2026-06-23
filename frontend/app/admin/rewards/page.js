@@ -10,6 +10,11 @@ export default function AdminRewardsPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [successMsg, setSuccessMsg] = useState("");
+  const [uploadingImage, setUploadingImage] = useState(false);
+  const [imageError, setImageError] = useState("");
+
+  const [levelConfigs, setLevelConfigs] = useState([]);
+  const [updatingLevelIndex, setUpdatingLevelIndex] = useState(null);
 
   // Modal & Form State
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -26,6 +31,7 @@ export default function AdminRewardsPage() {
     sponsor_url: "https://www.zycoz.com/",
     buy_url: "",
     image_url: "",
+    available_to_all: false,
   });
 
   const fetchRewards = useCallback(async () => {
@@ -47,8 +53,44 @@ export default function AdminRewardsPage() {
     }
   }, []);
 
+  const fetchLevelConfigs = async () => {
+    try {
+      const res = await fetch("/api/v1/admin/rewards/config");
+      const data = await res.json();
+      if (res.ok && data.success) {
+        setLevelConfigs(data.data || []);
+      }
+    } catch (err) {
+      console.error("Failed to fetch level configs:", err);
+    }
+  };
+
+  const handleUpdateLimit = async (level, limit) => {
+    setUpdatingLevelIndex(level);
+    try {
+      const res = await fetch("/api/v1/admin/rewards/config", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ level, choice_limit: parseInt(limit, 10) || 1 }),
+      });
+      const data = await res.json();
+      if (res.ok && data.success) {
+        triggerSuccess(`Level ${level} choice limit updated to ${limit}!`);
+        fetchLevelConfigs();
+      } else {
+        setError(data.error || "Failed to update choice limit.");
+      }
+    } catch (err) {
+      console.error(err);
+      setError("Failed to update choice limit.");
+    } finally {
+      setUpdatingLevelIndex(null);
+    }
+  };
+
   useEffect(() => {
     fetchRewards();
+    fetchLevelConfigs();
   }, [fetchRewards]);
 
   // Flash a success message
@@ -62,6 +104,8 @@ export default function AdminRewardsPage() {
   // Open modal for adding new item
   const handleAddNew = () => {
     setEditingItem(null);
+    setImageError("");
+    setUploadingImage(false);
     setFormData({
       title: "",
       description: "",
@@ -74,6 +118,7 @@ export default function AdminRewardsPage() {
       sponsor_url: "https://www.zycoz.com/",
       buy_url: "",
       image_url: "",
+      available_to_all: false,
     });
     setIsModalOpen(true);
   };
@@ -81,6 +126,8 @@ export default function AdminRewardsPage() {
   // Open modal for editing existing item
   const handleEdit = (item) => {
     setEditingItem(item);
+    setImageError("");
+    setUploadingImage(false);
     setFormData({
       title: item.title || "",
       description: item.description || "",
@@ -93,6 +140,7 @@ export default function AdminRewardsPage() {
       sponsor_url: item.sponsor_url || "https://www.zycoz.com/",
       buy_url: item.buy_url || "",
       image_url: item.image_url || "",
+      available_to_all: !!item.available_to_all,
     });
     setIsModalOpen(true);
   };
@@ -104,6 +152,59 @@ export default function AdminRewardsPage() {
       ...prev,
       [name]: type === "checkbox" ? checked : value,
     }));
+  };
+
+  // Handle reward image upload to Supabase storage
+  const handleImageUpload = async (e) => {
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
+
+    setUploadingImage(true);
+    setImageError("");
+
+    const dataObj = new FormData();
+    dataObj.append("image", files[0]);
+
+    try {
+      const res = await fetch("/api/v1/admin/rewards/upload-image", {
+        method: "POST",
+        body: dataObj,
+      });
+      const data = await res.json();
+      if (res.ok && data.success) {
+        setFormData((prev) => {
+          const currentUrls = prev.image_url
+            ? prev.image_url.split(",").map((u) => u.trim()).filter(Boolean)
+            : [];
+          currentUrls.push(data.image_url);
+          return {
+            ...prev,
+            image_url: currentUrls.join(", "),
+          };
+        });
+      } else {
+        setImageError(data.error || "Upload failed");
+      }
+    } catch (err) {
+      console.error(err);
+      setImageError("Network error. Upload failed.");
+    } finally {
+      setUploadingImage(false);
+    }
+  };
+
+  // Remove individual image from the list
+  const handleRemoveImage = (indexToRemove) => {
+    setFormData((prev) => {
+      const currentUrls = prev.image_url
+        ? prev.image_url.split(",").map((u) => u.trim()).filter(Boolean)
+        : [];
+      const updatedUrls = currentUrls.filter((_, idx) => idx !== indexToRemove);
+      return {
+        ...prev,
+        image_url: updatedUrls.join(", "),
+      };
+    });
   };
 
   // Create or Update
@@ -250,7 +351,41 @@ export default function AdminRewardsPage() {
           <button onClick={() => setSuccessMsg("")} className="text-emerald-950 font-bold hover:opacity-80">×</button>
         </div>
       )}
-
+      {/* Level Choice Limits Panel */}
+      <div className={`${THEME.panel} rounded-2xl p-4 flex flex-col gap-3 shadow-sm border border-slate-100`}>
+        <div>
+          <h3 className="text-xs font-bold uppercase tracking-wider text-slate-800">
+            Level Choice Limits Config
+          </h3>
+          <p className="text-[10px] text-slate-400 mt-0.5">
+            Configure the maximum number of choice rewards a player can claim per progression level. (Defaults to 1)
+          </p>
+        </div>
+        <div className="flex flex-wrap gap-4 items-center mt-1">
+          {levelConfigs.length === 0 ? (
+            <span className="text-[10px] text-slate-400">Loading configurations...</span>
+          ) : (
+            levelConfigs.map((cfg) => (
+              <div key={cfg.level} className="flex items-center gap-2 bg-slate-50 border border-slate-200/60 px-3 py-1.5 rounded-xl shadow-sm">
+                <span className="text-[10px] font-bold text-slate-700">Lvl {cfg.level}:</span>
+                <input
+                  type="number"
+                  min={1}
+                  disabled={updatingLevelIndex === cfg.level}
+                  defaultValue={cfg.choice_limit}
+                  onBlur={(e) => {
+                    if (parseInt(e.target.value, 10) !== cfg.choice_limit) {
+                      handleUpdateLimit(cfg.level, e.target.value);
+                    }
+                  }}
+                  className="w-12 text-center text-xs font-semibold bg-white border border-slate-300 rounded px-1 py-0.5 focus:outline-none focus:border-sky-500"
+                />
+                <span className="text-[9px] text-slate-400 uppercase tracking-wider font-bold">Choice Limit</span>
+              </div>
+            ))
+          )}
+        </div>
+      </div>
       {/* Rewards Grid/Table Panel */}
       <div className={`${THEME.panel} rounded-2xl overflow-hidden`}>
         {loading ? (
@@ -314,11 +449,22 @@ export default function AdminRewardsPage() {
                       {/* Title & Tag */}
                       <td className="px-5 py-3.5">
                         <div className="font-semibold text-slate-900">{item.title}</div>
-                        {item.tag && (
-                          <span className="inline-block mt-0.5 text-[9px] font-bold text-slate-500 bg-slate-100 px-1.5 py-0.5 rounded uppercase tracking-wider">
-                            {item.tag}
-                          </span>
-                        )}
+                        <div className="flex gap-1.5 flex-wrap items-center mt-1">
+                          {item.tag && (
+                            <span className="inline-block text-[9px] font-bold text-slate-500 bg-slate-100 px-1.5 py-0.5 rounded uppercase tracking-wider">
+                              {item.tag}
+                            </span>
+                          )}
+                          {item.available_to_all ? (
+                            <span className="inline-block text-[9px] font-bold text-blue-600 bg-blue-50 border border-blue-200 px-1.5 py-0.5 rounded uppercase tracking-wider">
+                              Global / Free
+                            </span>
+                          ) : (
+                            <span className="inline-block text-[9px] font-bold text-purple-600 bg-purple-50 border border-purple-200 px-1.5 py-0.5 rounded uppercase tracking-wider">
+                              Level {item.min_level} Choice
+                            </span>
+                          )}
+                        </div>
                       </td>
 
                       {/* Requirements */}
@@ -520,19 +666,90 @@ export default function AdminRewardsPage() {
                 </div>
               </div>
 
-              {/* Image URL */}
-              <div>
-                <label className="block text-[10px] font-bold uppercase tracking-wider text-slate-500 mb-1">
-                  Image URLs (Comma-separated for carousel)
+              {/* Image Upload & URLs */}
+              <div className="flex flex-col gap-2">
+                <label className="block text-[10px] font-bold uppercase tracking-wider text-slate-500">
+                  Reward Images
                 </label>
-                <input
-                  type="text"
-                  name="image_url"
-                  value={formData.image_url}
-                  onChange={handleInputChange}
-                  placeholder="https://example.com/img1.jpg, https://example.com/img2.jpg"
-                  className={`w-full rounded-xl px-3 py-2 text-xs focus:outline-none ${THEME.input}`}
-                />
+
+                {/* Previews / Gallery */}
+                <div className="flex flex-wrap gap-2 items-center">
+                  {(formData.image_url || "")
+                    .split(",")
+                    .map((u) => u.trim())
+                    .filter(Boolean)
+                    .map((url, idx) => (
+                      <div
+                        key={idx}
+                        className="relative w-16 h-16 rounded-xl overflow-hidden border border-slate-200 bg-slate-50 shrink-0 shadow-sm group"
+                      >
+                        <img
+                          src={url}
+                          alt={`preview-${idx}`}
+                          className="w-full h-full object-cover"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => handleRemoveImage(idx)}
+                          className="absolute -top-1 -right-1 bg-rose-500 hover:bg-rose-600 text-white rounded-full w-5 h-5 flex items-center justify-center text-[10px] font-bold shadow transition-colors cursor-pointer border border-white"
+                          title="Remove image"
+                        >
+                          ×
+                        </button>
+                      </div>
+                    ))}
+
+                  {/* Upload button card */}
+                  <label
+                    className={`w-16 h-16 rounded-xl border border-dashed border-slate-300 hover:border-sky-400 bg-slate-50/50 hover:bg-sky-50/20 flex flex-col items-center justify-center cursor-pointer transition-colors relative ${
+                      uploadingImage ? "opacity-50 pointer-events-none" : ""
+                    }`}
+                  >
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={handleImageUpload}
+                      disabled={uploadingImage}
+                      className="hidden"
+                    />
+                    {uploadingImage ? (
+                      <div className="w-5 h-5 border-2 border-sky-500 border-t-transparent rounded-full animate-spin" />
+                    ) : (
+                      <svg
+                        className="w-5 h-5 text-slate-400 hover:text-sky-500 transition-colors"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2.5"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          d="M12 4.5v15m7.5-7.5h-15"
+                        />
+                      </svg>
+                    )}
+                  </label>
+                </div>
+
+                {imageError && (
+                  <span className="text-[10px] font-bold text-rose-500">{imageError}</span>
+                )}
+
+                {/* Direct text input for fallback/fine-tuning */}
+                <div className="mt-1">
+                  <span className="text-[9px] text-slate-400 italic block mb-1">
+                    Or edit direct image URLs (comma-separated):
+                  </span>
+                  <input
+                    type="text"
+                    name="image_url"
+                    value={formData.image_url}
+                    onChange={handleInputChange}
+                    placeholder="https://example.com/img1.jpg, https://example.com/img2.jpg"
+                    className={`w-full rounded-xl px-3 py-2 text-xs focus:outline-none ${THEME.input}`}
+                  />
+                </div>
               </div>
 
               {/* Sponsor & URLs */}
@@ -592,6 +809,16 @@ export default function AdminRewardsPage() {
                     className="w-4 h-4 rounded border-slate-300 text-sky-600 focus:ring-sky-500"
                   />
                   Release immediately (Make active)
+                </label>
+                <label className="flex items-center gap-2 text-xs font-semibold text-slate-700 cursor-pointer select-none">
+                  <input
+                    type="checkbox"
+                    name="available_to_all"
+                    checked={formData.available_to_all}
+                    onChange={handleInputChange}
+                    className="w-4 h-4 rounded border-slate-300 text-sky-600 focus:ring-sky-500"
+                  />
+                  Available to Everyone (Global / Bypasses Choice Limit)
                 </label>
               </div>
 

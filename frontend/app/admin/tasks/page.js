@@ -291,7 +291,7 @@ export default function AdminTasksPage() {
                   <option value="">-- Choose Task --</option>
                   {allTasks.map((t) => (
                     <option key={t.id} value={t.id}>
-                      Task {t.id}: {t.title} (Tier {t.tier})
+                      Task {t.id}: {t.title}
                     </option>
                   ))}
                 </select>
@@ -403,7 +403,6 @@ export default function AdminTasksPage() {
                     <tr className="border-b border-slate-200/90 text-slate-500">
                       <th className="px-4 py-3 font-bold uppercase tracking-wider">ID</th>
                       <th className="px-4 py-3 font-bold uppercase tracking-wider">Title</th>
-                      <th className="px-4 py-3 font-bold uppercase tracking-wider">Tier</th>
                       <th className="px-4 py-3 font-bold uppercase tracking-wider">MuPoints</th>
                       <th className="px-4 py-3 font-bold uppercase tracking-wider">XP Breakdown</th>
                     </tr>
@@ -425,7 +424,6 @@ export default function AdminTasksPage() {
                             </div>
                           )}
                         </td>
-                        <td className="px-4 py-3 text-slate-600">Tier {task.tier}</td>
                         <td className="px-4 py-3 font-mono font-semibold text-sky-700">+{task.mupoint}</td>
                         <td className="px-4 py-3 font-mono text-[10px] text-slate-500 whitespace-nowrap">
                           C:{task.xp_creativity} | B:{task.xp_branding} | I:{task.xp_innovation} | T:{task.xp_teamwork} | E:{task.xp_execution}

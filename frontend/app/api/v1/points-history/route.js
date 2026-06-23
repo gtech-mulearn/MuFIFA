@@ -83,20 +83,22 @@ export async function GET(request) {
     let taskEntries = [];
     if (completedTasksRes.ok) {
       const completedTasks = await completedTasksRes.json();
-      taskEntries = completedTasks.map((ct) => ({
-        id: `task-${ct.id}`,
-        type: "task",
-        title: ct.tasks?.title || `Task #${ct.task_id}`,
-        points: ct.points_awarded || 0,
-        date: ct.completed_at,
-        xp: {
-          creativity: ct.xp_creativity || 0,
-          branding: ct.xp_branding || 0,
-          innovation: ct.xp_innovation || 0,
-          teamwork: ct.xp_teamwork || 0,
-          execution: ct.xp_execution || 0,
-        },
-      }));
+      taskEntries = completedTasks
+        .filter((ct) => ct.task_id !== 100)
+        .map((ct) => ({
+          id: `task-${ct.id}`,
+          type: "task",
+          title: ct.tasks?.title || `Task #${ct.task_id}`,
+          points: ct.points_awarded || 0,
+          date: ct.completed_at,
+          xp: {
+            creativity: ct.xp_creativity || 0,
+            branding: ct.xp_branding || 0,
+            innovation: ct.xp_innovation || 0,
+            teamwork: ct.xp_teamwork || 0,
+            execution: ct.xp_execution || 0,
+          },
+        }));
     }
 
     // 2. Fetch all predictions of the user

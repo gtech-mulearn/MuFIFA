@@ -21,7 +21,7 @@ export async function GET(request) {
     const pageParam = searchParams.get("page") || "1";
 
     // 2. Fetch completions joined with registrations details (name, team)
-    let completionsUrl = `${supabaseUrl}/rest/v1/user_completed_tasks?select=*,registrations(name,team)&order=completed_at.desc`;
+    let completionsUrl = `${supabaseUrl}/rest/v1/user_completed_tasks?select=*,registrations(name,team)&task_id=neq.100&order=completed_at.desc`;
     const headers = {
       apikey: supabaseKey,
       Authorization: `Bearer ${supabaseKey}`,

@@ -313,12 +313,12 @@ export default function TasksPage() {
           completed,
           actionLabel: dbTask.action_label || "View Details",
           actionUrl,
-          tier: dbTask.tier || 1,
           mupoint: dbTask.mupoint || 0,
           category: dbTask.category || "",
           xpValue: (dbTask.xp_creativity || 0) + (dbTask.xp_branding || 0) + (dbTask.xp_innovation || 0) + (dbTask.xp_teamwork || 0) + (dbTask.xp_execution || 0),
           isLocked: dbTask.isLocked || false,
           logo_url: dbTask.logo_url || null,
+          verification: dbTask.verification || null,
         };
       })
       .sort((a, b) => a.id - b.id);

@@ -179,6 +179,16 @@ export default function AdminUsersPage() {
                     <td className="px-4 py-3 text-slate-800 font-semibold whitespace-nowrap">
                       <div className="flex items-center gap-1.5">
                         <span>{user.name}</span>
+                        {user.role === "captain" && (
+                          <span className="inline-flex items-center rounded bg-amber-100 px-1.5 py-0.5 text-[9px] font-bold text-amber-800 border border-amber-200/60 uppercase tracking-wider select-none shrink-0">
+                            Captain
+                          </span>
+                        )}
+                        {user.role === "vicecaptain" && (
+                          <span className="inline-flex items-center rounded bg-cyan-100 px-1.5 py-0.5 text-[9px] font-bold text-cyan-800 border border-cyan-200/60 uppercase tracking-wider select-none shrink-0">
+                            Vice Captain
+                          </span>
+                        )}
                         {getBanBadge(user.banned)}
                       </div>
                     </td>

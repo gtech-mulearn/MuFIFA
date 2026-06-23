@@ -251,7 +251,7 @@ export default function ChallengeCard({ task, onViewDetails, dbTasks }) {
                 />
               </svg>
               <span className="text-[7.5px] font-black uppercase tracking-wider leading-tight">
-                COMPLETE TIER {task.tier - 1} TO UNLOCK
+                LOCKED (COMPLETE COMPULSORY CHALLENGES TO UNLOCK)
               </span>
             </div>
           ) : (
