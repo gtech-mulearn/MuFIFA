@@ -6,7 +6,7 @@ import Script from "next/script";
 import LayoutContent from "@/components/LayoutContent";
 import RouteChangeLoader from "@/components/RouteChangeLoader";
 import { getSEOMetadata } from "@/utils/seo";
-import { SpeedInsights } from "@vercel/speed-insights/next";
+import PostHogProvider from "@/components/PostHogProvider";
 const outfit = Outfit({
   variable: "--font-outfit",
   subsets: ["latin"],
@@ -88,7 +88,7 @@ function LayoutShell({ children }) {
         <Suspense fallback={null}>
           <RouteChangeLoader />
         </Suspense>
-        {children}
+        <PostHogProvider>{children}</PostHogProvider>
       </body>
     </html>
   );
@@ -106,7 +106,6 @@ export default function RootLayout({ children }) {
       >
         <LayoutContent>{children}</LayoutContent>
       </Suspense>
-      <SpeedInsights />
     </LayoutShell>
   );
 }

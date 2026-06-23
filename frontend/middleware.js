@@ -1,5 +1,4 @@
 import { NextResponse } from "next/server";
-import { underMaintenanceFlag } from "./flags";
 
 /**
  * Verify a JWT token's HMAC-SHA256 signature and expiry using the Web Crypto API.
@@ -71,32 +70,6 @@ export async function middleware(request) {
     return NextResponse.next();
   }
 
-  let isUnderMaintenance = false;
-  const hasVercelEnv = !!(
-    process.env.EDGE_CONFIG ||
-    process.env.VERCEL_PROJECT_ID ||
-    process.env.VERCEL_ENV
-  );
-
-  if (hasVercelEnv) {
-    try {
-      // Race the flag check with a 150ms timeout to avoid blocking page loads on slow API responses
-      const flagVal = await Promise.race([
-        underMaintenanceFlag(),
-        new Promise((resolve) =>
-          setTimeout(() => resolve({ under_maintainence: false }), 150)
-        ),
-      ]);
-      isUnderMaintenance = flagVal?.under_maintainence === true;
-    } catch (err) {
-      console.error("Failed to check UnderMaintenance flag in middleware:", err);
-    }
-  }
-
-  if (isUnderMaintenance) {
-    const devUrl = new URL("/development", request.url);
-    return NextResponse.redirect(devUrl);
-  }
 
   // Handle Admin routes
   if (pathname.startsWith("/admin")) {
