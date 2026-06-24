@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useCallback } from "react";
-import { TEAM_FLAGS, THEME } from "../layout";
+import { TEAM_FLAGS, THEME, useAdmin } from "../layout";
 
 function TeamBadge({ team }) {
   const code = TEAM_FLAGS[team];
@@ -62,6 +62,9 @@ function AuditCard({ label, value, icon, accent, subtitle }) {
 }
 
 export default function TestStatPage() {
+  const admin = useAdmin();
+  const isViewer = admin?.role === "viewer";
+
   const [stats, setStats] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -74,6 +77,8 @@ export default function TestStatPage() {
   const [memberSearch, setMemberSearch] = useState("");
   const [memberSortKey, setMemberSortKey] = useState("totalPoints");
   const [memberSortDir, setMemberSortDir] = useState("desc");
+  const [syncingTeam, setSyncingTeam] = useState(null);
+  const [syncSuccess, setSyncSuccess] = useState("");
 
   const fetchStats = useCallback(async () => {
     setLoading(true);
@@ -99,6 +104,68 @@ export default function TestStatPage() {
       setLoading(false);
     }
   }, []);
+
+  const handleSyncTeam = async (teamName) => {
+    if (syncingTeam) return;
+    setSyncingTeam(teamName);
+    setError("");
+    setSyncSuccess("");
+
+    try {
+      const res = await fetch("/api/v1/admin/test-stat", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ teamName }),
+      });
+      const data = await res.json();
+      if (res.ok && data.success) {
+        setSyncSuccess(data.message || `Successfully synced points for ${teamName}.`);
+        await fetchStats();
+        setTimeout(() => setSyncSuccess(""), 5000);
+      } else {
+        setError(data.error || `Failed to sync points for team ${teamName}.`);
+      }
+    } catch (err) {
+      console.error(err);
+      setError("A network error occurred while syncing squad points.");
+    } finally {
+      setSyncingTeam(null);
+    }
+  };
+
+  const [syncingUser, setSyncingUser] = useState(null);
+
+  const handleSyncUser = async (userId, teamName) => {
+    if (syncingUser) return;
+    setSyncingUser(userId);
+    setError("");
+    setSyncSuccess("");
+
+    try {
+      const res = await fetch("/api/v1/admin/test-stat", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ userId, teamName }),
+      });
+      const data = await res.json();
+      if (res.ok && data.success) {
+        setSyncSuccess(data.message || `Successfully synced points for user.`);
+        await fetchStats();
+        setTimeout(() => setSyncSuccess(""), 5000);
+      } else {
+        setError(data.error || "Failed to sync points for user.");
+      }
+    } catch (err) {
+      console.error(err);
+      setError("A network error occurred while syncing user points.");
+    } finally {
+      setSyncingUser(null);
+    }
+  };
 
   useEffect(() => {
     fetchStats();
@@ -268,6 +335,13 @@ export default function TestStatPage() {
       {error && (
         <div className="bg-rose-500/10 border border-rose-500/30 text-rose-800 text-xs py-2.5 px-4 rounded-xl">
           {error}
+        </div>
+      )}
+
+      {/* Success Notification */}
+      {syncSuccess && (
+        <div className="bg-emerald-500/10 border border-emerald-500/30 text-emerald-800 text-xs py-2.5 px-4 rounded-xl font-medium">
+          {syncSuccess}
         </div>
       )}
 
@@ -445,17 +519,35 @@ export default function TestStatPage() {
                         )}
                       </td>
                       <td className="px-5 py-3.5 text-center whitespace-nowrap" onClick={(e) => e.stopPropagation()}>
-                        <button
-                          onClick={() => {
-                            setSelectedSquad(team);
-                            setMemberSearch("");
-                            setMemberSortKey("totalPoints");
-                            setMemberSortDir("desc");
-                          }}
-                          className="text-[10px] font-bold uppercase tracking-wider px-2 py-1 rounded-lg border border-slate-200 hover:border-slate-300 bg-white hover:bg-slate-50 text-slate-700 hover:text-slate-900 transition-all cursor-pointer shadow-sm"
-                        >
-                          Audit Members
-                        </button>
+                        <div className="flex items-center justify-center gap-2">
+                          <button
+                            onClick={() => {
+                              setSelectedSquad(team);
+                              setMemberSearch("");
+                              setMemberSortKey("totalPoints");
+                              setMemberSortDir("desc");
+                            }}
+                            className="text-[10px] font-bold uppercase tracking-wider px-2 py-1 rounded-lg border border-slate-200 hover:border-slate-300 bg-white hover:bg-slate-50 text-slate-700 hover:text-slate-900 transition-all cursor-pointer shadow-sm"
+                          >
+                            Audit Members
+                          </button>
+                          {!isMatch && (
+                            <button
+                              onClick={() => handleSyncTeam(team.name)}
+                              disabled={syncingTeam !== null || isViewer}
+                              className="text-[10px] font-bold uppercase tracking-wider px-2 py-1 rounded-lg bg-sky-500 hover:bg-sky-600 disabled:bg-slate-300 text-white transition-all cursor-pointer shadow-sm flex items-center gap-1"
+                            >
+                              {syncingTeam === team.name ? (
+                                <>
+                                  <div className="w-2.5 h-2.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                                  Syncing...
+                                </>
+                              ) : (
+                                "Sync Points"
+                              )}
+                            </button>
+                          )}
+                        </div>
                       </td>
                     </tr>
                   );
@@ -620,7 +712,24 @@ export default function TestStatPage() {
                         <td className="px-4 py-2.5 text-right font-mono text-slate-500">{m.kuzhiApiSubmissions || 0}</td>
                         <td className="px-4 py-2.5 text-right font-mono text-slate-500">{m.predictionPoints}</td>
                         <td className="px-4 py-2.5 text-right font-mono font-bold text-sky-700 bg-sky-50/10">{m.totalPoints}</td>
-                        <td className="px-4 py-2.5 text-right font-mono text-slate-600 bg-slate-50/5">{m.muPoints}</td>
+                        <td className="px-4 py-2.5 text-right font-mono text-slate-600 bg-slate-50/5">
+                          <div className="flex items-center justify-end gap-1.5">
+                            <span>{m.muPoints}</span>
+                            {m.totalPoints !== m.muPoints && (
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleSyncUser(m.user_id, selectedSquad.name);
+                                }}
+                                disabled={syncingUser === m.user_id || isViewer}
+                                className="text-[9px] font-black uppercase bg-amber-500 hover:bg-amber-600 disabled:bg-slate-300 text-white px-1.5 py-0.5 rounded cursor-pointer transition-colors shadow-sm"
+                                title="Sync this user's points in DB"
+                              >
+                                {syncingUser === m.user_id ? "..." : "Fix"}
+                              </button>
+                            )}
+                          </div>
+                        </td>
                       </tr>
                     ))
                   )}
@@ -670,6 +779,22 @@ export default function TestStatPage() {
 
             {/* Modal Footer */}
             <div className="flex justify-end gap-2 border-t border-slate-200/90 pt-4 mt-4">
+              {selectedSquad.calculatedTotal !== selectedSquad.actualSquadPoints && (
+                <button
+                  onClick={() => handleSyncTeam(selectedSquad.name)}
+                  disabled={syncingTeam !== null || isViewer}
+                  className="px-4 py-2 text-xs font-semibold bg-sky-500 hover:bg-sky-600 disabled:bg-slate-300 text-white rounded-xl transition-all cursor-pointer shadow-sm flex items-center gap-1.5"
+                >
+                  {syncingTeam === selectedSquad.name ? (
+                    <>
+                      <div className="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                      Syncing Discrepancies...
+                    </>
+                  ) : (
+                    "Sync Squad Discrepancies"
+                  )}
+                </button>
+              )}
               <button
                 onClick={() => setSelectedSquad(null)}
                 className="px-4 py-2 text-xs font-semibold border border-slate-300 hover:border-slate-400 text-slate-700 hover:text-slate-900 rounded-xl transition-all cursor-pointer bg-white"

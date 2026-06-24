@@ -265,3 +265,310 @@ export async function GET(request) {
     return NextResponse.json({ success: false, error: "Internal server error" }, { status: 500 });
   }
 }
+
+export async function POST(request) {
+  try {
+    // 1. Authenticate Admin
+    const auth = requireRole(request, "admin", "superadmin");
+    if (auth.error) {
+      return NextResponse.json({ success: false, error: auth.message }, { status: auth.status });
+    }
+
+    const body = await request.json();
+    const { teamName, userId } = body;
+    if (!teamName && !userId) {
+      return NextResponse.json({ success: false, error: "Either teamName or userId is required." }, { status: 400 });
+    }
+
+    const supabaseUrl = process.env.SUPABASE_URL;
+    const supabaseKey = process.env.SUPABASE_KEY;
+
+    if (!supabaseUrl || !supabaseKey) {
+      return NextResponse.json({ success: false, error: "Database not configured." }, { status: 503 });
+    }
+
+    const headers = {
+      apikey: supabaseKey,
+      Authorization: `Bearer ${supabaseKey}`,
+      "Content-Type": "application/json",
+    };
+
+    let targetTeamName = teamName;
+
+    // If userId is passed and teamName is not, resolve the user's team first
+    if (userId && !targetTeamName) {
+      const userRes = await fetch(`${supabaseUrl}/rest/v1/registrations?user_id=eq.${encodeURIComponent(userId)}&select=team`, {
+        method: "GET",
+        headers,
+      });
+      if (userRes.ok) {
+        const rows = await userRes.json();
+        if (rows.length > 0) {
+          targetTeamName = rows[0].team;
+        }
+      }
+    }
+
+    if (targetTeamName) {
+      // 2. Fetch registrations for this team
+      const regRes = await fetch(`${supabaseUrl}/rest/v1/registrations?team=eq.${encodeURIComponent(targetTeamName)}&select=id,user_id,name,team,referred_by,mu_points,tasks&limit=5000`, {
+        method: "GET",
+        headers,
+        next: { revalidate: 0 }
+      });
+      if (!regRes.ok) throw new Error(`Failed to fetch registrations: ${await regRes.text()}`);
+      const registrations = await regRes.json();
+
+      if (registrations.length === 0) {
+        return NextResponse.json({ success: true, updatedUsersCount: 0, message: "No members in this team." });
+      }
+
+      const userIds = registrations.map((r) => r.user_id).filter(Boolean);
+      const formattedIds = userIds.map((id) => `"${id}"`).join(",");
+
+      // 3. Fetch completions for these users
+      const completionsRes = await fetch(`${supabaseUrl}/rest/v1/user_completed_tasks?user_id=in.(${formattedIds})&select=user_id,task_id,points_awarded,xp_execution&limit=5000`, {
+        method: "GET",
+        headers,
+        next: { revalidate: 0 }
+      });
+      if (!completionsRes.ok) throw new Error(`Failed to fetch completions: ${await completionsRes.text()}`);
+      const completions = await completionsRes.json();
+
+      // 4. Fetch predictions for these users
+      const predictionsRes = await fetch(`${supabaseUrl}/rest/v1/match_predictions?user_id=in.(${formattedIds})&select=user_id,outcome&limit=5000`, {
+        method: "GET",
+        headers,
+        next: { revalidate: 0 }
+      });
+      if (!predictionsRes.ok) throw new Error(`Failed to fetch predictions: ${await predictionsRes.text()}`);
+      const predictions = await predictionsRes.json();
+
+      // 5. Aggregate calculations per user
+      const userTaskPoints = {};
+      const userKuzhiundoPoints = {};
+      completions.forEach((c) => {
+        const taskId = Number(c.task_id);
+        const points = Number(c.points_awarded) || 0;
+        if (taskId === 4 || taskId === 100) {
+          userKuzhiundoPoints[c.user_id] = (userKuzhiundoPoints[c.user_id] || 0) + points;
+        } else {
+          userTaskPoints[c.user_id] = (userTaskPoints[c.user_id] || 0) + points;
+        }
+      });
+
+      const userPredictionPoints = {};
+      predictions.forEach((p) => {
+        let points = 0;
+        if (p.outcome === "exact") points = 25;
+        else if (p.outcome === "correct_outcome") points = 2;
+        else if (p.outcome === "incorrect") points = -1;
+        userPredictionPoints[p.user_id] = (userPredictionPoints[p.user_id] || 0) + points;
+      });
+
+      let updatedUsersCount = 0;
+      let teamCalculatedPointsSum = 0;
+
+      // 6. Identify issued users and update them
+      for (const r of registrations) {
+        let tasksObj = {};
+        if (r.tasks) {
+          if (typeof r.tasks === "string") {
+            try {
+              tasksObj = JSON.parse(r.tasks);
+            } catch (e) {}
+          } else if (typeof r.tasks === "object") {
+            tasksObj = r.tasks;
+          }
+        }
+
+        let referalVal = 0;
+        if (tasksObj && typeof tasksObj.referal === "number") {
+          referalVal = tasksObj.referal;
+        } else if (tasksObj && typeof tasksObj.referal === "string") {
+          const parsedVal = parseInt(tasksObj.referal, 10);
+          if (!isNaN(parsedVal)) referalVal = parsedVal;
+        }
+
+        const basePoints = 10;
+        const referralPoints = referalVal * 5;
+        const taskPoints = userTaskPoints[r.user_id] || 0;
+        const kuzhiundoPoints = userKuzhiundoPoints[r.user_id] || 0;
+        const predictionPoints = userPredictionPoints[r.user_id] || 0;
+
+        const calculatedTotal = basePoints + referralPoints + taskPoints + kuzhiundoPoints + predictionPoints;
+        teamCalculatedPointsSum += calculatedTotal;
+
+        const currentMuPoints = Number(r.mu_points) || 0;
+
+        // If performing user-specific sync, only PATCH that specific user (though team sum recalculation will still update squad standings)
+        const shouldUpdate = userId ? (r.user_id === userId) : (calculatedTotal !== currentMuPoints);
+
+        if (shouldUpdate && calculatedTotal !== currentMuPoints) {
+          const updateRes = await fetch(`${supabaseUrl}/rest/v1/registrations?user_id=eq.${encodeURIComponent(r.user_id)}`, {
+            method: "PATCH",
+            headers,
+            body: JSON.stringify({ mu_points: calculatedTotal }),
+          });
+          if (!updateRes.ok) {
+            const errText = await updateRes.text();
+            console.error(`Failed to sync mu_points for user ${r.user_id}:`, errText);
+            return NextResponse.json({
+              success: false,
+              error: `Failed to sync mu_points for user ${r.name || r.user_id}: ${errText}`
+            }, { status: 500 });
+          } else {
+            updatedUsersCount++;
+          }
+        }
+      }
+
+      // 7. Update the team points in the squads table
+      const updateSquadRes = await fetch(`${supabaseUrl}/rest/v1/squads?name=eq.${encodeURIComponent(targetTeamName)}`, {
+        method: "PATCH",
+        headers,
+        body: JSON.stringify({ points: teamCalculatedPointsSum }),
+      });
+
+      if (!updateSquadRes.ok) {
+        throw new Error(`Failed to update squad points: ${await updateSquadRes.text()}`);
+      }
+
+      // Prepare a safe debug calculated breakdown for user review
+      const debugBreakdowns = registrations.map((r) => {
+        let tasksObj = {};
+        if (r.tasks) {
+          if (typeof r.tasks === "string") {
+            try { tasksObj = JSON.parse(r.tasks); } catch (e) {}
+          } else if (typeof r.tasks === "object") {
+            tasksObj = r.tasks;
+          }
+        }
+        let referalVal = 0;
+        if (tasksObj && typeof tasksObj.referal === "number") {
+          referalVal = tasksObj.referal;
+        } else if (tasksObj && typeof tasksObj.referal === "string") {
+          const parsedVal = parseInt(tasksObj.referal, 10);
+          if (!isNaN(parsedVal)) referalVal = parsedVal;
+        }
+
+        const calculated = 10 + referalVal * 5 + (userTaskPoints[r.user_id] || 0) + (userKuzhiundoPoints[r.user_id] || 0) + (userPredictionPoints[r.user_id] || 0);
+        return {
+          name: r.name,
+          user_id: r.user_id,
+          current_mu_points: r.mu_points,
+          calculated,
+          diff: calculated !== (Number(r.mu_points) || 0)
+        };
+      });
+
+      return NextResponse.json({
+        success: true,
+        updatedUsersCount,
+        newSquadPoints: teamCalculatedPointsSum,
+        message: userId
+          ? `Successfully synchronized points for user and updated squad standings.`
+          : `Successfully synchronized points for ${updatedUsersCount} issued users and updated ${targetTeamName} total to ${teamCalculatedPointsSum} points.`,
+        debug: {
+          registrationsCount: registrations.length,
+          userIdsCount: userIds.length,
+          completionsCount: completions.length,
+          predictionsCount: predictions.length,
+          formattedIds,
+          breakdown: debugBreakdowns
+        }
+      });
+    } else if (userId) {
+      // Sync single user who has no team
+      const regRes = await fetch(`${supabaseUrl}/rest/v1/registrations?user_id=eq.${encodeURIComponent(userId)}&select=id,user_id,name,team,referred_by,mu_points,tasks`, {
+        method: "GET",
+        headers,
+      });
+      if (!regRes.ok) throw new Error(`Failed to fetch registration: ${await regRes.text()}`);
+      const registrations = await regRes.json();
+      if (registrations.length === 0) {
+        return NextResponse.json({ success: false, error: "User not found." }, { status: 404 });
+      }
+
+      const r = registrations[0];
+      const completionsRes = await fetch(`${supabaseUrl}/rest/v1/user_completed_tasks?user_id=eq.${encodeURIComponent(userId)}&select=user_id,task_id,points_awarded,xp_execution&limit=500`, {
+        method: "GET",
+        headers,
+      });
+      const completions = completionsRes.ok ? await completionsRes.json() : [];
+
+      const predictionsRes = await fetch(`${supabaseUrl}/rest/v1/match_predictions?user_id=eq.${encodeURIComponent(userId)}&select=user_id,outcome&limit=500`, {
+        method: "GET",
+        headers,
+      });
+      const predictions = predictionsRes.ok ? await predictionsRes.json() : [];
+
+      const userTaskPoints = completions.reduce((sum, c) => {
+        const taskId = Number(c.task_id);
+        return (taskId !== 4 && taskId !== 100) ? sum + (Number(c.points_awarded) || 0) : sum;
+      }, 0);
+
+      const userKuzhiundoPoints = completions.reduce((sum, c) => {
+        const taskId = Number(c.task_id);
+        return (taskId === 4 || taskId === 100) ? sum + (Number(c.points_awarded) || 0) : sum;
+      }, 0);
+
+      const userPredictionPoints = predictions.reduce((sum, p) => {
+        let points = 0;
+        if (p.outcome === "exact") points = 25;
+        else if (p.outcome === "correct_outcome") points = 2;
+        else if (p.outcome === "incorrect") points = -1;
+        return sum + points;
+      }, 0);
+
+      let tasksObj = {};
+      if (r.tasks) {
+        if (typeof r.tasks === "string") {
+          try { tasksObj = JSON.parse(r.tasks); } catch (e) {}
+        } else if (typeof r.tasks === "object") {
+          tasksObj = r.tasks;
+        }
+      }
+
+      let referalVal = 0;
+      if (tasksObj && typeof tasksObj.referal === "number") {
+        referalVal = tasksObj.referal;
+      } else if (tasksObj && typeof tasksObj.referal === "string") {
+        const parsedVal = parseInt(tasksObj.referal, 10);
+        if (!isNaN(parsedVal)) referalVal = parsedVal;
+      }
+
+      const calculatedTotal = 10 + referalVal * 5 + userTaskPoints + userKuzhiundoPoints + userPredictionPoints;
+      const current = Number(r.mu_points) || 0;
+
+      let updated = false;
+      if (calculatedTotal !== current) {
+        const updateRes = await fetch(`${supabaseUrl}/rest/v1/registrations?user_id=eq.${encodeURIComponent(userId)}`, {
+          method: "PATCH",
+          headers,
+          body: JSON.stringify({ mu_points: calculatedTotal }),
+        });
+        if (!updateRes.ok) {
+          const errText = await updateRes.text();
+          console.error(`Failed to sync single user points:`, errText);
+          return NextResponse.json({
+            success: false,
+            error: `Failed to sync points for user: ${errText}`
+          }, { status: 500 });
+        }
+        updated = true;
+      }
+
+      return NextResponse.json({
+        success: true,
+        updatedUsersCount: updated ? 1 : 0,
+        message: updated 
+          ? `Successfully synchronized points for ${r.name} to ${calculatedTotal} points.`
+          : `${r.name}'s points are already in sync.`,
+      });
+    }
+  } catch (error) {
+    console.error("Audit sync error:", error);
+    return NextResponse.json({ success: false, error: "Internal server error" }, { status: 500 });
+  }
+}

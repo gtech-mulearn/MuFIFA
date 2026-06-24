@@ -95,7 +95,7 @@ export async function POST(request) {
     }
 
     const taskRes = await fetch(
-      `${supabaseUrl}/rest/v1/tasks?id=eq.${taskIdInt}&select=id,mupoint,xp_creativity,xp_branding,xp_innovation,xp_teamwork,xp_execution`,
+      `${supabaseUrl}/rest/v1/tasks?id=eq.${taskIdInt}&select=id,mupoint,xp_creativity,xp_branding,xp_innovation,xp_teamwork,xp_execution,verification`,
       {
         headers: {
           apikey: supabaseKey,
@@ -137,8 +137,39 @@ export async function POST(request) {
 
     let pointsDiff = task.mupoint || 0;
 
-    // 4. Server-side verification logic for specific tasks
-    if (taskIdInt === 1) {
+    // 4. Resolve the verification mechanism dynamically
+    let verificationMethod = "none";
+    if (task.verification) {
+      if (task.verification.startsWith("discord_api:")) {
+        verificationMethod = "discord_api";
+      } else if (task.verification === "referral") {
+        verificationMethod = "referral";
+      } else if (task.verification === "profile") {
+        verificationMethod = "profile";
+      } else if (task.verification === "kuzhiundo") {
+        verificationMethod = "kuzhiundo";
+      } else if (task.verification === "points") {
+        verificationMethod = "points";
+      } else if (task.verification === "custom") {
+        // Fallback to task ID heuristics for older custom configurations
+        if (taskIdInt === 1) verificationMethod = "referral";
+        else if (taskIdInt === 2) verificationMethod = "profile";
+        else if (taskIdInt === 4) verificationMethod = "kuzhiundo";
+        else if (taskIdInt === 5) verificationMethod = "points";
+        else if (taskIdInt === 6) verificationMethod = "discord_api";
+      } else {
+        verificationMethod = task.verification; // e.g. "none"
+      }
+    } else {
+      // Fallback for tasks without explicit verification field set
+      if (taskIdInt === 1) verificationMethod = "referral";
+      else if (taskIdInt === 2) verificationMethod = "profile";
+      else if (taskIdInt === 4) verificationMethod = "kuzhiundo";
+      else if (taskIdInt === 5) verificationMethod = "points";
+      else if (taskIdInt === 6) verificationMethod = "discord_api";
+    }
+
+    if (verificationMethod === "referral") {
       // Referral Program Challenge
       const refQuery = `${supabaseUrl}/rest/v1/registrations?referred_by=eq.${encodeURIComponent(player.id)}&select=id`;
       const refRes = await fetch(refQuery, {
@@ -162,7 +193,7 @@ export async function POST(request) {
           { status: 400 },
         );
       }
-    } else if (taskIdInt === 2) {
+    } else if (verificationMethod === "profile") {
       // Profile Page Update
       const isProfileComplete = !!(
         player.bio &&
@@ -208,17 +239,7 @@ export async function POST(request) {
           { status: 400 },
         );
       }
-    } else if (taskIdInt === 3) {
-      // GitHub Contribution (manual only)
-      return NextResponse.json(
-        {
-          success: false,
-          error:
-            "GitHub Contribution requires manual verification and crediting by an admin.",
-        },
-        { status: 400 },
-      );
-    } else if (taskIdInt === 4) {
+    } else if (verificationMethod === "kuzhiundo") {
       // Kuzhiyundo Challenge Pothole Mapping verification
       const uuid = player.id; // MuFIFA registration UUID is the player.id
 
@@ -291,8 +312,6 @@ export async function POST(request) {
         );
       }
 
-
-
       // 1. Insert/Upsert Task 100 row into user_completed_tasks for initial submissions
       const submissionPoints = Math.max(0, reportsCount - 1) * KUZHIUNDO_PER_SUBMISSION;
       const upsertTask100Res = await fetch(
@@ -339,7 +358,7 @@ export async function POST(request) {
 
       // First time verification strictly awards the base task points (10 uPoints)
       pointsDiff = KUZHIUNDO_BASE_POINTS;
-    } else if (taskIdInt === 5) {
+    } else if (verificationMethod === "points") {
       // Squad Synergy (20 points)
       const currentMuPoints = player.mu_points || 0;
       if (currentMuPoints < 20) {
@@ -352,11 +371,11 @@ export async function POST(request) {
           { status: 400 },
         );
       }
-    } else if (taskIdInt === 6) {
+    } else if (verificationMethod === "discord_api") {
       // Discord Integration (Bypassed since socials is not in DB)
       pointsDiff = task.mupoint || 0;
     } else {
-      // Dynamic database task (manual only)
+      // Manual admin review / none / unrecognized
       return NextResponse.json(
         {
           success: false,

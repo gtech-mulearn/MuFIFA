@@ -33,6 +33,15 @@ export async function GET(request) {
     const limitParam = searchParams.get("limit");
     const pageParam = searchParams.get("page") || "1";
     const categoryParam = searchParams.get("category") || "All";
+    const flatParam = searchParams.get("flat") === "true";
+    const previewParam = searchParams.get("preview") === "true";
+
+    if (previewParam) {
+      const auth = requireRole(request, "admin", "superadmin", "iglead", "viewer");
+      if (auth.error) {
+        return NextResponse.json({ success: false, error: auth.message }, { status: auth.status });
+      }
+    }
 
     // Fetch all tasks from Supabase (or use in-memory cache) to filter and paginate programmatically
     let tasks = null;
@@ -61,6 +70,7 @@ export async function GET(request) {
 
     // 3. Fetch user completions if logged in
     let completionsMap = {};
+    let overallCompletedPoints = 0;
     if (userId) {
       const compRes = await fetch(`${supabaseUrl}/rest/v1/user_completed_tasks?user_id=eq.${encodeURIComponent(userId)}&select=*`, {
         headers: { apikey: supabaseKey, Authorization: `Bearer ${supabaseKey}` },
@@ -70,34 +80,24 @@ export async function GET(request) {
         const completions = await compRes.json();
         completions.forEach((c) => {
           completionsMap[c.task_id] = c;
+          overallCompletedPoints += (c.points_awarded || 0);
         });
       }
     }
 
-    // 4. Map completions and locking logic to tasks
-    let firstUncompletedCompulsoryTaskId = null;
-
-    const visibleTasks = tasks.filter((t) => t.id !== 100);
+    // 4. Map completions to tasks
+    let visibleTasks = tasks.filter((t) => t.id !== 100);
+    if (!previewParam) {
+      visibleTasks = visibleTasks.filter((t) => t.visibility === "public");
+    }
 
     const processedTasks = visibleTasks.map((t) => {
       const completion = completionsMap[t.id];
       const completed = !!completion;
-      
-      let isLocked = false;
-      // If we found an uncompleted compulsory task, lock any task with a higher ID
-      if (firstUncompletedCompulsoryTaskId !== null && t.id > firstUncompletedCompulsoryTaskId) {
-        isLocked = true;
-      }
-      
-      // If this task is compulsory and not completed, mark it as the lock barrier for subsequent tasks
-      if (t.compulsory && !completed && firstUncompletedCompulsoryTaskId === null) {
-        firstUncompletedCompulsoryTaskId = t.id;
-      }
 
       return {
         ...t,
         completed,
-        isLocked,
         completed_at: completion ? completion.completed_at : null,
         points_awarded: completion ? completion.points_awarded : 0,
         xp_earned: completion
@@ -111,6 +111,68 @@ export async function GET(request) {
           : null,
       };
     });
+
+    // Separate parents and children
+    const parentTasks = processedTasks.filter(t => t.parent_id === null || t.parent_id === undefined);
+    const childTasks = processedTasks.filter(t => t.parent_id !== null && t.parent_id !== undefined);
+
+    let finalTasksList;
+    let processedParents = [];
+
+    if (flatParam) {
+      finalTasksList = processedTasks;
+    } else {
+      // Map parent tasks completion derived from children (if any) first
+      const parentTasksWithCompletions = parentTasks.map(t => {
+        const subLevels = childTasks.filter(c => c.parent_id === t.id);
+        const parentCompleted = subLevels.length > 0 ? subLevels.every(sl => sl.completed) : t.completed;
+        return {
+          ...t,
+          completed: parentCompleted,
+        };
+      });
+
+      // Apply global locking barrier to parent tasks and process sub-levels locking
+      let firstUncompletedCompulsoryTaskId = null;
+      processedParents = parentTasksWithCompletions.map((t) => {
+        let isLocked = false;
+        // If we found an uncompleted compulsory task, lock any task with a higher ID
+        if (firstUncompletedCompulsoryTaskId !== null && t.id > firstUncompletedCompulsoryTaskId) {
+          isLocked = true;
+        }
+        
+        // If this task is compulsory and not completed, mark it as the lock barrier for subsequent tasks
+        if (t.compulsory && !t.completed && firstUncompletedCompulsoryTaskId === null) {
+          firstUncompletedCompulsoryTaskId = t.id;
+        }
+
+        // Find children for this parent
+        const subLevels = childTasks
+          .filter((c) => c.parent_id === t.id)
+          .sort((a, b) => a.id - b.id);
+
+        // Compute locking for child sub-levels
+        const processedSubLevels = subLevels.map((sl, index) => {
+          let childLocked = isLocked; // If parent is locked, child is locked
+          if (!childLocked && index > 0) {
+            // Locked if previous level in sequence is not completed
+            childLocked = !subLevels[index - 1].completed;
+          }
+          return {
+            ...sl,
+            isLocked: childLocked,
+          };
+        });
+
+        return {
+          ...t,
+          isLocked,
+          sub_levels: processedSubLevels,
+        };
+      });
+
+      finalTasksList = processedParents;
+    }
 
     // Helper to categorize tasks dynamically based on content attributes
     const getTaskCategory = (task) => {
@@ -128,9 +190,9 @@ export async function GET(request) {
     };
 
     // 5. Filter by category
-    let filteredTasks = processedTasks;
+    let filteredTasks = finalTasksList;
     if (categoryParam !== "All") {
-      filteredTasks = processedTasks.filter(t => {
+      filteredTasks = finalTasksList.filter(t => {
         if (t.category && typeof t.category === "string") {
           const categories = t.category.split(",").map(c => c.trim().toLowerCase());
           return categories.includes(categoryParam.toLowerCase());
@@ -151,15 +213,16 @@ export async function GET(request) {
       paginatedTasks = filteredTasks.slice(offset, offset + limit);
     }
 
-    const overallTotalTasks = processedTasks.length;
-    const overallCompletedTasks = processedTasks.filter(t => t.completed).length;
+    const overallTotalTasks = flatParam ? processedTasks.length : processedParents.length;
+    const overallCompletedTasks = flatParam ? processedTasks.filter(t => t.completed).length : processedParents.filter(t => t.completed).length;
 
     const responseData = { 
       success: true, 
       data: paginatedTasks,
       overallStats: {
         totalTasks: overallTotalTasks,
-        completedTasks: overallCompletedTasks
+        completedTasks: overallCompletedTasks,
+        completedPoints: overallCompletedPoints
       }
     };
     if (limitParam) {
@@ -211,6 +274,8 @@ export async function POST(request) {
       logo_url,
       compulsory,
       verification,
+      parent_id,
+      visibility,
     } = body;
 
     if (!id || !title || !description) {
@@ -245,6 +310,8 @@ export async function POST(request) {
         logo_url: logo_url || null,
         compulsory: compulsory || false,
         verification: verification || "none",
+        parent_id: parent_id ? parseInt(parent_id, 10) : null,
+        visibility: visibility || "preview",
       }),
     });
 

@@ -63,7 +63,7 @@ export default function AdminTasksPage() {
   // Fetch all tasks for Credit Form dropdown (no limit param)
   const fetchAllTasks = useCallback(async () => {
     try {
-      const res = await fetch("/api/v1/tasks");
+      const res = await fetch("/api/v1/tasks?flat=true");
       const data = await res.json();
       if (data.success) {
         setAllTasks(data.data || []);
@@ -412,7 +412,13 @@ export default function AdminTasksPage() {
                       <tr key={task.id} className="border-b border-slate-200/50 hover:bg-slate-50 transition-colors">
                         <td className="px-4 py-3 font-mono font-bold text-slate-900">{task.id}</td>
                         <td className="px-4 py-3 whitespace-nowrap">
-                          <div className="font-semibold text-slate-800">{task.title}</div>
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <div className="font-semibold text-slate-800">{task.title}</div>
+                            {task.compulsory && <span className="bg-rose-100 text-rose-700 text-[8px] font-bold px-1.5 py-0.5 rounded uppercase w-max">Compulsory</span>}
+                            {task.guidelines && task.guidelines.trim().startsWith("{\"levels\":") && (
+                              <span className="bg-violet-100 text-violet-700 text-[8px] font-bold px-1.5 py-0.5 rounded uppercase w-max">Levels</span>
+                            )}
+                          </div>
                           <div className="text-[10px] text-slate-400 max-w-xs truncate">{task.description}</div>
                           {task.category && (
                             <div className="mt-1 flex gap-1 flex-wrap">

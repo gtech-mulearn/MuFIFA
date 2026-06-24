@@ -28,6 +28,7 @@ export default function TasksPage() {
   const [totalPages, setTotalPages] = useState(1);
   const [overallTotal, setOverallTotal] = useState(0);
   const [overallCompleted, setOverallCompleted] = useState(0);
+  const [overallCompletedPoints, setOverallCompletedPoints] = useState(0);
   const [dbTasksList, setDbTasksList] = useState([]);
 
   // Fetch referrals to double check task 1 status
@@ -57,6 +58,7 @@ export default function TasksPage() {
         if (data.overallStats) {
           setOverallTotal(data.overallStats.totalTasks || 0);
           setOverallCompleted(data.overallStats.completedTasks || 0);
+          setOverallCompletedPoints(data.overallStats.completedPoints || 0);
         }
       }
     } catch (err) {
@@ -131,7 +133,12 @@ export default function TasksPage() {
     setVerifyingTaskId(task.id);
 
     // 1. Check if the task criteria is met locally
-    if (task.id === 1) {
+    const vMethod = task.verification || "";
+    const isReferral = vMethod === "referral" || task.id === 1;
+    const isProfile = vMethod === "profile" || task.id === 2;
+    const isPoints = vMethod === "points" || task.id === 5;
+
+    if (isReferral) {
       const isEligible = referralCount > 0 || referrals.length > 0;
       if (!isEligible) {
         setVerifyError(
@@ -140,7 +147,7 @@ export default function TasksPage() {
         setVerifyingTaskId(null);
         return;
       }
-    } else if (task.id === 2) {
+    } else if (isProfile) {
       const isProfileComplete = !!(
         player?.bio &&
         player.bio.trim().length > 0 &&
@@ -162,8 +169,7 @@ export default function TasksPage() {
         setVerifyingTaskId(null);
         return;
       }
-
-    } else if (task.id === 5) {
+    } else if (isPoints) {
       const isEligible = (player?.mu_points || 0) >= 20;
       if (!isEligible) {
         setVerifyError(
@@ -172,8 +178,6 @@ export default function TasksPage() {
         setVerifyingTaskId(null);
         return;
       }
-    } else if (task.id === 6) {
-      // Bypassed since socials is not in DB
     }
 
     try {
@@ -288,7 +292,41 @@ export default function TasksPage() {
       .map((dbTask) => {
         const completed = !!dbTask.completed;
 
-        const longDesc = dbTask.guidelines ? (() => {
+        // Check if guidelines is a levels progression JSON or task has sub-levels
+        let isJsonLevels = false;
+        let levelsData = null;
+        if (dbTask.guidelines && dbTask.guidelines.trim().startsWith("{\"levels\":")) {
+          try {
+            const parsed = JSON.parse(dbTask.guidelines);
+            if (parsed && Array.isArray(parsed.levels)) {
+              isJsonLevels = true;
+              levelsData = parsed.levels;
+            }
+          } catch (e) {
+            console.error("Failed to parse guidelines levels JSON in mergedTasks:", e);
+          }
+        } else if (dbTask.sub_levels && Array.isArray(dbTask.sub_levels) && dbTask.sub_levels.length > 0) {
+          isJsonLevels = true;
+          levelsData = dbTask.sub_levels.map((sl, index) => ({
+            level: index + 1,
+            title: sl.title || `Level ${index + 1}`,
+            description: sl.description || sl.short_desc || "",
+          }));
+        }
+
+        const longDesc = isJsonLevels ? (
+          <div className="flex flex-col gap-2 mt-1">
+            <span className="text-[10px] uppercase font-black tracking-wider text-violet-400">Progression Challenge (Levels):</span>
+            <div className="flex flex-col gap-2 pl-2 border-l border-violet-500/30">
+              {levelsData.map((lvl) => (
+                <div key={lvl.level} className="text-[11px] text-slate-300 leading-normal flex flex-col">
+                  <span className="font-bold text-slate-100">Level {lvl.level}: {lvl.title}</span>
+                  <span className="text-[10px] text-slate-400 line-clamp-1">{lvl.description}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        ) : dbTask.guidelines ? (() => {
           const safe = DOMPurify.sanitize(dbTask.guidelines, {
             ALLOWED_TAGS: ['p', 'br', 'b', 'i', 'strong', 'em', 'ul', 'ol', 'li', 'a', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'span', 'div', 'img', 'code', 'pre', 'blockquote'],
             ALLOWED_ATTR: ['href', 'target', 'rel', 'src', 'alt', 'class', 'style'],
@@ -304,21 +342,37 @@ export default function TasksPage() {
             ? `/profile/${player?.user_id}`
             : dbTask.action_url || "#";
 
+        // Compute total MuPoints for this challenge (including all sub-levels)
+        let totalMuPoints = dbTask.mupoint || 0;
+        if (dbTask.sub_levels && Array.isArray(dbTask.sub_levels) && dbTask.sub_levels.length > 0) {
+          totalMuPoints += dbTask.sub_levels.reduce((sum, sl) => sum + (sl.mupoint || 0), 0);
+        }
+
+        // Compute total XP for this challenge (including all sub-levels)
+        let totalXP = (dbTask.xp_creativity || 0) + (dbTask.xp_branding || 0) + (dbTask.xp_innovation || 0) + (dbTask.xp_teamwork || 0) + (dbTask.xp_execution || 0);
+        if (dbTask.sub_levels && Array.isArray(dbTask.sub_levels) && dbTask.sub_levels.length > 0) {
+          totalXP += dbTask.sub_levels.reduce((sum, sl) => {
+            return sum + (sl.xp_creativity || 0) + (sl.xp_branding || 0) + (sl.xp_innovation || 0) + (sl.xp_teamwork || 0) + (sl.xp_execution || 0);
+          }, 0);
+        }
+
         return {
           id: dbTask.id,
           title: dbTask.title || `Challenge ${dbTask.id}`,
           shortDesc: dbTask.short_desc || dbTask.description || "",
           longDesc,
-          reward: `Earn +${dbTask.mupoint || 0} μPoints & custom XP breakdown.`,
+          reward: `Earn +${totalMuPoints} μPoints & custom XP breakdown.`,
           completed,
           actionLabel: dbTask.action_label || "View Details",
           actionUrl,
-          mupoint: dbTask.mupoint || 0,
+          mupoint: totalMuPoints,
           category: dbTask.category || "",
-          xpValue: (dbTask.xp_creativity || 0) + (dbTask.xp_branding || 0) + (dbTask.xp_innovation || 0) + (dbTask.xp_teamwork || 0) + (dbTask.xp_execution || 0),
+          xpValue: totalXP,
           isLocked: dbTask.isLocked || false,
           logo_url: dbTask.logo_url || null,
           verification: dbTask.verification || null,
+          guidelines: dbTask.guidelines || null,
+          sub_levels: dbTask.sub_levels || [],
         };
       })
       .sort((a, b) => a.id - b.id);
@@ -377,6 +431,7 @@ export default function TasksPage() {
           <Stats
             completedCount={completedCount}
             totalCount={totalCount}
+            completedPoints={overallCompletedPoints}
           />
         </div>
       </div>

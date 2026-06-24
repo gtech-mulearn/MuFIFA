@@ -1,6 +1,65 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import Image from "next/image";
+import DOMPurify from "dompurify";
+
+const getTaskLevels = (task) => {
+  if (!task) return [];
+
+  // If sub_levels exists from the database parent-child hierarchy
+  if (task.sub_levels && Array.isArray(task.sub_levels) && task.sub_levels.length > 0) {
+    return task.sub_levels.map((sl, index) => {
+      // Calculate total XP for this sublevel
+      const xpReward = (sl.xp_creativity || 0) + (sl.xp_branding || 0) + (sl.xp_innovation || 0) + (sl.xp_teamwork || 0) + (sl.xp_execution || 0);
+      
+      // Parse guidelines if they are defined (e.g. HTML bullet points, milestones list)
+      let entries = [];
+      if (sl.guidelines) {
+        if (sl.guidelines.trim().startsWith("[")) {
+          try {
+            entries = JSON.parse(sl.guidelines);
+          } catch {}
+        } else {
+          entries = [sl.guidelines];
+        }
+      }
+
+      return {
+        level: index + 1,
+        id: sl.id,
+        title: sl.title || `Level ${index + 1}`,
+        description: sl.description || sl.short_desc || "",
+        entries: entries,
+        xpReward: xpReward,
+        muPointsReward: sl.mupoint || 0,
+        completed: sl.completed,
+        isLocked: sl.isLocked,
+        verification: sl.verification,
+        actionUrl: sl.action_url || "#",
+        actionLabel: sl.action_label || "View Details",
+        xp_creativity: sl.xp_creativity || 0,
+        xp_branding: sl.xp_branding || 0,
+        xp_innovation: sl.xp_innovation || 0,
+        xp_teamwork: sl.xp_teamwork || 0,
+        xp_execution: sl.xp_execution || 0,
+      };
+    });
+  }
+
+  // Parse custom levels configured via DB/Admin panel JSON (legacy backup)
+  if (task.guidelines && typeof task.guidelines === "string" && task.guidelines.trim().startsWith("{\"levels\":")) {
+    try {
+      const parsed = JSON.parse(task.guidelines);
+      if (parsed && Array.isArray(parsed.levels)) {
+        return parsed.levels;
+      }
+    } catch (e) {
+      console.error("Failed to parse dynamic task guidelines levels:", e);
+    }
+  }
+  
+  return [];
+};
 
 export default function ChallengeModal({
   isOpen,
@@ -11,6 +70,9 @@ export default function ChallengeModal({
   verifyError,
   verifySuccess,
 }) {
+  const [activeTab, setActiveTab] = useState(1);
+  const [completedLevelsState, setCompletedLevelsState] = useState([]);
+
   useEffect(() => {
     const handleKeyDown = (e) => {
       if (e.key === "Escape") {
@@ -25,7 +87,112 @@ export default function ChallengeModal({
     };
   }, [isOpen, onClose]);
 
+  const prevIsOpenRef = useRef(false);
+  const prevCompletionsRef = useRef({});
+
+  // Load levels completed status on task change or modal open
+  useEffect(() => {
+    if (!task) return;
+
+    const prevIsOpen = prevIsOpenRef.current;
+    if (isOpen && !prevIsOpen) {
+      const taskLevels = getTaskLevels(task);
+      const firstUncompleted = taskLevels.find((l) => !l.completed);
+      setActiveTab(firstUncompleted ? firstUncompleted.level : 1);
+    }
+    prevIsOpenRef.current = isOpen;
+
+    if (task.completed) {
+      setCompletedLevelsState([1, 2, 3]);
+    } else {
+      const key = `mufifa_task_levels_completed_${task.id}`;
+      try {
+        const stored = localStorage.getItem(key);
+        if (stored) {
+          setCompletedLevelsState(JSON.parse(stored));
+        } else {
+          setCompletedLevelsState([]);
+        }
+      } catch (e) {
+        console.error("Failed to load completed levels from localStorage", e);
+        setCompletedLevelsState([]);
+      }
+    }
+  }, [task, isOpen]);
+
+  // Auto-advance to the next level when a dynamic level is completed
+  useEffect(() => {
+    if (!task) return;
+    const taskLevels = getTaskLevels(task);
+    const prevCompletions = prevCompletionsRef.current;
+    
+    taskLevels.forEach((lvl) => {
+      const wasCompletedBefore = !!prevCompletions[lvl.id || lvl.level];
+      const isCompletedNow = !!lvl.completed;
+
+      if (isCompletedNow && !wasCompletedBefore) {
+        if (activeTab === lvl.level && lvl.level < taskLevels.length) {
+          setActiveTab(lvl.level + 1);
+        }
+      }
+    });
+
+    const currentCompletions = {};
+    taskLevels.forEach((lvl) => {
+      currentCompletions[lvl.id || lvl.level] = !!lvl.completed;
+    });
+    prevCompletionsRef.current = currentCompletions;
+  }, [task, activeTab]);
+
   if (!task) return null;
+
+  const levels = getTaskLevels(task);
+
+  const markLevelCompletedLocal = (levelNum) => {
+    const key = `mufifa_task_levels_completed_${task.id}`;
+    let completedList = [];
+    try {
+      const stored = localStorage.getItem(key);
+      if (stored) {
+        completedList = JSON.parse(stored);
+      }
+    } catch (e) {
+      console.error(e);
+    }
+
+    if (!completedList.includes(levelNum)) {
+      completedList.push(levelNum);
+    }
+
+    try {
+      localStorage.setItem(key, JSON.stringify(completedList));
+    } catch (e) {
+      console.error(e);
+    }
+
+    setCompletedLevelsState(completedList);
+
+    // Auto-advance to next level if available
+    if (levelNum < levels.length) {
+      setActiveTab(levelNum + 1);
+    }
+  };
+
+  const isLevelCompleted = (levelNum, lvlObj) => {
+    if (task.completed) return true;
+    if (lvlObj && lvlObj.completed !== undefined) {
+      return lvlObj.completed;
+    }
+    return completedLevelsState.includes(levelNum);
+  };
+
+  const isLevelLocked = (levelNum, lvlObj) => {
+    if (lvlObj && lvlObj.isLocked !== undefined) {
+      return lvlObj.isLocked;
+    }
+    if (levelNum === 1) return false;
+    return !isLevelCompleted(levelNum - 1);
+  };
 
   // Map task ID to playercard badge logos
   const getTaskLogo = (taskId) => {
@@ -47,12 +214,12 @@ export default function ChallengeModal({
     );
   };
 
-  const xpValue = task.xpValue || 0;
+  const activeLvlData = levels.find((l) => l.level === activeTab) || levels[0] || { title: "", description: "", entries: [], xpReward: 0, muPointsReward: 0 };
 
-  const getVerificationDetails = () => {
-    const v = task.verification;
+  const getVerificationDetails = (targetTask) => {
+    const v = targetTask.verification;
     if (v) {
-      if (v === "none") {
+      if (v === "none" || v === "manual") {
         return {
           type: "Manual",
           description:
@@ -75,10 +242,16 @@ export default function ChallengeModal({
           ),
         };
       }
-      if (v === "custom") {
+      if (v === "custom" || v === "referral" || v === "profile" || v === "kuzhiundo" || v === "points") {
+        let desc = "Automated check via website action.";
+        if (v === "referral") desc = "Automated check of your referred players.";
+        if (v === "profile") desc = "Automated check of profile completeness & prediction.";
+        if (v === "kuzhiundo") desc = "Automated check of Kuzhiyundo pothole submissions.";
+        if (v === "points") desc = "Automated check of accumulated μPoints.";
+
         return {
           type: "Automated",
-          description: "Automated check via website action.",
+          description: desc,
           colorClass: "text-cyan-400 border-cyan-500/20 bg-cyan-500/5",
           icon: (
             <svg
@@ -117,23 +290,23 @@ export default function ChallengeModal({
       }
     }
     // Fallback based on task ID for backwards compatibility
-    if ([1, 2, 4, 5, 6].includes(task.id)) {
+    if ([1, 2, 4, 5, 6].includes(targetTask.id)) {
       return {
         type: "Automated",
         description: "Automated check via website action.",
         colorClass: "text-cyan-400 border-cyan-500/20 bg-cyan-500/5",
         icon: (
           <svg
-            className="w-4.5 h-4.5"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2.5"
-            viewBox="0 0 24 24"
+              className="w-4.5 h-4.5"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2.5"
+              viewBox="0 0 24 24"
           >
             <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"
             />
           </svg>
         ),
@@ -161,7 +334,7 @@ export default function ChallengeModal({
     };
   };
 
-  const vDetails = getVerificationDetails();
+  const vDetails = getVerificationDetails((levels.length > 0 && activeLvlData && activeLvlData.id) ? activeLvlData : task);
   const isVerifiable = vDetails.type !== "Manual";
 
   return (
@@ -207,7 +380,7 @@ export default function ChallengeModal({
       >
         {/* Left Panel: Slides in from left on desktop, static stack on mobile */}
         <div
-          className={`md:absolute md:left-0 md:top-0 md:bottom-0 md:w-1/2 w-full md:h-full h-auto bg-gradient-to-br from-[#1b1544] via-[#0f0b27] to-[#04030a] p-6 py-10 md:p-8 flex flex-col items-center justify-center border-b md:border-b-0 md:border-r border-white/5 relative overflow-hidden shrink-0 select-none transition-transform duration-500 ease-out z-10 ${
+          className={`md:absolute md:left-0 md:top-0 md:bottom-0 md:w-[35%] w-full md:h-full h-auto bg-gradient-to-br from-[#1b1544] via-[#0f0b27] to-[#04030a] p-6 py-10 md:p-8 flex flex-col items-center justify-between border-b md:border-b-0 md:border-r border-white/5 relative overflow-hidden shrink-0 select-none transition-transform duration-500 ease-out z-10 ${
             isOpen ? "md:translate-x-0" : "md:-translate-x-full"
           }`}
         >
@@ -219,16 +392,16 @@ export default function ChallengeModal({
           {/* Glow */}
           <div className="absolute w-64 h-64 bg-violet-600/10 rounded-full blur-3xl pointer-events-none z-0" />
 
-          <div className="relative z-10 flex flex-col items-center text-center gap-4 md:gap-8">
+          <div className={`relative z-10 flex flex-col items-center text-center gap-4 md:gap-6 ${levels.length > 0 ? "mt-auto" : "my-auto"}`}>
             <span className="text-[10px] md:text-xs font-black uppercase tracking-[0.25em] text-violet-400">
-              Challenge Reward
+              {levels.length > 0 ? "Active Level Rewards" : "Challenge Rewards"}
             </span>
 
             {/* Logo Badge (Playercard Badge) */}
-            <div className="relative w-24 h-24 md:w-36 md:h-36 shrink-0 flex items-center justify-center">
+            <div className="relative w-20 h-20 md:w-28 md:h-28 shrink-0 flex items-center justify-center">
               <div className="absolute -inset-1 md:-inset-1.5 rounded-full bg-gradient-to-br from-violet-500 to-indigo-600 blur opacity-45 animate-pulse" />
-              <div className="w-20 h-20 md:w-32 md:h-32 rounded-full bg-[#121021] border border-violet-500/30 flex items-center justify-center shadow-2xl relative z-10">
-                <div className="relative w-12 h-12 md:w-18 md:h-18">
+              <div className="w-16 h-16 md:w-24 md:h-24 rounded-full bg-[#121021] border border-violet-500/30 flex items-center justify-center shadow-2xl relative z-10">
+                <div className="relative w-10 h-10 md:w-14 md:h-14">
                   <Image
                     src={getTaskLogo(task.id)}
                     alt="Logo Badge"
@@ -240,42 +413,90 @@ export default function ChallengeModal({
             </div>
 
             {/* Reward breakdown values */}
-            <div className="flex flex-row gap-3 md:gap-4 mt-1 md:mt-2 justify-center items-center">
+            <div className="flex flex-row gap-3 mt-1 justify-center items-center">
               {/* points */}
-              <div className="bg-[#120e2b]/80 border border-violet-500/15 rounded-2xl p-3 md:p-5 flex flex-col items-center justify-center shadow-lg w-28 md:w-36 select-none">
-                <span className="text-2xl md:text-3xl font-black text-amber-400 leading-none">
-                  +{task.mupoint || 0}
+              <div className="bg-[#120e2b]/80 border border-violet-500/15 rounded-2xl p-2.5 flex flex-col items-center justify-center shadow-lg w-24 md:w-28 select-none">
+                <span className="text-xl md:text-2xl font-black text-amber-400 leading-none">
+                  +{levels.length > 0 ? (activeLvlData.muPointsReward || 0) : (task.mupoint || 0)}
                 </span>
-                <span className="text-[8px] md:text-[10px] font-black tracking-widest text-slate-400 mt-1 md:mt-2">
+                <span className="text-[8px] font-black tracking-widest text-slate-400 mt-1">
                   μPoints
                 </span>
               </div>
 
               {/* XP */}
-              <div className="bg-[#120e2b]/80 border border-violet-500/15 rounded-2xl p-3 md:p-5 flex flex-col items-center justify-center shadow-lg w-28 md:w-36 select-none">
-                <span className="text-2xl md:text-3xl font-black text-violet-400 leading-none">
-                  +{xpValue}
+              <div className="bg-[#120e2b]/80 border border-violet-500/15 rounded-2xl p-2.5 flex flex-col items-center justify-center shadow-lg w-24 md:w-28 select-none">
+                <span className="text-xl md:text-2xl font-black text-violet-400 leading-none">
+                  +{levels.length > 0 ? (activeLvlData.xpReward || 0) : (task.xpValue || 0)}
                 </span>
-                <span className="text-[8px] md:text-[10px] font-black uppercase tracking-widest text-slate-400 mt-1 md:mt-2">
+                <span className="text-[8px] font-black uppercase tracking-widest text-slate-400 mt-1">
                   XP Points
                 </span>
               </div>
             </div>
           </div>
+
+          {/* Level Tabs Selector (placed at the bottom of the Left Panel) */}
+          {levels.length > 0 && (
+            <div className="relative z-10 w-full mt-auto pt-6 border-t border-white/5 flex flex-col gap-2">
+              <span className="text-[10px] font-black uppercase tracking-[0.2em] text-violet-400 text-center">
+                Levels Progression
+              </span>
+              <div className="flex flex-col gap-2 w-full">
+                {levels.map((lvl) => {
+                  const isLocked = isLevelLocked(lvl.level, lvl);
+                  const isComp = isLevelCompleted(lvl.level, lvl);
+                  return (
+                    <button
+                      key={lvl.level}
+                      onClick={() => !isLocked && setActiveTab(lvl.level)}
+                      disabled={isLocked}
+                      className={`w-full py-2.5 px-4 rounded-xl transition-all flex flex-col items-start gap-0.5 border ${
+                        isLocked
+                          ? "bg-slate-950/20 border-white/5 opacity-40 cursor-not-allowed text-slate-600"
+                          : activeTab === lvl.level
+                            ? "bg-violet-600 border-violet-500 text-white shadow-lg shadow-violet-600/20 cursor-pointer"
+                            : "bg-white/2 border-white/5 text-slate-400 hover:text-slate-200 hover:bg-white/5 cursor-pointer"
+                      }`}
+                    >
+                      <div className="flex items-center justify-between w-full text-[11px] font-black">
+                        <span className="truncate pr-2">{lvl.title}</span>
+                        {isLocked ? (
+                          <svg className="w-3.5 h-3.5 text-slate-600 shrink-0" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z" />
+                          </svg>
+                        ) : isComp ? (
+                          <svg className="w-3.5 h-3.5 text-emerald-400 shrink-0" fill="none" stroke="currentColor" strokeWidth="3.5" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
+                          </svg>
+                        ) : (
+                          <span className="w-2 h-2 rounded-full bg-violet-400/80 animate-ping shrink-0" />
+                        )}
+                      </div>
+                      <div className="flex gap-2 text-[9px] font-bold opacity-80 mt-0.5">
+                        <span className="text-amber-400">+{lvl.muPointsReward} μPoints</span>
+                        <span className={activeTab === lvl.level ? "text-violet-200" : "text-violet-400"}>+{lvl.xpReward} XP</span>
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Right Panel: Slides in from right on desktop, static stack on mobile */}
         <div
-          className={`md:absolute md:right-0 md:top-0 md:bottom-0 md:w-1/2 w-full md:h-full h-auto p-6 pb-24 md:p-12 flex flex-col justify-between md:overflow-y-auto bg-[#0c0a18]/95 backdrop-blur-md transition-transform duration-500 ease-out z-10 ${
+          className={`md:absolute md:right-0 md:top-0 md:bottom-0 md:w-[65%] w-full md:h-full h-auto p-6 pb-24 md:p-12 flex flex-col justify-between md:overflow-y-auto bg-[#0c0a18]/95 backdrop-blur-md transition-transform duration-500 ease-out z-10 ${
             isOpen ? "md:translate-x-0" : "md:translate-x-full"
           }`}
         >
-          <div className="flex flex-col gap-8 text-left pr-2 mt-4 md:mt-8">
+          <div className="flex flex-col gap-6 text-left pr-2 mt-4 md:mt-8 flex-1">
             {/* Header detail */}
             <div className="flex flex-col gap-2 mt-2">
               <div className="flex items-center gap-2.5">
                 <span className="text-xs font-black uppercase tracking-[0.2em] text-slate-400">
-                  Challenge {task.id}
+                  {levels.length > 0 ? `Challenge ${task.id} • ${activeLvlData.title}` : `Challenge ${task.id}`}
                 </span>
               </div>
               <h2 className="text-3xl md:text-4xl font-black text-white uppercase tracking-wider leading-tight">
@@ -283,22 +504,75 @@ export default function ChallengeModal({
               </h2>
             </div>
 
-            {/* Guidelines */}
+            {/* Level Guidelines */}
             <div className="flex flex-col gap-4">
               <span className="text-sm font-black uppercase tracking-[0.25em] text-violet-400 border-b border-white/5 pb-2.5">
-                GUIDELINES & CRITERIA
+                {levels.length > 0 ? "LEVEL INSTRUCTIONS" : "CHALLENGE INSTRUCTIONS"}
               </span>
-              <div className="guidelines-content text-base text-slate-200 leading-relaxed font-semibold space-y-4 max-h-none md:max-h-[300px] overflow-y-visible md:overflow-y-auto pr-2 custom-scrollbar">
-                {task.longDesc}
+              <div className="guidelines-content text-base text-slate-200 leading-relaxed font-semibold space-y-4 max-h-[260px] overflow-y-auto pr-2 custom-scrollbar">
+                {levels.length > 0 ? (
+                  <>
+                    <p className="text-slate-300 text-sm leading-relaxed mb-3">
+                      {activeLvlData.description}
+                    </p>
+                    {activeLvlData.entries && activeLvlData.entries.length > 0 && (
+                      <div className="flex flex-col gap-2 mt-4 bg-slate-950/25 border border-white/5 p-4 rounded-2xl">
+                        <span className="text-[10px] font-black uppercase tracking-[0.15em] text-violet-400">
+                          Required Level Milestones:
+                        </span>
+                        <ul className="list-disc pl-5 space-y-2 mt-2">
+                          {activeLvlData.entries.map((entry, idx) => (
+                            <li key={idx} className="text-xs text-slate-300">
+                              {entry.name || entry}
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+                  </>
+                ) : (
+                  <div className="text-sm font-medium text-slate-300 guidelines-html-container">
+                    {task.guidelines ? (
+                      (() => {
+                        const safe = DOMPurify.sanitize(task.guidelines, {
+                          ALLOWED_TAGS: ['p', 'br', 'b', 'i', 'strong', 'em', 'ul', 'ol', 'li', 'a', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'span', 'div', 'img', 'code', 'pre', 'blockquote'],
+                          ALLOWED_ATTR: ['href', 'target', 'rel', 'src', 'alt', 'class', 'style'],
+                        });
+                        return <div dangerouslySetInnerHTML={{ __html: safe }} />;
+                      })()
+                    ) : (
+                      <p>{task.description || task.shortDesc}</p>
+                    )}
+                  </div>
+                )}
               </div>
             </div>
 
-            {/* Verification details */}
+            {/* Detailed XP Breakdown for Active Level / Task */}
+            <div className="flex flex-col gap-3">
+              <span className="text-sm font-black uppercase tracking-[0.25em] text-violet-400 border-b border-white/5 pb-2.5">
+                {levels.length > 0 ? "LEVEL REWARDS" : "CHALLENGE REWARDS"}
+              </span>
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-2.5 text-center">
+                {[
+                  { label: "Creativity", value: activeLvlData.xp_creativity || task.xp_creativity || 0, color: "text-rose-400 border-rose-500/10 bg-rose-500/5" },
+                  { label: "Branding", value: activeLvlData.xp_branding || task.xp_branding || 0, color: "text-amber-400 border-amber-500/10 bg-amber-500/5" },
+                  { label: "Innovation", value: activeLvlData.xp_innovation || task.xp_innovation || 0, color: "text-cyan-400 border-cyan-500/10 bg-cyan-500/5" },
+                  { label: "Teamwork", value: activeLvlData.xp_teamwork || task.xp_teamwork || 0, color: "text-emerald-400 border-emerald-500/10 bg-emerald-500/5" },
+                  { label: "Execution", value: activeLvlData.xp_execution || task.xp_execution || 0, color: "text-indigo-400 border-indigo-500/10 bg-indigo-500/5" },
+                ].map((item) => (
+                  <div key={item.label} className={`border rounded-xl p-2 flex flex-col items-center justify-center ${item.color}`}>
+                    <span className="text-sm font-black leading-none">+{item.value}</span>
+                    <span className="text-[7.5px] font-black uppercase tracking-wider mt-1">{item.label}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
 
-            {/* Status indicator */}
+            {/* Level Status indicator */}
             <div className="flex flex-col gap-3">
               <span className="text-sm font-black uppercase tracking-[0.25em] text-amber-500 border-b border-white/5 pb-2.5">
-                STATUS
+                {levels.length > 0 ? "LEVEL STATUS" : "CHALLENGE STATUS"}
               </span>
               {task.completed ? (
                 <div className="flex items-center gap-2 text-emerald-400 text-xs font-black uppercase tracking-wider">
@@ -315,19 +589,29 @@ export default function ChallengeModal({
                       d="M4.5 12.75l6 6 9-13.5"
                     />
                   </svg>
-                  <span>Completed - Reward Claimed</span>
+                  <span>Challenge Completed</span>
+                </div>
+              ) : (levels.length > 0 && isLevelCompleted(activeTab, activeLvlData)) ? (
+                <div className="flex items-center gap-2 text-emerald-400 text-xs font-black uppercase tracking-wider">
+                  <svg
+                    className="w-4.5 h-4.5"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="4"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      d="M4.5 12.75l6 6 9-13.5"
+                    />
+                  </svg>
+                  <span>Level Completed</span>
                 </div>
               ) : (
-                <div className="flex flex-col gap-2">
-                  <div className="flex justify-between text-xs font-black text-slate-500 uppercase tracking-wider">
-                    <span>Progress</span>
-                    <span>{task.completed ? "1/1" : "0/1"}</span>
-                  </div>
-                  <div className="w-full bg-[#151225] h-2 rounded-full overflow-hidden">
-                    <div
-                      className={`bg-violet-500 h-full rounded-full transition-all duration-500 ${task.completed ? "w-full" : "w-0"}`}
-                    />
-                  </div>
+                <div className="flex items-center gap-2 text-amber-500 text-xs font-black uppercase tracking-wider animate-pulse">
+                  <span className="w-2 h-2 rounded-full bg-amber-500" />
+                  <span>In Progress</span>
                 </div>
               )}
             </div>
@@ -347,56 +631,76 @@ export default function ChallengeModal({
 
           {/* Action Buttons Row */}
           <div className="flex flex-col sm:flex-row gap-4 mt-8 pt-6 border-t border-white/5">
-            {isVerifiable && (
-              <button
-                onClick={() => onVerify(task)}
-                disabled={verifyingTaskId === task.id || task.completed}
-                className="flex-1 py-4 bg-emerald-500/10 hover:bg-emerald-500/25 border border-emerald-500/40 text-emerald-400 hover:text-white font-black text-xs tracking-widest uppercase rounded-xl transition-all disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer flex items-center justify-center gap-2"
-              >
-                {verifyingTaskId === task.id ? (
-                  <span>VERIFYING...</span>
-                ) : task.completed ? (
-                  <>
-                    <svg
-                      className="w-4 h-4"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="3.5"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        d="M4.5 12.75l6 6 9-13.5"
-                      />
-                    </svg>
-                    <span>VERIFIED</span>
-                  </>
+            {task.completed ? (
+              <div className="flex-1 py-4 bg-emerald-500/10 border border-emerald-500/40 text-emerald-400 font-black text-xs tracking-widest uppercase rounded-xl text-center flex items-center justify-center gap-2 select-none">
+                <svg className="w-4.5 h-4.5" fill="none" stroke="currentColor" strokeWidth="3.5" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
+                </svg>
+                <span>CHALLENGE VERIFIED & COMPLETE</span>
+              </div>
+            ) : (
+              <>
+                {/* Custom Level completions vs final Database verification */}
+                {levels.length > 0 && activeTab < levels.length && !activeLvlData.id ? (
+                  <button
+                    onClick={() => markLevelCompletedLocal(activeTab)}
+                    disabled={isLevelCompleted(activeTab, activeLvlData)}
+                    className="flex-1 py-4 bg-emerald-500/10 hover:bg-emerald-500/25 border border-emerald-500/40 text-emerald-400 hover:text-white font-black text-xs tracking-widest uppercase rounded-xl transition-all cursor-pointer flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {isLevelCompleted(activeTab, activeLvlData) ? (
+                      <>
+                        <svg className="w-4.5 h-4.5" fill="none" stroke="currentColor" strokeWidth="3.5" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
+                        </svg>
+                        <span>LEVEL {activeTab} COMPLETED</span>
+                      </>
+                    ) : (
+                      <span>COMPLETE LEVEL {activeTab}</span>
+                    )}
+                  </button>
                 ) : (
-                  <span>VERIFY TASK</span>
+                  isVerifiable && (
+                    <button
+                      onClick={() => onVerify(levels.length > 0 ? activeLvlData : task)}
+                      disabled={
+                        verifyingTaskId === (levels.length > 0 ? activeLvlData.id : task.id) ||
+                        isLevelCompleted(activeTab, activeLvlData) ||
+                        isLevelLocked(activeTab, activeLvlData)
+                      }
+                      className="flex-1 py-4 bg-emerald-500/10 hover:bg-emerald-500/25 border border-emerald-500/40 text-emerald-400 hover:text-white font-black text-xs tracking-widest uppercase rounded-xl transition-all disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer flex items-center justify-center gap-2"
+                    >
+                      {verifyingTaskId === (levels.length > 0 ? activeLvlData.id : task.id) ? (
+                        <span>VERIFYING...</span>
+                      ) : isLevelCompleted(activeTab, activeLvlData) ? (
+                        <span>VERIFIED & COMPLETE</span>
+                      ) : (
+                        <span>VERIFY LEVEL {activeTab}</span>
+                      )}
+                    </button>
+                  )
                 )}
-              </button>
-            )}
 
-            <Link
-              href={task.actionUrl}
-              className="flex-1 py-4 bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-500 hover:to-indigo-500 text-white font-black text-xs tracking-widest uppercase rounded-xl transition-all shadow-md text-center flex items-center justify-center gap-2 cursor-pointer"
-            >
-              <span>{task.actionLabel}</span>
-              <svg
-                className="w-4 h-4"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="3"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  d="M8.25 4.5l7.5 7.5-7.5 7.5"
-                />
-              </svg>
-            </Link>
+                <Link
+                  href={levels.length > 0 ? activeLvlData.actionUrl : task.actionUrl}
+                  className="flex-1 py-4 bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-500 hover:to-indigo-500 text-white font-black text-xs tracking-widest uppercase rounded-xl transition-all shadow-md text-center flex items-center justify-center gap-2 cursor-pointer"
+                >
+                  <span>{levels.length > 0 ? activeLvlData.actionLabel : task.actionLabel}</span>
+                  <svg
+                    className="w-4.5 h-4.5"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="3"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      d="M8.25 4.5l7.5 7.5-7.5 7.5"
+                    />
+                  </svg>
+                </Link>
+              </>
+            )}
           </div>
         </div>
       </div>

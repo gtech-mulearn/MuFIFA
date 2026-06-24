@@ -1,8 +1,57 @@
+import React, { useState, useEffect } from "react";
 import Link from "next/link";
 
 export default function ChallengeCard({ task, onViewDetails, dbTasks }) {
   const isCompleted = task.completed;
   const isLocked = task.isLocked;
+
+  const [prog, setProg] = useState({ text: "0/1", pct: 0 });
+
+  useEffect(() => {
+    if (isCompleted) {
+      setProg({ text: "1/1", pct: 100 });
+      return;
+    }
+    if (isLocked) {
+      setProg({ text: "0/1", pct: 0 });
+      return;
+    }
+
+    if (task.sub_levels && Array.isArray(task.sub_levels) && task.sub_levels.length > 0) {
+      const totalLevels = task.sub_levels.length;
+      const completedCount = task.sub_levels.filter(sl => sl.completed).length;
+      setProg({
+        text: `${completedCount}/${totalLevels}`,
+        pct: Math.round((completedCount / totalLevels) * 100),
+      });
+      return;
+    }
+
+    if (task.guidelines && typeof task.guidelines === "string" && task.guidelines.trim().startsWith("{\"levels\":")) {
+      try {
+        const parsed = JSON.parse(task.guidelines);
+        if (parsed && Array.isArray(parsed.levels) && parsed.levels.length > 0) {
+          const totalLevels = parsed.levels.length;
+          const stored = localStorage.getItem(`mufifa_task_levels_completed_${task.id}`);
+          let completedCount = 0;
+          if (stored) {
+            const list = JSON.parse(stored);
+            if (Array.isArray(list)) {
+              completedCount = Math.min(list.length, totalLevels);
+            }
+          }
+          setProg({
+            text: `${completedCount}/${totalLevels}`,
+            pct: Math.round((completedCount / totalLevels) * 100),
+          });
+          return;
+        }
+      } catch (e) {
+        console.error(e);
+      }
+    }
+    setProg({ text: "0/1", pct: 0 });
+  }, [task, isCompleted, isLocked]);
 
   // Icons mapping based on task ID
   const renderIcon = () => {
@@ -258,18 +307,10 @@ export default function ChallengeCard({ task, onViewDetails, dbTasks }) {
             <div className="flex flex-col gap-1">
               <div className="flex justify-between text-[8px] font-black text-slate-500 uppercase tracking-wider">
                 <span>Progress</span>
-                <span>
-                  {task.id === 1
-                    ? task.completed
-                      ? "1/1"
-                      : "0/1"
-                    : task.id === 4
-                      ? "0/3"
-                      : "0/1"}
-                </span>
+                <span>{prog.text}</span>
               </div>
               <div className="w-full bg-[#151225] h-1 rounded-full overflow-hidden">
-                <div className="bg-violet-500 h-full rounded-full w-[25%]" />
+                <div className="bg-violet-500 h-full rounded-full transition-all duration-300" style={{ width: `${prog.pct}%` }} />
               </div>
             </div>
           )}

@@ -1,10 +1,10 @@
 import Image from "next/image";
 import Link from "next/link";
 
-export default function Stats({ activeTier, completedCount, totalCount }) {
+export default function Stats({ activeTier, completedCount, totalCount, completedPoints }) {
   const progressPercentage =
     totalCount > 0 ? Math.round((completedCount / totalCount) * 100) : 0;
-  const pointsEarned = completedCount * 5; // e.g. each challenge is 5 points
+  const pointsEarned = completedPoints || 0;
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch">
