@@ -119,6 +119,30 @@ export async function GET(request) {
     }
 
     const rawMembers = await membersRes.json();
+
+    // Fetch completed tasks count for all team members in a single query
+    const userIds = rawMembers.map((m) => m.user_id).filter(Boolean);
+    const completionsCountMap = {};
+    if (userIds.length > 0) {
+      try {
+        const formattedIds = userIds.map((id) => `"${id}"`).join(",");
+        const compRes = await fetch(`${supabaseUrl}/rest/v1/user_completed_tasks?user_id=in.(${formattedIds})&select=user_id,task_id`, {
+          method: "GET",
+          headers,
+        });
+        if (compRes.ok) {
+          const completions = await compRes.json();
+          completions.forEach((c) => {
+            if (c.task_id !== 100) {
+              completionsCountMap[c.user_id] = (completionsCountMap[c.user_id] || 0) + 1;
+            }
+          });
+        }
+      } catch (err) {
+        console.error("Failed to fetch completions count in members API:", err);
+      }
+    }
+
     const members = rawMembers.map((m) => ({
       id: m.id,
       name: m.name,
@@ -126,7 +150,9 @@ export async function GET(request) {
       user_id: m.user_id,
       whatsapp_joined: !!m.whatsapp_joined,
       role: m.role || "player",
+      completed_tasks_count: completionsCountMap[m.user_id] || 0,
     }));
+
 
     // Save to global cache
     global.captainCache.set(cacheKey, {

@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { requireRole } from "@/utils/auth";
+import { fetchAllSupabase } from "@/utils/supabase";
 
 export async function GET(request) {
   try {
@@ -22,31 +23,25 @@ export async function GET(request) {
     };
 
     // 2. Fetch all registrations (id, user_id, name, team, referred_by, mu_points, tasks)
-    const regRes = await fetch(`${supabaseUrl}/rest/v1/registrations?select=id,user_id,name,team,referred_by,mu_points,tasks&limit=5000`, {
-      method: "GET",
+    const registrations = await fetchAllSupabase(
+      `${supabaseUrl}/rest/v1/registrations?select=id,user_id,name,team,referred_by,mu_points,tasks`,
       headers,
-      next: { revalidate: 0 }
-    });
-    if (!regRes.ok) throw new Error(`Failed to fetch registrations: ${await regRes.text()}`);
-    const registrations = await regRes.json();
+      { fetchOptions: { next: { revalidate: 0 } } }
+    );
 
     // 3. Fetch all task completions (user_id, task_id, points_awarded, xp_execution)
-    const completionsRes = await fetch(`${supabaseUrl}/rest/v1/user_completed_tasks?select=user_id,task_id,points_awarded,xp_execution&limit=5000`, {
-      method: "GET",
+    const completions = await fetchAllSupabase(
+      `${supabaseUrl}/rest/v1/user_completed_tasks?select=user_id,task_id,points_awarded,xp_execution`,
       headers,
-      next: { revalidate: 0 }
-    });
-    if (!completionsRes.ok) throw new Error(`Failed to fetch completions: ${await completionsRes.text()}`);
-    const completions = await completionsRes.json();
+      { fetchOptions: { next: { revalidate: 0 } } }
+    );
 
     // 4. Fetch all predictions (user_id, outcome)
-    const predictionsRes = await fetch(`${supabaseUrl}/rest/v1/match_predictions?select=user_id,outcome&limit=5000`, {
-      method: "GET",
+    const predictions = await fetchAllSupabase(
+      `${supabaseUrl}/rest/v1/match_predictions?select=user_id,outcome`,
       headers,
-      next: { revalidate: 0 }
-    });
-    if (!predictionsRes.ok) throw new Error(`Failed to fetch predictions: ${await predictionsRes.text()}`);
-    const predictions = await predictionsRes.json();
+      { fetchOptions: { next: { revalidate: 0 } } }
+    );
 
     // 4b. Fetch live Kuzhiundo individuals leaderboard
     let kuzhiundoApiReports = {};
@@ -311,13 +306,11 @@ export async function POST(request) {
 
     if (targetTeamName) {
       // 2. Fetch registrations for this team
-      const regRes = await fetch(`${supabaseUrl}/rest/v1/registrations?team=eq.${encodeURIComponent(targetTeamName)}&select=id,user_id,name,team,referred_by,mu_points,tasks&limit=5000`, {
-        method: "GET",
+      const registrations = await fetchAllSupabase(
+        `${supabaseUrl}/rest/v1/registrations?team=eq.${encodeURIComponent(targetTeamName)}&select=id,user_id,name,team,referred_by,mu_points,tasks`,
         headers,
-        next: { revalidate: 0 }
-      });
-      if (!regRes.ok) throw new Error(`Failed to fetch registrations: ${await regRes.text()}`);
-      const registrations = await regRes.json();
+        { fetchOptions: { next: { revalidate: 0 } } }
+      );
 
       if (registrations.length === 0) {
         return NextResponse.json({ success: true, updatedUsersCount: 0, message: "No members in this team." });
@@ -327,22 +320,18 @@ export async function POST(request) {
       const formattedIds = userIds.map((id) => `"${id}"`).join(",");
 
       // 3. Fetch completions for these users
-      const completionsRes = await fetch(`${supabaseUrl}/rest/v1/user_completed_tasks?user_id=in.(${formattedIds})&select=user_id,task_id,points_awarded,xp_execution&limit=5000`, {
-        method: "GET",
+      const completions = await fetchAllSupabase(
+        `${supabaseUrl}/rest/v1/user_completed_tasks?user_id=in.(${formattedIds})&select=user_id,task_id,points_awarded,xp_execution`,
         headers,
-        next: { revalidate: 0 }
-      });
-      if (!completionsRes.ok) throw new Error(`Failed to fetch completions: ${await completionsRes.text()}`);
-      const completions = await completionsRes.json();
+        { fetchOptions: { next: { revalidate: 0 } } }
+      );
 
       // 4. Fetch predictions for these users
-      const predictionsRes = await fetch(`${supabaseUrl}/rest/v1/match_predictions?user_id=in.(${formattedIds})&select=user_id,outcome&limit=5000`, {
-        method: "GET",
+      const predictions = await fetchAllSupabase(
+        `${supabaseUrl}/rest/v1/match_predictions?user_id=in.(${formattedIds})&select=user_id,outcome`,
         headers,
-        next: { revalidate: 0 }
-      });
-      if (!predictionsRes.ok) throw new Error(`Failed to fetch predictions: ${await predictionsRes.text()}`);
-      const predictions = await predictionsRes.json();
+        { fetchOptions: { next: { revalidate: 0 } } }
+      );
 
       // 5. Aggregate calculations per user
       const userTaskPoints = {};
@@ -491,17 +480,15 @@ export async function POST(request) {
       }
 
       const r = registrations[0];
-      const completionsRes = await fetch(`${supabaseUrl}/rest/v1/user_completed_tasks?user_id=eq.${encodeURIComponent(userId)}&select=user_id,task_id,points_awarded,xp_execution&limit=500`, {
-        method: "GET",
-        headers,
-      });
-      const completions = completionsRes.ok ? await completionsRes.json() : [];
+      const completions = await fetchAllSupabase(
+        `${supabaseUrl}/rest/v1/user_completed_tasks?user_id=eq.${encodeURIComponent(userId)}&select=user_id,task_id,points_awarded,xp_execution`,
+        headers
+      );
 
-      const predictionsRes = await fetch(`${supabaseUrl}/rest/v1/match_predictions?user_id=eq.${encodeURIComponent(userId)}&select=user_id,outcome&limit=500`, {
-        method: "GET",
-        headers,
-      });
-      const predictions = predictionsRes.ok ? await predictionsRes.json() : [];
+      const predictions = await fetchAllSupabase(
+        `${supabaseUrl}/rest/v1/match_predictions?user_id=eq.${encodeURIComponent(userId)}&select=user_id,outcome`,
+        headers
+      );
 
       const userTaskPoints = completions.reduce((sum, c) => {
         const taskId = Number(c.task_id);

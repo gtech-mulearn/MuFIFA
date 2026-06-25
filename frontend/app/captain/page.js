@@ -19,6 +19,34 @@ export default function CaptainDashboard() {
   const [debouncedSearch, setDebouncedSearch] = useState("");
   const [filter, setFilter] = useState("not_joined");
 
+  // Tasks Modal State
+  const [selectedMember, setSelectedMember] = useState(null); // { user_id, name }
+  const [completedTasks, setCompletedTasks] = useState([]);
+  const [loadingTasks, setLoadingTasks] = useState(false);
+  const [tasksError, setTasksError] = useState("");
+
+  const handleViewTasks = async (member) => {
+    setSelectedMember(member);
+    setCompletedTasks([]);
+    setLoadingTasks(true);
+    setTasksError("");
+    try {
+      const res = await fetch(`/api/v1/captain/member-tasks?userId=${encodeURIComponent(member.user_id)}`);
+      const data = await res.json();
+      if (res.ok && data.success) {
+        setCompletedTasks(data.completedTasks || []);
+      } else {
+        setTasksError(data.error || "Failed to load completed tasks.");
+      }
+    } catch (err) {
+      console.error(err);
+      setTasksError("Failed to fetch tasks from the server.");
+    } finally {
+      setLoadingTasks(false);
+    }
+  };
+
+
   // Debounce search input
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -309,9 +337,11 @@ export default function CaptainDashboard() {
                     <th className="px-4 py-3 font-bold uppercase tracking-wider">Member Name</th>
                     <th className="px-4 py-3 font-bold uppercase tracking-wider">Username ID</th>
                     <th className="px-4 py-3 font-bold uppercase tracking-wider">Phone Number</th>
+                    <th className="px-4 py-3 font-bold uppercase tracking-wider text-center">Tasks Completed</th>
                     <th className="px-4 py-3 font-bold uppercase tracking-wider text-center">WhatsApp Group</th>
                     <th className="px-4 py-3 font-bold uppercase tracking-wider text-right">Message</th>
                   </tr>
+
                 </thead>
                 <tbody className="divide-y divide-white/5">
                   {members.map((member) => (
@@ -347,6 +377,20 @@ export default function CaptainDashboard() {
                       <td className="px-4 py-3.5 font-mono text-slate-300 whitespace-nowrap">
                         {member.phone}
                       </td>
+
+                      {/* Tasks Completed Button */}
+                      <td className="px-4 py-3.5 whitespace-nowrap text-center">
+                        <button
+                          onClick={() => handleViewTasks(member)}
+                          className="cursor-pointer inline-flex items-center gap-1.5 px-2.5 py-1.5 text-[10px] font-extrabold uppercase tracking-wider rounded-xl transition-all border border-violet-500/30 bg-violet-500/10 text-violet-300 hover:bg-violet-500/20 active:bg-violet-500/30"
+                        >
+                          <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
+                          </svg>
+                          <span>{member.completed_tasks_count || 0} Tasks</span>
+                        </button>
+                      </td>
+
 
                       {/* Joined WhatsApp toggle */}
                       <td className="px-4 py-3.5 whitespace-nowrap text-center">
@@ -387,6 +431,110 @@ export default function CaptainDashboard() {
           )}
         </div>
       </div>
+      {/* Tasks Modal */}
+      {selectedMember && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-sm transition-all duration-300">
+          <div 
+            className="absolute inset-0 cursor-pointer" 
+            onClick={() => setSelectedMember(null)}
+          />
+          <div className="relative w-full max-w-2xl bg-gradient-to-b from-[#131927] to-[#0d101d] border border-white/10 rounded-3xl shadow-2xl p-6 md:p-8 flex flex-col max-h-[85vh] z-10 animate-in fade-in zoom-in-95 duration-200">
+            {/* Modal Header */}
+            <div className="flex items-center justify-between border-b border-white/10 pb-4 mb-4">
+              <div>
+                <h3 className="text-base font-black tracking-wider text-white uppercase">
+                  Completed Tasks
+                </h3>
+                <p className="text-[11px] text-slate-400 mt-1">
+                  Showing task activity for <span className="text-cyan-400 font-bold">@{selectedMember.user_id}</span> ({selectedMember.name})
+                </p>
+              </div>
+              <button
+                onClick={() => setSelectedMember(null)}
+                className="cursor-pointer text-slate-400 hover:text-white text-2xl font-bold transition-colors w-8 h-8 rounded-full hover:bg-white/5 flex items-center justify-center focus:outline-none"
+              >
+                &times;
+              </button>
+            </div>
+
+            {/* Modal Content */}
+            <div className="flex-1 overflow-y-auto pr-1">
+              {loadingTasks ? (
+                <div className="flex flex-col items-center justify-center py-12 gap-3">
+                  <div className="w-8 h-8 border-2 border-violet-500 border-t-transparent rounded-full animate-spin" />
+                  <span className="text-xs text-slate-400 font-medium">Fetching completed tasks...</span>
+                </div>
+              ) : tasksError ? (
+                <div className="bg-rose-500/10 border border-rose-500/20 text-rose-400 text-xs py-3 px-4 rounded-xl text-center font-bold">
+                  {tasksError}
+                </div>
+              ) : completedTasks.length === 0 ? (
+                <div className="text-center py-12 text-slate-400 text-xs flex flex-col items-center gap-2">
+                  <svg className="w-8 h-8 text-slate-600" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                  </svg>
+                  This member hasn't completed any tasks yet.
+                </div>
+              ) : (
+                <div className="overflow-x-auto">
+                  <table className="w-full text-xs text-left border-collapse">
+                    <thead>
+                      <tr className="border-b border-white/5 text-slate-400 text-[10px] uppercase tracking-wider">
+                        <th className="px-3 py-2.5 font-bold">Task Name / Hashtag</th>
+                        <th className="px-3 py-2.5 font-bold">Category</th>
+                        <th className="px-3 py-2.5 font-bold text-center">Points</th>
+                        <th className="px-3 py-2.5 font-bold text-right">Completed At</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-white/5">
+                      {completedTasks.map((t) => (
+                        <tr key={t.id} className="hover:bg-white/[0.02] transition-colors">
+                          <td className="px-3 py-3">
+                            <div className="font-bold text-slate-200 text-xs">{t.title}</div>
+                            {t.hashtag && (
+                              <div className="text-[10px] text-cyan-400 font-mono mt-0.5 font-bold uppercase">
+                                {t.hashtag}
+                              </div>
+                            )}
+                          </td>
+                          <td className="px-3 py-3 whitespace-nowrap">
+                            <span className="inline-flex items-center rounded bg-slate-800/80 px-2 py-0.5 text-[9px] font-extrabold text-slate-300 border border-white/5 uppercase tracking-wide">
+                              {t.category}
+                            </span>
+                          </td>
+                          <td className="px-3 py-3 text-center whitespace-nowrap">
+                            <span className="font-bold text-emerald-400">+{t.pointsAwarded}</span>
+                            <span className="text-[10px] text-slate-500 font-semibold"> / {t.maxPoints}</span>
+                          </td>
+                          <td className="px-3 py-3 text-right text-slate-400 font-mono whitespace-nowrap">
+                            {new Date(t.completedAt).toLocaleDateString(undefined, {
+                              month: "short",
+                              day: "numeric",
+                              hour: "2-digit",
+                              minute: "2-digit"
+                            })}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
+
+            {/* Modal Footer */}
+            <div className="border-t border-white/10 pt-4 mt-4 flex justify-end">
+              <button
+                onClick={() => setSelectedMember(null)}
+                className="cursor-pointer px-5 py-2 bg-slate-800 hover:bg-slate-700 active:bg-slate-900 text-white text-xs font-bold rounded-xl uppercase tracking-wider transition-colors focus:outline-none"
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
+

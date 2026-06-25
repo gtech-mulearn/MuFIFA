@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { fetchAllSupabase } from "@/utils/supabase";
 
 // Cache object stored on the Node global namespace to persist across hot-reloads
 if (!global.topPredictorsCache_v2) {
@@ -44,40 +45,19 @@ export async function GET(request) {
     // Refresh cache if expired or empty
     if (!cache.data || now > cache.expiresAt) {
       // 1. Fetch all registrations and predictions concurrently (with 5-minute Next.js caching)
-      const [registrationsRes, predictionsRes] = await Promise.all([
-        fetch(
-          `${supabaseUrl}/rest/v1/registrations?select=user_id,name,team,avatar_url,domain&limit=5000`,
-          {
-            method: "GET",
-            headers: supabaseHeaders,
-            next: { revalidate: 300 },
-          }
-        ),
-        fetch(
-          `${supabaseUrl}/rest/v1/match_predictions?select=user_id,outcome&limit=10000`,
-          {
-            method: "GET",
-            headers: supabaseHeaders,
-            next: { revalidate: 300 },
-          }
-        ),
-      ]);
-
-      if (!registrationsRes.ok) {
-        throw new Error(
-          `Failed to fetch registrations: ${await registrationsRes.text()}`
-        );
-      }
-      if (!predictionsRes.ok) {
-        throw new Error(
-          `Failed to fetch predictions: ${await predictionsRes.text()}`
-        );
-      }
-
       const [registrations, predictions] = await Promise.all([
-        registrationsRes.json(),
-        predictionsRes.json(),
+        fetchAllSupabase(
+          `${supabaseUrl}/rest/v1/registrations?select=user_id,name,team,avatar_url,domain`,
+          supabaseHeaders,
+          { fetchOptions: { next: { revalidate: 300 } } }
+        ),
+        fetchAllSupabase(
+          `${supabaseUrl}/rest/v1/match_predictions?select=user_id,outcome`,
+          supabaseHeaders,
+          { fetchOptions: { next: { revalidate: 300 } } }
+        ),
       ]);
+
 
       const usersMap = {};
       registrations.forEach((r) => {
