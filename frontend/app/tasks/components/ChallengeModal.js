@@ -509,23 +509,34 @@ export default function ChallengeModal({
               <span className="text-sm font-black uppercase tracking-[0.25em] text-violet-400 border-b border-white/5 pb-2.5">
                 {levels.length > 0 ? "LEVEL INSTRUCTIONS" : "CHALLENGE INSTRUCTIONS"}
               </span>
-              <div className="guidelines-content text-base text-slate-200 leading-relaxed font-semibold space-y-4 max-h-[260px] overflow-y-auto pr-2 custom-scrollbar">
+              <div className="guidelines-content text-base text-slate-200 leading-relaxed font-semibold space-y-4">
                 {levels.length > 0 ? (
                   <>
-                    <p className="text-slate-300 text-sm leading-relaxed mb-3">
-                      {activeLvlData.description}
-                    </p>
+                    {activeLvlData.description ? (() => {
+                      const safe = DOMPurify.sanitize(activeLvlData.description, {
+                        ALLOWED_TAGS: ['p', 'br', 'b', 'i', 'strong', 'em', 'ul', 'ol', 'li', 'a', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'span', 'div', 'img', 'code', 'pre', 'blockquote'],
+                        ALLOWED_ATTR: ['href', 'target', 'rel', 'src', 'alt', 'class', 'style'],
+                      });
+                      return <div className="text-slate-300 text-sm leading-relaxed mb-3 guidelines-html-container" dangerouslySetInnerHTML={{ __html: safe }} />;
+                    })() : (
+                      <p className="text-slate-300 text-sm leading-relaxed mb-3">No instructions provided.</p>
+                    )}
                     {activeLvlData.entries && activeLvlData.entries.length > 0 && (
                       <div className="flex flex-col gap-2 mt-4 bg-slate-950/25 border border-white/5 p-4 rounded-2xl">
                         <span className="text-[10px] font-black uppercase tracking-[0.15em] text-violet-400">
                           Required Level Milestones:
                         </span>
                         <ul className="list-disc pl-5 space-y-2 mt-2">
-                          {activeLvlData.entries.map((entry, idx) => (
-                            <li key={idx} className="text-xs text-slate-300">
-                              {entry.name || entry}
-                            </li>
-                          ))}
+                          {activeLvlData.entries.map((entry, idx) => {
+                            const entryText = entry.name || entry;
+                            const safeEntry = DOMPurify.sanitize(entryText, {
+                              ALLOWED_TAGS: ['p', 'br', 'b', 'i', 'strong', 'em', 'a', 'span', 'code'],
+                              ALLOWED_ATTR: ['href', 'target', 'rel'],
+                            });
+                            return (
+                              <li key={idx} className="text-xs text-slate-300" dangerouslySetInnerHTML={{ __html: safeEntry }} />
+                            );
+                          })}
                         </ul>
                       </div>
                     )}

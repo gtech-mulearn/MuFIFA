@@ -284,12 +284,18 @@ export default function AdminTasksPreviewPage() {
         <div className="flex flex-col gap-2 mt-1">
           <span className="text-[10px] uppercase font-black tracking-wider text-violet-400">Progression Challenge (Levels):</span>
           <div className="flex flex-col gap-2 pl-2 border-l border-violet-500/30">
-            {levelsData.map((lvl) => (
-              <div key={lvl.level} className="text-[11px] text-slate-300 leading-normal flex flex-col">
-                <span className="font-bold text-slate-100">Level {lvl.level}: {lvl.title}</span>
-                <span className="text-[10px] text-slate-400 line-clamp-1">{lvl.description}</span>
-              </div>
-            ))}
+            {levelsData.map((lvl) => {
+              const safeDesc = DOMPurify.sanitize(lvl.description || "", {
+                ALLOWED_TAGS: ['b', 'i', 'strong', 'em', 'span', 'code'],
+                ALLOWED_ATTR: [],
+              });
+              return (
+                <div key={lvl.level} className="text-[11px] text-slate-300 leading-normal flex flex-col">
+                  <span className="font-bold text-slate-100">Level {lvl.level}: {lvl.title}</span>
+                  <span className="text-[10px] text-slate-400 line-clamp-1" dangerouslySetInnerHTML={{ __html: safeDesc }} />
+                </div>
+              );
+            })}
           </div>
         </div>
       ) : dbTask.guidelines ? (() => {
