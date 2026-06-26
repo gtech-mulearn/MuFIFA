@@ -22,6 +22,9 @@ const getTeamPlayerImage = (teamName) => {
   if (name === "brazil" || name === "argentina" || name === "portugal") {
     return `/players/${name}_back.svg`;
   }
+  if (name === "germany") {
+    return `/players/germany_back.png`;
+  }
   return null;
 };
 

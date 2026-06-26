@@ -27,11 +27,13 @@ const SQUAD_PHOTOS = {
   Brazil: "/players/brazil_back.svg",
   Argentina: "/players/argentina_back.svg",
   Portugal: "/players/portugal_back.svg",
+  Germany: "/players/germany_back.png",
 };
 
 const getSquadPhoto = (teamName) => {
   if (SQUAD_PHOTOS[teamName]) return SQUAD_PHOTOS[teamName];
   const formatted = teamName.toLowerCase().replace(/\s+/g, "_");
+  if (formatted === "germany") return "/players/germany_front.png";
   return `/players/${formatted}_front.svg`;
 };
 

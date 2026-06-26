@@ -152,6 +152,7 @@ export default function AdminUserDetailPage({ params }) {
           team: data.user.team || "",
           mu_points: data.user.mu_points || 0,
           role: data.user.role || "player",
+          muid: data.user.muid || "",
         });
       } else {
         setError(data.error?.message || data.error || "User not found.");
@@ -571,6 +572,15 @@ export default function AdminUserDetailPage({ params }) {
 
                   <div className="flex flex-col gap-1">
                     <span className="text-[10px] font-black uppercase tracking-wider text-slate-400">
+                      µLearn ID (µID)
+                    </span>
+                    <span className="text-sm font-mono font-semibold text-slate-800">
+                      {user?.muid || "Not Linked"}
+                    </span>
+                  </div>
+
+                  <div className="flex flex-col gap-1">
+                    <span className="text-[10px] font-black uppercase tracking-wider text-slate-400">
                       User Database ID
                     </span>
                     <span className="text-sm font-mono font-semibold text-slate-500">
@@ -729,6 +739,19 @@ export default function AdminUserDetailPage({ params }) {
                         </option>
                       ))}
                     </select>
+                  </div>
+
+                  <div className="flex flex-col gap-1.5">
+                    <label className="text-[10px] font-black uppercase tracking-wider text-slate-500">
+                      µLearn ID (µID)
+                    </label>
+                    <input
+                      name="muid"
+                      value={form.muid || ""}
+                      onChange={handleChange}
+                      placeholder="e.g. username@mulearn"
+                      className={`rounded-xl px-4 py-2.5 text-xs transition-colors focus:outline-none ${THEME.input}`}
+                    />
                   </div>
                 </div>
 

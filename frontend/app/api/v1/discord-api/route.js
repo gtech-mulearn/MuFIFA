@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 
-async function verifyDiscordSubmission(muid, email, hashtag) {
+export async function verifyDiscordSubmission(muid, email, hashtag) {
   if (!muid || !email || !hashtag) {
     return {
       hasError: true,

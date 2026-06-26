@@ -29,6 +29,7 @@ const userPatchSchema = z.object({
   password: z.string().min(6, "Password must be at least 6 characters long.").optional(),
   banned: z.string().optional(),
   role: z.enum(["player", "captain", "vicecaptain"], { errorMap: () => ({ message: "Invalid role selected." }) }).optional(),
+  muid: z.string().trim().nullable().optional(),
 });
 
 export async function GET(request, { params }) {

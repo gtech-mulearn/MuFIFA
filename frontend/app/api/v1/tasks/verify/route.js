@@ -7,6 +7,7 @@ import {
   KUZHIUNDO_PER_SUBMISSION,
   KUZHIUNDO_SUBMISSION_TASK_ID,
 } from "@/utils/kuzhiundo";
+import { verifyDiscordSubmission } from "../../discord-api/route";
 
 const PLAYER_COOKIE = "player_token";
 const checkRate = createRateLimiter("task-verify", 15, 5 * 60 * 1000);
@@ -408,32 +409,9 @@ export async function POST(request) {
         );
       }
 
-      const mulearnUrl = `https://mulearn.org/api/v1/integrations/mufifa/verify-task/?muid=${player.muid}&email=${player.email}&hashtag=${hashtag.replace("#", "%23")}`;
-
       try {
-        const verifyRes = await fetch(mulearnUrl, {
-          method: "GET",
-          headers: {
-            Accept: "application/json",
-          },
-          cache: "no-store",
-        });
+        const verifyData = await verifyDiscordSubmission(player.muid, player.email, hashtag);
 
-        if (!verifyRes.ok) {
-          const errData = await verifyRes.json().catch(() => ({}));
-          const errMsg =
-            errData.message?.general?.[0] ||
-            `µLearn API error (${verifyRes.status})`;
-          return NextResponse.json(
-            {
-              success: false,
-              error: `Verification failed: ${errMsg}`,
-            },
-            { status: 400 },
-          );
-        }
-
-        const verifyData = await verifyRes.json();
         if (verifyData.hasError) {
           const errMsg =
             verifyData.message?.general?.[0] || "Verification failed.";
@@ -442,7 +420,7 @@ export async function POST(request) {
               success: false,
               error: `Verification failed: ${errMsg}`,
             },
-            { status: 400 },
+            { status: verifyData.statusCode || 400 },
           );
         }
 
