@@ -270,8 +270,8 @@ export default function ChallengeModal({
           ),
         };
       }
-      if (v.startsWith("discord_api:")) {
-        const hashtag = v.substring("discord_api:".length);
+      if (v.startsWith("discord_api:") || v === "discord_api" || v === "discord api") {
+        const hashtag = v.startsWith("discord_api:") ? v.substring("discord_api:".length) : "";
         return {
           type: "Discord API",
           description: `Verify via Discord by posting in the channel with hashtag: `,

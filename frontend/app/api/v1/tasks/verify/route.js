@@ -67,7 +67,7 @@ export async function POST(request) {
 
     // 2. Fetch User & Task to verify they exist
     const userRes = await fetch(
-      `${supabaseUrl}/rest/v1/registrations?user_id=eq.${encodeURIComponent(userId)}&select=id,user_id,team,mu_points,tasks,bio,referal_id,avatar_url,muid,banned`,
+      `${supabaseUrl}/rest/v1/registrations?user_id=eq.${encodeURIComponent(userId)}&select=id,user_id,email,team,mu_points,tasks,bio,referal_id,avatar_url,muid,banned`,
       {
         headers: {
           apikey: supabaseKey,
@@ -140,7 +140,7 @@ export async function POST(request) {
     // 4. Resolve the verification mechanism dynamically
     let verificationMethod = "none";
     if (task.verification) {
-      if (task.verification.startsWith("discord_api:")) {
+      if (task.verification.startsWith("discord_api:") || task.verification === "discord_api" || task.verification === "discord api") {
         verificationMethod = "discord_api";
       } else if (task.verification === "referral") {
         verificationMethod = "referral";
@@ -372,8 +372,90 @@ export async function POST(request) {
         );
       }
     } else if (verificationMethod === "discord_api") {
-      // Discord Integration (Bypassed since socials is not in DB)
-      pointsDiff = task.mupoint || 0;
+      if (!player.muid || !player.email) {
+        return NextResponse.json(
+          {
+            success: false,
+            error: "Please complete your µLearn ID (µID) and Email in your profile.",
+          },
+          { status: 400 },
+        );
+      }
+
+      let hashtag = "";
+      if (task.verification && task.verification.startsWith("discord_api:")) {
+        hashtag = task.verification.substring("discord_api:".length);
+      } else if (taskIdInt === 6) {
+        hashtag = "#mufifa2026-intro";
+      }
+
+      if (!hashtag) {
+        return NextResponse.json(
+          {
+            success: false,
+            error: "Task verification hashtag is not configured.",
+          },
+          { status: 400 },
+        );
+      }
+
+      const mulearnUrl = `https://mulearn.org/api/v1/integrations/mufifa/verify-task/?muid=${player.muid}&email=${player.email}&hashtag=${hashtag.replace('#', '%23')}`;
+
+      try {
+        const verifyRes = await fetch(mulearnUrl, {
+          method: "GET",
+          headers: {
+            Accept: "application/json",
+          },
+          cache: "no-store",
+        });
+
+        if (!verifyRes.ok) {
+          const errData = await verifyRes.json().catch(() => ({}));
+          const errMsg = errData.message?.general?.[0] || `µLearn API error (${verifyRes.status})`;
+          return NextResponse.json(
+            {
+              success: false,
+              error: `Verification failed: ${errMsg}`,
+            },
+            { status: 400 },
+          );
+        }
+
+        const verifyData = await verifyRes.json();
+        if (verifyData.hasError) {
+          const errMsg = verifyData.message?.general?.[0] || "Verification failed.";
+          return NextResponse.json(
+            {
+              success: false,
+              error: `Verification failed: ${errMsg}`,
+            },
+            { status: 400 },
+          );
+        }
+
+        if (!verifyData.response || !verifyData.response.verified) {
+          return NextResponse.json(
+            {
+              success: false,
+              error: "Discord submission not found. Please ensure you have posted in the Discord channel with the correct hashtag and try again.",
+            },
+            { status: 400 },
+          );
+        }
+
+        // Successfully verified
+        pointsDiff = task.mupoint || 0;
+      } catch (err) {
+        console.error("External Discord API verification error:", err);
+        return NextResponse.json(
+          {
+            success: false,
+            error: "µLearn verification server is temporarily unreachable. Please try again later.",
+          },
+          { status: 502 },
+        );
+      }
     } else {
       // Manual admin review / none / unrecognized
       return NextResponse.json(
