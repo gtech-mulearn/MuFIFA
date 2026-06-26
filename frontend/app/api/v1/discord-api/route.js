@@ -6,13 +6,13 @@ async function verifyDiscordSubmission(muid, email, hashtag) {
       hasError: true,
       statusCode: 400,
       message: {
-        general: ["muid, email, and hashtag are required parameters."]
+        general: ["muid, email, and hashtag are required parameters."],
       },
-      response: {}
+      response: {},
     };
   }
 
-  const url = `https://mulearn.org/api/v1/integrations/mufifa/verify-task/?muid=${muid}&email=${email}&hashtag=${hashtag.replace('#', '%23')}`;
+  const url = `https://mulearn.org/api/v1/integrations/mufifa/verify-task/?muid=${muid}&email=${email}&hashtag=${hashtag.replace("#", "%23")}`;
 
   try {
     const res = await fetch(url, {
@@ -32,9 +32,9 @@ async function verifyDiscordSubmission(muid, email, hashtag) {
           hasError: true,
           statusCode: res.status,
           message: {
-            general: [`µLearn API returned status code ${res.status}`]
+            general: [`µLearn API returned status code ${res.status}`],
           },
-          response: {}
+          response: {},
         };
       }
     }
@@ -46,9 +46,9 @@ async function verifyDiscordSubmission(muid, email, hashtag) {
       hasError: true,
       statusCode: 502,
       message: {
-        general: ["µLearn verification server is temporarily unreachable."]
+        general: ["µLearn verification server is temporarily unreachable."],
       },
-      response: {}
+      response: {},
     };
   }
 }
@@ -60,7 +60,9 @@ export async function GET(request) {
   const hashtag = searchParams.get("hashtag");
 
   const result = await verifyDiscordSubmission(muid, email, hashtag);
-  return NextResponse.json(result, { status: result.statusCode || (result.hasError ? 400 : 200) });
+  return NextResponse.json(result, {
+    status: result.statusCode || (result.hasError ? 400 : 200),
+  });
 }
 
 export async function POST(request) {
@@ -71,18 +73,20 @@ export async function POST(request) {
     const hashtag = body.hashtag || "";
 
     const result = await verifyDiscordSubmission(muid, email, hashtag);
-    return NextResponse.json(result, { status: result.statusCode || (result.hasError ? 400 : 200) });
+    return NextResponse.json(result, {
+      status: result.statusCode || (result.hasError ? 400 : 200),
+    });
   } catch (error) {
     return NextResponse.json(
       {
         hasError: true,
         statusCode: 500,
         message: {
-          general: ["Internal server error parsing request body."]
+          general: ["Internal server error parsing request body."],
         },
-        response: {}
+        response: {},
       },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

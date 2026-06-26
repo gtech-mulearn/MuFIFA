@@ -17,8 +17,11 @@ export async function POST(request) {
     const rateCheck = checkRate(getClientIp(request));
     if (rateCheck.limited) {
       return NextResponse.json(
-        { success: false, error: `Too many requests. Try again in ${rateCheck.retryAfter}s.` },
-        { status: 429 }
+        {
+          success: false,
+          error: `Too many requests. Try again in ${rateCheck.retryAfter}s.`,
+        },
+        { status: 429 },
       );
     }
 
@@ -90,7 +93,7 @@ export async function POST(request) {
     if (banCheck.isBanned) {
       return NextResponse.json(
         { success: false, error: banCheck.message },
-        { status: 403 }
+        { status: 403 },
       );
     }
 
@@ -140,7 +143,11 @@ export async function POST(request) {
     // 4. Resolve the verification mechanism dynamically
     let verificationMethod = "none";
     if (task.verification) {
-      if (task.verification.startsWith("discord_api:") || task.verification === "discord_api" || task.verification === "discord api") {
+      if (
+        task.verification.startsWith("discord_api:") ||
+        task.verification === "discord_api" ||
+        task.verification === "discord api"
+      ) {
         verificationMethod = "discord_api";
       } else if (task.verification === "referral") {
         verificationMethod = "referral";
@@ -313,7 +320,8 @@ export async function POST(request) {
       }
 
       // 1. Insert/Upsert Task 100 row into user_completed_tasks for initial submissions
-      const submissionPoints = Math.max(0, reportsCount - 1) * KUZHIUNDO_PER_SUBMISSION;
+      const submissionPoints =
+        Math.max(0, reportsCount - 1) * KUZHIUNDO_PER_SUBMISSION;
       const upsertTask100Res = await fetch(
         `${supabaseUrl}/rest/v1/user_completed_tasks?on_conflict=user_id,task_id`,
         {
@@ -376,7 +384,8 @@ export async function POST(request) {
         return NextResponse.json(
           {
             success: false,
-            error: "Please complete your µLearn ID (µID) and Email in your profile.",
+            error:
+              "Please complete your µLearn ID (µID) and Email in your profile.",
           },
           { status: 400 },
         );
@@ -399,7 +408,7 @@ export async function POST(request) {
         );
       }
 
-      const mulearnUrl = `https://mulearn.org/api/v1/integrations/mufifa/verify-task/?muid=${player.muid}&email=${player.email}&hashtag=${hashtag.replace('#', '%23')}`;
+      const mulearnUrl = `https://mulearn.org/api/v1/integrations/mufifa/verify-task/?muid=${player.muid}&email=${player.email}&hashtag=${hashtag.replace("#", "%23")}`;
 
       try {
         const verifyRes = await fetch(mulearnUrl, {
@@ -412,7 +421,9 @@ export async function POST(request) {
 
         if (!verifyRes.ok) {
           const errData = await verifyRes.json().catch(() => ({}));
-          const errMsg = errData.message?.general?.[0] || `µLearn API error (${verifyRes.status})`;
+          const errMsg =
+            errData.message?.general?.[0] ||
+            `µLearn API error (${verifyRes.status})`;
           return NextResponse.json(
             {
               success: false,
@@ -424,7 +435,8 @@ export async function POST(request) {
 
         const verifyData = await verifyRes.json();
         if (verifyData.hasError) {
-          const errMsg = verifyData.message?.general?.[0] || "Verification failed.";
+          const errMsg =
+            verifyData.message?.general?.[0] || "Verification failed.";
           return NextResponse.json(
             {
               success: false,
@@ -438,7 +450,8 @@ export async function POST(request) {
           return NextResponse.json(
             {
               success: false,
-              error: "Discord submission not found. Please ensure you have posted in the Discord channel with the correct hashtag and try again.",
+              error:
+                "Discord submission not found. Please ensure you have posted in the Discord channel with the correct hashtag and try again.",
             },
             { status: 400 },
           );
@@ -451,7 +464,8 @@ export async function POST(request) {
         return NextResponse.json(
           {
             success: false,
-            error: "µLearn verification server is temporarily unreachable. Please try again later.",
+            error:
+              "µLearn verification server is temporarily unreachable. Please try again later.",
           },
           { status: 502 },
         );
