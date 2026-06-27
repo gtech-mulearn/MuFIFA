@@ -461,27 +461,27 @@ export default function MatchPage() {
     };
   }, [matches, activeTab, resultsVisible, nowTime]);
 
-  // Next 4 matches in 24 hours for matches tab layout
-  const top4Matches = useMemo(() => {
-    return activeTab === "matches" ? filteredMatches.slice(0, 4) : [];
+  // All matches in 24 hours for matches tab layout
+  const activeMatches = useMemo(() => {
+    return activeTab === "matches" ? filteredMatches : [];
   }, [activeTab, filteredMatches]);
 
-  const top4Ids = useMemo(() => {
-    return top4Matches.map((m) => String(m.id));
-  }, [top4Matches]);
+  const activeMatchIds = useMemo(() => {
+    return activeMatches.map((m) => String(m.id));
+  }, [activeMatches]);
 
   useEffect(() => {
     let active = true;
     Promise.resolve().then(() => {
       if (active) {
-        if (top4Ids.length > 0) {
+        if (activeMatchIds.length > 0) {
           setOrderedMatchIds((prev) => {
             const prevSet = new Set(prev);
             const isMatch =
-              top4Ids.length === prev.length &&
-              top4Ids.every((id) => prevSet.has(id));
+              activeMatchIds.length === prev.length &&
+              activeMatchIds.every((id) => prevSet.has(id));
             if (!isMatch) {
-              return top4Ids;
+              return activeMatchIds;
             }
             return prev;
           });
@@ -493,24 +493,24 @@ export default function MatchPage() {
     return () => {
       active = false;
     };
-  }, [top4Ids]);
+  }, [activeMatchIds]);
 
   // Derived main and row matches
   const mainMatch =
-    top4Matches.find((m) => String(m.id) === String(orderedMatchIds[0])) ||
-    top4Matches[0];
+    activeMatches.find((m) => String(m.id) === String(orderedMatchIds[0])) ||
+    activeMatches[0];
 
   const rowMatches =
     orderedMatchIds.length > 0
       ? orderedMatchIds
           .slice(1)
-          .map((id) => top4Matches.find((m) => String(m.id) === String(id)))
+          .map((id) => activeMatches.find((m) => String(m.id) === String(id)))
           .filter(Boolean)
-      : top4Matches.slice(1);
+      : activeMatches.slice(1);
 
   const handleSwap = (clickedId) => {
     setOrderedMatchIds((prev) => {
-      const currentOrder = prev.length > 0 ? prev : top4Ids;
+      const currentOrder = prev.length > 0 ? prev : activeMatchIds;
       const copy = [...currentOrder];
       const idx = copy.indexOf(String(clickedId));
       if (idx > 0) {
@@ -684,7 +684,7 @@ export default function MatchPage() {
                       </div>
                     )}
 
-                    {/* 2. Grid Row of the other 3 matches */}
+                    {/* 2. Grid Row of the other matches */}
                     {rowMatches.length > 0 && (
                       <div className="flex flex-col gap-2">
                         <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
@@ -786,7 +786,7 @@ export default function MatchPage() {
                     <strong className="text-white font-semibold">
                       10:00 AM to 10:30 PM IST
                     </strong>
-                    . Editing locks instantly at match kick-off.
+                    . Editing locks 10 minutes before match kick-off.
                   </div>
                 </li>
               </ul>

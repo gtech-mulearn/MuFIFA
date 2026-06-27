@@ -147,6 +147,7 @@ export default function MatchCard({ match, player, onPredictionSaved, compact, i
   const [oddsError, setOddsError] = useState(false);
   const [showForm, setShowForm] = useState(false);
   const [isTimeWindowOpen, setIsTimeWindowOpen] = useState(false);
+  const [isBeforeTenMins, setIsBeforeTenMins] = useState(true);
 
   useEffect(() => {
     function checkTimeWindow() {
@@ -161,6 +162,20 @@ export default function MatchCard({ match, player, onPredictionSaved, compact, i
     const interval = setInterval(checkTimeWindow, 60000);
     return () => clearInterval(interval);
   }, []);
+
+  useEffect(() => {
+    if (!match?.utcDate) return;
+    const matchTime = new Date(match.utcDate).getTime();
+    const tenMinsBeforeMatch = matchTime - 10 * 60 * 1000;
+    
+    function checkBeforeTenMins() {
+      setIsBeforeTenMins(Date.now() < tenMinsBeforeMatch);
+    }
+    
+    checkBeforeTenMins();
+    const interval = setInterval(checkBeforeTenMins, 10000);
+    return () => clearInterval(interval);
+  }, [match?.utcDate]);
 
   const fetchOdds = useCallback(async () => {
     setOddsLoading(true);
@@ -244,8 +259,8 @@ export default function MatchCard({ match, player, onPredictionSaved, compact, i
   const isScheduled = status === "SCHEDULED" || status === "TIMED";
   const isLive = status === "IN_PLAY" || status === "PAUSED";
   const isFinished = status === "FINISHED";
-  // Predictions only open before kick-off; no editing once the match has started
-  const isPredictionOpen = isScheduled;
+  // Predictions lock 10 minutes before kick-off
+  const isPredictionOpen = isScheduled && isBeforeTenMins;
 
   const homeDisplayName = compact ? (homeTeam?.shortName || homeTeam?.name) : homeTeam?.name;
   const awayDisplayName = compact ? (awayTeam?.shortName || awayTeam?.name) : awayTeam?.name;
@@ -407,6 +422,7 @@ export default function MatchCard({ match, player, onPredictionSaved, compact, i
                   matchId={String(match.id)}
                   homeTeam={homeTeam?.name}
                   awayTeam={awayTeam?.name}
+                  matchUtcDate={utcDate}
                   existingPrediction={oddsData?.myPrediction ?? null}
                   onSave={handlePredictionSaved}
                   onCancel={() => setShowForm(false)}

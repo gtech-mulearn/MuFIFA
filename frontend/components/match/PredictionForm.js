@@ -58,6 +58,7 @@ export default function PredictionForm({
   matchId,
   homeTeam,
   awayTeam,
+  matchUtcDate,
   existingPrediction,
   onSave,
   onCancel,
@@ -108,6 +109,16 @@ export default function PredictionForm({
         setError("Predictions and editing are only allowed between 10:00 AM and 10:30 PM IST.");
         setSubmitting(false);
         return;
+      }
+
+      if (matchUtcDate) {
+        const matchTime = new Date(matchUtcDate).getTime();
+        const tenMinsBeforeMatch = matchTime - 10 * 60 * 1000;
+        if (Date.now() >= tenMinsBeforeMatch) {
+          setError("Predictions close 10 minutes before the match starts.");
+          setSubmitting(false);
+          return;
+        }
       }
 
       const res = await fetch("/api/v1/predictions", {

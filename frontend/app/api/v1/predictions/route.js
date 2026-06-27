@@ -296,6 +296,22 @@ export async function POST(request) {
       );
     }
 
+    const matchTime = new Date(match.utcDate).getTime();
+    const tenMinsBeforeMatch = matchTime - 10 * 60 * 1000;
+    if (Date.now() >= tenMinsBeforeMatch) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: {
+            code: "UNPROCESSABLE_ENTITY",
+            message: "Predictions close 10 minutes before the match starts.",
+            details: null,
+          },
+        },
+        { status: 422 }
+      );
+    }
+
     // g. UPSERT into match_predictions
     // on_conflict tells PostgREST which unique constraint to use for merge-duplicates
     const upsertRes = await fetch(
