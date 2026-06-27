@@ -19,11 +19,23 @@ const getPodiumFlagBg = (teamName) => {
 const getTeamPlayerImage = (teamName) => {
   if (!teamName) return null;
   const name = teamName.toLowerCase();
-  if (name === "brazil" || name === "argentina" || name === "portugal") {
+  if (name === "brazil" || name === "argentina" || name === "portugal" || name === "japan") {
     return `/players/${name}_back.svg`;
   }
   if (name === "germany") {
     return `/players/germany_back.png`;
+  }
+  return null;
+};
+
+const getTeamPlayerFrontImage = (teamName) => {
+  if (!teamName) return null;
+  const name = teamName.toLowerCase();
+  if (name === "brazil" || name === "argentina" || name === "portugal" || name === "japan") {
+    return `/players/${name}_front.svg`;
+  }
+  if (name === "germany") {
+    return `/players/germany_front.png`;
   }
   return null;
 };
@@ -117,14 +129,26 @@ function PodiumCard({
         </div>
       ) : teamPlayerImage ? (
         <div
-          className={`relative flex items-center justify-center group-hover:scale-105 transition-all duration-300 ${isFirst ? "w-16 h-20 sm:w-24 sm:h-28" : "w-14 h-16 sm:w-20 sm:h-24"}`}
+          className={`relative flex items-center justify-center transition-all duration-500 ${getTeamPlayerFrontImage(team) ? "[transform-style:preserve-3d] group-hover:[transform:rotateY(180deg)]" : "group-hover:scale-105 duration-300"} ${isFirst ? "w-16 h-20 sm:w-24 sm:h-28" : "w-14 h-16 sm:w-20 sm:h-24"}`}
         >
-          <Image
-            src={teamPlayerImage}
-            alt={team || "Team logo"}
-            fill
-            className="object-contain drop-shadow-[0_8px_16px_rgba(255,255,255,0.05)]"
-          />
+          <div className="absolute inset-0 [backface-visibility:hidden]">
+            <Image
+              src={teamPlayerImage}
+              alt={team || "Team logo"}
+              fill
+              className="object-contain drop-shadow-[0_8px_16px_rgba(255,255,255,0.05)]"
+            />
+          </div>
+          {getTeamPlayerFrontImage(team) && (
+            <div className="absolute inset-0 [backface-visibility:hidden] [transform:rotateY(180deg)]">
+              <Image
+                src={getTeamPlayerFrontImage(team)}
+                alt={`${team || "Team"} front`}
+                fill
+                className="object-contain drop-shadow-[0_8px_16px_rgba(255,255,255,0.05)]"
+              />
+            </div>
+          )}
         </div>
       ) : (
         <div

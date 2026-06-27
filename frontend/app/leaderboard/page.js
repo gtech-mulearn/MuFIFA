@@ -28,13 +28,31 @@ const SQUAD_PHOTOS = {
   Argentina: "/players/argentina_back.svg",
   Portugal: "/players/portugal_back.svg",
   Germany: "/players/germany_back.png",
+  Japan: "/players/japan_back.svg",
 };
+
+const SQUAD_PHOTOS_FRONT = {
+  Brazil: "/players/brazil_front.svg",
+  Argentina: "/players/argentina_front.svg",
+  Portugal: "/players/portugal_front.svg",
+  Germany: "/players/germany_front.png",
+  Japan: "/players/japan_front.svg",
+};
+
+const HAS_SQUAD_PHOTOS = ["Brazil", "Argentina", "Portugal", "Germany", "Japan"];
 
 const getSquadPhoto = (teamName) => {
   if (SQUAD_PHOTOS[teamName]) return SQUAD_PHOTOS[teamName];
   const formatted = teamName.toLowerCase().replace(/\s+/g, "_");
   if (formatted === "germany") return "/players/germany_front.png";
   return `/players/${formatted}_front.svg`;
+};
+
+const getSquadPhotoFront = (teamName) => {
+  if (HAS_SQUAD_PHOTOS.includes(teamName)) {
+    return SQUAD_PHOTOS_FRONT[teamName];
+  }
+  return null;
 };
 
 const INITIAL_TEAMS = TEAMS.map((team, idx) => ({
@@ -331,13 +349,29 @@ export default function LeaderboardPage() {
                   {/* 2nd Place */}
                   <div className="flex-1 max-w-[110px] sm:max-w-[140px] md:max-w-[180px] flex flex-col items-center text-center group">
                     <div className="relative mb-2 transition-transform duration-300 group-hover:-translate-y-1 w-20 h-20 sm:w-26 sm:h-26 md:w-48 md:h-48">
-                      <Image
-                        src={getSquadPhoto(teamsData[1].name)}
-                        alt={`${teamsData[1].name} jersey`}
-                        fill
-                        className="object-contain drop-shadow-[0_8px_16px_rgba(255,255,255,0.05)]"
-                      />
-                      <span className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-[#94A3B8] border border-white/20 text-black text-[10px] font-black flex items-center justify-center shadow-lg">
+                      <div className={`relative w-full h-full transition-all duration-500 ${getSquadPhotoFront(teamsData[1].name) ? "[transform-style:preserve-3d] group-hover:[transform:rotateY(180deg)]" : ""}`}>
+                        {/* Back Image (default) */}
+                        <div className="absolute inset-0 [backface-visibility:hidden]">
+                          <Image
+                            src={getSquadPhoto(teamsData[1].name)}
+                            alt={`${teamsData[1].name} jersey`}
+                            fill
+                            className="object-contain drop-shadow-[0_8px_16px_rgba(255,255,255,0.05)]"
+                          />
+                        </div>
+                        {/* Front Image (hover) */}
+                        {getSquadPhotoFront(teamsData[1].name) && (
+                          <div className="absolute inset-0 [backface-visibility:hidden] [transform:rotateY(180deg)]">
+                            <Image
+                              src={getSquadPhotoFront(teamsData[1].name)}
+                              alt={`${teamsData[1].name} jersey front`}
+                              fill
+                              className="object-contain drop-shadow-[0_8px_16px_rgba(255,255,255,0.05)]"
+                            />
+                          </div>
+                        )}
+                      </div>
+                      <span className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-[#94A3B8] border border-white/20 text-black text-[10px] font-black flex items-center justify-center shadow-lg z-20">
                         2
                       </span>
                     </div>
@@ -364,13 +398,29 @@ export default function LeaderboardPage() {
                   {/* 1st Place */}
                   <div className="flex-1 max-w-[130px] sm:max-w-[160px] md:max-w-[210px] flex flex-col items-center text-center group z-10">
                     <div className="relative mb-2 transition-transform duration-300 group-hover:-translate-y-1 w-24 h-24 sm:w-32 sm:h-32 md:w-56 md:h-56">
-                      <Image
-                        src={getSquadPhoto(teamsData[0].name)}
-                        alt={`${teamsData[0].name} jersey`}
-                        fill
-                        className="object-contain drop-shadow-[0_10px_20px_rgba(251,191,36,0.15)]"
-                      />
-                      <span className="absolute -top-1 -right-1 w-6 h-6 rounded-full bg-[#FBBF24] border border-white/20 text-black text-[11px] font-black flex items-center justify-center shadow-lg">
+                      <div className={`relative w-full h-full transition-all duration-500 ${getSquadPhotoFront(teamsData[0].name) ? "[transform-style:preserve-3d] group-hover:[transform:rotateY(180deg)]" : ""}`}>
+                        {/* Back Image (default) */}
+                        <div className="absolute inset-0 [backface-visibility:hidden]">
+                          <Image
+                            src={getSquadPhoto(teamsData[0].name)}
+                            alt={`${teamsData[0].name} jersey`}
+                            fill
+                            className="object-contain drop-shadow-[0_10px_20px_rgba(251,191,36,0.15)]"
+                          />
+                        </div>
+                        {/* Front Image (hover) */}
+                        {getSquadPhotoFront(teamsData[0].name) && (
+                          <div className="absolute inset-0 [backface-visibility:hidden] [transform:rotateY(180deg)]">
+                            <Image
+                              src={getSquadPhotoFront(teamsData[0].name)}
+                              alt={`${teamsData[0].name} jersey front`}
+                              fill
+                              className="object-contain drop-shadow-[0_10px_20px_rgba(251,191,36,0.15)]"
+                            />
+                          </div>
+                        )}
+                      </div>
+                      <span className="absolute -top-1 -right-1 w-6 h-6 rounded-full bg-[#FBBF24] border border-white/20 text-black text-[11px] font-black flex items-center justify-center shadow-lg z-20">
                         1
                       </span>
                     </div>
@@ -397,13 +447,29 @@ export default function LeaderboardPage() {
                   {/* 3rd Place */}
                   <div className="flex-1 max-w-[100px] sm:max-w-[130px] md:max-w-[160px] flex flex-col items-center text-center group">
                     <div className="relative mb-2 transition-transform duration-300 group-hover:-translate-y-1 w-18 h-18 sm:w-22 sm:h-22 md:w-40 md:h-40">
-                      <Image
-                        src={getSquadPhoto(teamsData[2].name)}
-                        alt={`${teamsData[2].name} jersey`}
-                        fill
-                        className="object-contain drop-shadow-[0_6px_12px_rgba(217,119,6,0.05)]"
-                      />
-                      <span className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-[#D97706] border border-white/20 text-black text-[10px] font-black flex items-center justify-center shadow-lg">
+                      <div className={`relative w-full h-full transition-all duration-500 ${getSquadPhotoFront(teamsData[2].name) ? "[transform-style:preserve-3d] group-hover:[transform:rotateY(180deg)]" : ""}`}>
+                        {/* Back Image (default) */}
+                        <div className="absolute inset-0 [backface-visibility:hidden]">
+                          <Image
+                            src={getSquadPhoto(teamsData[2].name)}
+                            alt={`${teamsData[2].name} jersey`}
+                            fill
+                            className="object-contain drop-shadow-[0_6px_12px_rgba(217,119,6,0.05)]"
+                          />
+                        </div>
+                        {/* Front Image (hover) */}
+                        {getSquadPhotoFront(teamsData[2].name) && (
+                          <div className="absolute inset-0 [backface-visibility:hidden] [transform:rotateY(180deg)]">
+                            <Image
+                              src={getSquadPhotoFront(teamsData[2].name)}
+                              alt={`${teamsData[2].name} jersey front`}
+                              fill
+                              className="object-contain drop-shadow-[0_6px_12px_rgba(217,119,6,0.05)]"
+                            />
+                          </div>
+                        )}
+                      </div>
+                      <span className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-[#D97706] border border-white/20 text-black text-[10px] font-black flex items-center justify-center shadow-lg z-20">
                         3
                       </span>
                     </div>
