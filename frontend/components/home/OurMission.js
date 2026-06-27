@@ -75,15 +75,15 @@ export default function OurMission() {
       <div className="w-full max-w-7xl mx-auto px-6 md:px-12 relative z-10 grid grid-cols-1 lg:grid-cols-12 gap-10 items-center">
         {/* Left Column: Mission Content */}
         <div className="lg:col-span-5 flex flex-col gap-6 text-left">
-          <h2 className="text-2xl md:text-3xl font-black uppercase tracking-wider text-white">
+          <h2 className="text-2xl md:text-3xl font-black tracking-wider text-white">
             Why μLearn is behind this
           </h2>
           <p className="text-sm text-slate-200 leading-relaxed mb-2 font-medium">
-            Across Kerala, youth potential remains largely unrealized with no clear 
-            direction and no real bridge to industry. μFIFA is how μLearn closes 
-            that gap: a structured path that channels potential the right way, giving 
-            students a domain to grow in and a clear direction toward where that 
-            potential is actually needed.
+            Across Kerala, youth potential remains largely unrealized with no
+            clear direction and no real bridge to industry. μFIFA is how μLearn
+            closes that gap: a structured path that channels potential the right
+            way, giving students a domain to grow in and a clear direction
+            toward where that potential is actually needed.
           </p>
           <Link
             href="/community-guidelines"
