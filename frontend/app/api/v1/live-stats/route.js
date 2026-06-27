@@ -123,12 +123,13 @@ export async function GET(request) {
         squad_points[team] = 0;
         return;
       }
-      const activeCount = pointsArray.filter((pts) => pts > 0).length;
+      const activeCount = pointsArray.filter((pts) => pts > 10).length;
       const median = calculateMedian(pointsArray);
       const score =
         median *
         (activeCount / registeredCount) *
-        Math.log10(activeCount + 1) *
+        Math.pow(activeCount, 0.4) *
+        Math.pow(registeredCount, 0.3) *
         100;
       squad_points[team] = Math.round(score);
     });
