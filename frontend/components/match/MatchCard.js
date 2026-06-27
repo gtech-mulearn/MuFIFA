@@ -141,27 +141,28 @@ function formatMatchDate(utcDate) {
   }
 }
 
+function formatLockDate(utcDate) {
+  if (!utcDate) return "";
+  try {
+    const matchTime = new Date(utcDate).getTime();
+    const lockTime = new Date(matchTime - 10 * 60 * 1000);
+    return new Intl.DateTimeFormat(undefined, {
+      day: "2-digit",
+      month: "short",
+      hour: "2-digit",
+      minute: "2-digit",
+    }).format(lockTime);
+  } catch {
+    return "";
+  }
+}
+
 export default function MatchCard({ match, player, onPredictionSaved, compact, isSelected, onClick }) {
   const [oddsData, setOddsData] = useState(null);
   const [oddsLoading, setOddsLoading] = useState(true);
   const [oddsError, setOddsError] = useState(false);
   const [showForm, setShowForm] = useState(false);
-  const [isTimeWindowOpen, setIsTimeWindowOpen] = useState(false);
   const [isBeforeTenMins, setIsBeforeTenMins] = useState(true);
-
-  useEffect(() => {
-    function checkTimeWindow() {
-      const now = new Date();
-      const istTimeStr = now.toLocaleString("en-US", { timeZone: "Asia/Kolkata" });
-      const istDate = new Date(istTimeStr);
-      const istHour = istDate.getHours();
-      const istMinute = istDate.getMinutes();
-      setIsTimeWindowOpen(istHour >= 10 && (istHour < 22 || (istHour === 22 && istMinute <= 30)));
-    }
-    checkTimeWindow();
-    const interval = setInterval(checkTimeWindow, 60000);
-    return () => clearInterval(interval);
-  }, []);
 
   useEffect(() => {
     if (!match?.utcDate) return;
@@ -327,8 +328,13 @@ export default function MatchCard({ match, player, onPredictionSaved, compact, i
       </div>
 
       {/* Date/time */}
-      <div className="text-[10px] text-slate-400">
-        {formatMatchDate(utcDate)}
+      <div className="flex flex-wrap items-center justify-between gap-2 text-[10px] text-slate-400">
+        <span>{formatMatchDate(utcDate)}</span>
+        {isPredictionOpen && (
+          <span className="text-amber-500 font-semibold uppercase tracking-wider shrink-0 bg-amber-500/5 px-2 py-0.5 rounded border border-amber-500/10">
+            Locks: {formatLockDate(utcDate)}
+          </span>
+        )}
       </div>
 
       {/* Divider */}
@@ -369,53 +375,36 @@ export default function MatchCard({ match, player, onPredictionSaved, compact, i
                         <span className="text-[9px] text-slate-400 bg-slate-700/30 border border-slate-600/30 px-2 py-1 rounded">
                           Your pick: {oddsData.myPrediction.predicted_home_goals} – {oddsData.myPrediction.predicted_away_goals}
                         </span>
-                        {isTimeWindowOpen ? (
-                          Number(player?.mu_points || 0) < 0 ? (
-                            <span className="text-[9px] text-red-400 font-semibold italic bg-red-500/10 border border-red-500/20 px-2 py-1 rounded">
-                              Editing locked (negative points)
-                            </span>
-                          ) : (
-                            <button
-                              onClick={() => setShowForm(true)}
-                              className="cursor-pointer bg-slate-800 hover:bg-slate-700 border border-slate-600/50 text-white text-[9px] font-bold px-2.5 py-1 rounded transition-colors"
-                            >
-                              Edit
-                            </button>
-                          )
-                        ) : (
-                          <span className="text-[9px] text-slate-500 italic">
-                            (Editing locked)
+                        {Number(player?.mu_points || 0) < 0 ? (
+                          <span className="text-[9px] text-red-400 font-semibold italic bg-red-500/10 border border-red-500/20 px-2 py-1 rounded">
+                            Editing locked (negative points)
                           </span>
+                        ) : (
+                          <button
+                            onClick={() => setShowForm(true)}
+                            className="cursor-pointer bg-slate-800 hover:bg-slate-700 border border-slate-600/50 text-white text-[9px] font-bold px-2.5 py-1 rounded transition-colors"
+                          >
+                            Edit
+                          </button>
                         )}
                       </>
                     ) : (
                       <>
-                        {isTimeWindowOpen ? (
-                          Number(player?.mu_points || 0) < 0 ? (
-                            <span className="text-[10px] text-red-400 font-semibold italic bg-red-500/10 border border-red-500/20 px-2.5 py-1.5 rounded-xl">
-                              Predictions locked (insufficient points)
-                            </span>
-                          ) : (
-                            <button
-                              onClick={() => setShowForm(true)}
-                              className="cursor-pointer bg-[#4F46E5] hover:bg-[#4338CA] text-white text-xs font-bold px-4 py-2 rounded-xl transition-colors"
-                            >
-                              Predict
-                            </button>
-                          )
-                        ) : (
-                          <span className="text-[10px] text-slate-500 font-medium italic">
-                            Predictions closed for today
+                        {Number(player?.mu_points || 0) < 0 ? (
+                          <span className="text-[10px] text-red-400 font-semibold italic bg-red-500/10 border border-red-500/20 px-2.5 py-1.5 rounded-xl">
+                            Predictions locked (insufficient points)
                           </span>
+                        ) : (
+                          <button
+                            onClick={() => setShowForm(true)}
+                            className="cursor-pointer bg-[#4F46E5] hover:bg-[#4338CA] text-white text-xs font-bold px-4 py-2 rounded-xl transition-colors"
+                          >
+                            Predict
+                          </button>
                         )}
                       </>
                     )}
                   </div>
-                  {!isTimeWindowOpen && (
-                    <span className="text-[9px] text-slate-500 font-mono">
-                      Open 10:00 AM – 10:30 PM IST only.
-                    </span>
-                  )}
                 </div>
               ) : (
                 <PredictionForm
@@ -435,7 +424,7 @@ export default function MatchCard({ match, player, onPredictionSaved, compact, i
           {player !== null && !isPredictionOpen && (
             <div className="flex items-center gap-2 flex-wrap">
               <span className="bg-slate-700/30 border border-slate-600/30 text-slate-500 text-[9px] font-bold uppercase px-2 py-1 rounded">
-                {isFinished ? "Match ended" : "Match started"}
+                {isFinished ? "Match ended" : isLive ? "Match started" : "Predictions locked"}
               </span>
               {oddsData?.myPrediction && (
                 <div className="flex items-center gap-1.5 flex-wrap">
@@ -466,14 +455,9 @@ export default function MatchCard({ match, player, onPredictionSaved, compact, i
           <span>Predicted: {oddsData.myPrediction.predicted_home_goals} – {oddsData.myPrediction.predicted_away_goals}</span>
         </div>
       )}
-      {compact && !oddsData?.myPrediction && isPredictionOpen && isTimeWindowOpen && (
+      {compact && !oddsData?.myPrediction && isPredictionOpen && (
         <div className="text-[9px] text-slate-400 font-semibold flex items-center gap-1 mt-0.5 justify-center bg-white/5 border border-dashed border-white/10 py-1.5 rounded-xl group-hover:border-[#4F46E5]/40 transition-colors">
           <span>Click to Predict</span>
-        </div>
-      )}
-      {compact && !oddsData?.myPrediction && isPredictionOpen && !isTimeWindowOpen && (
-        <div className="text-[9px] text-slate-500 font-medium flex items-center gap-1 mt-0.5 justify-center bg-white/[0.02] border border-white/5 py-1.5 rounded-xl">
-          <span>Predict at 10:00 AM</span>
         </div>
       )}
       {compact && !isPredictionOpen && (

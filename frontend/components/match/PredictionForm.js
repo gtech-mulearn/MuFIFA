@@ -96,20 +96,7 @@ export default function PredictionForm({
     setSubmitting(true);
 
     try {
-      // Time-window check: Predictions are only allowed between 10:00 AM and 10:30 PM IST
-      const now = new Date();
-      const istTimeStr = now.toLocaleString("en-US", { timeZone: "Asia/Kolkata" });
-      const istDate = new Date(istTimeStr);
-      const istHour = istDate.getHours();
-      const istMinute = istDate.getMinutes();
 
-      const isOpen = (istHour >= 10 && (istHour < 22 || (istHour === 22 && istMinute <= 30)));
-
-      if (!isOpen) {
-        setError("Predictions and editing are only allowed between 10:00 AM and 10:30 PM IST.");
-        setSubmitting(false);
-        return;
-      }
 
       if (matchUtcDate) {
         const matchTime = new Date(matchUtcDate).getTime();

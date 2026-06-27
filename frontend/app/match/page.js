@@ -782,11 +782,11 @@ export default function MatchPage() {
                     <strong className="text-white block font-semibold mb-0.5">
                       Predictions Timeline
                     </strong>
-                    Predictions open daily from{" "}
+                    Predictions can be made or edited anytime up to{" "}
                     <strong className="text-white font-semibold">
-                      10:00 AM to 10:30 PM IST
-                    </strong>
-                    . Editing locks 10 minutes before match kick-off.
+                      10 minutes before kick-off
+                    </strong>{" "}
+                    for each match.
                   </div>
                 </li>
               </ul>
