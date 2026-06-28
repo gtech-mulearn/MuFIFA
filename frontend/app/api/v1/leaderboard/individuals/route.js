@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { fetchAllSupabase } from "@/utils/supabase";
 
 // ---------------------------------------------------------------------------
 // In-memory caches (module-scoped, persist across requests in the same process)
@@ -26,22 +27,17 @@ async function getRankMap(supabaseUrl, supabaseKey) {
 
   const rankMap = new Map();
   try {
-    const allPlayersRes = await fetch(
-      `${supabaseUrl}/rest/v1/registrations?select=id,mu_points,name&order=mu_points.desc,name.asc`,
+    const allPlayers = await fetchAllSupabase(
+      `${supabaseUrl}/rest/v1/registrations?select=id,mu_points,name,team&order=mu_points.desc,name.asc`,
       {
-        method: "GET",
-        headers: {
-          apikey: supabaseKey,
-          Authorization: `Bearer ${supabaseKey}`,
-        },
-      },
+        apikey: supabaseKey,
+        Authorization: `Bearer ${supabaseKey}`,
+      }
     );
-    if (allPlayersRes.ok) {
-      const allPlayers = await allPlayersRes.json();
-      allPlayers.forEach((p, idx) => {
-        rankMap.set(p.id, idx + 1);
-      });
-    }
+    const allPlayersFiltered = allPlayers.filter(p => p.team !== 'Test');
+    allPlayersFiltered.forEach((p, idx) => {
+      rankMap.set(p.id, idx + 1);
+    });
   } catch (err) {
     console.error("Failed to build rank map:", err);
     // Return stale cache if available
@@ -138,6 +134,8 @@ export async function GET(request) {
 
     if (team && team !== "All") {
       queryUrl += `&team=eq.${encodeURIComponent(team)}`;
+    } else {
+      queryUrl += `&team=neq.Test`;
     }
 
     // Fetch paginated players and rank map in parallel

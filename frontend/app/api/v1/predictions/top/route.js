@@ -45,7 +45,7 @@ export async function GET(request) {
     // Refresh cache if expired or empty
     if (!cache.data || now > cache.expiresAt) {
       // 1. Fetch all registrations and predictions concurrently (with 5-minute Next.js caching)
-      const [registrations, predictions] = await Promise.all([
+      const [allRegistrations, allPredictions] = await Promise.all([
         fetchAllSupabase(
           `${supabaseUrl}/rest/v1/registrations?select=user_id,name,team,avatar_url,domain`,
           supabaseHeaders,
@@ -58,13 +58,15 @@ export async function GET(request) {
         ),
       ]);
 
-
+      const registrations = allRegistrations.filter(r => r.team !== "Test");
       const usersMap = {};
       registrations.forEach((r) => {
         if (r.user_id) {
           usersMap[r.user_id] = r;
         }
       });
+
+      const predictions = allPredictions.filter(p => p.user_id && usersMap[p.user_id]);
 
       // 3. Aggregate predictions by user
       const statsMap = {};

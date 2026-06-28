@@ -379,6 +379,12 @@ export default function TasksPage() {
           verification: dbTask.verification || null,
           guidelines: dbTask.guidelines || null,
           sub_levels: dbTask.sub_levels || [],
+          visibility: dbTask.visibility || "preview",
+          xp_creativity: dbTask.xp_creativity || 0,
+          xp_branding: dbTask.xp_branding || 0,
+          xp_innovation: dbTask.xp_innovation || 0,
+          xp_teamwork: dbTask.xp_teamwork || 0,
+          xp_execution: dbTask.xp_execution || 0,
         };
       })
       .sort((a, b) => a.id - b.id);
@@ -389,14 +395,12 @@ export default function TasksPage() {
     const title = (task.title || "").toLowerCase();
     const desc = (task.shortDesc || task.description || "").toLowerCase();
     
-    if (title.includes("uiux") || title.includes("ui/ux") || title.includes("ui") || title.includes("ux") || title.includes("design") || desc.includes("design") || desc.includes("ui/ux") || desc.includes("uiux")) return "UIUX";
-    if (title.includes("cyber") || title.includes("security") || title.includes("kuzhi") || title.includes("pothole")) return "Cyber";
-    if (title.includes("web") || title.includes("website") || title.includes("frontend") || title.includes("backend") || title.includes("nextjs") || title.includes("api") || desc.includes("web")) return "Web";
     if (title.includes("social") || title.includes("discord") || title.includes("referral") || title.includes("invite") || title.includes("git") || title.includes("profile")) return "Social";
-    if (title.includes("iot") || title.includes("hardware") || title.includes("sensor")) return "IoT";
-    if (title.includes("dsa") || title.includes("leetcode") || title.includes("algorithm") || title.includes("data structure") || title.includes("codeforces") || title.includes("coding")) return "DSA";
+    if (title.includes("dsa") || title.includes("leetcode") || title.includes("algorithm") || title.includes("data structure") || title.includes("codeforces") || title.includes("coding") || title.includes("web") || title.includes("website") || title.includes("frontend") || title.includes("backend") || title.includes("nextjs") || title.includes("api") || desc.includes("web")) return "Coder";
+    if (title.includes("uiux") || title.includes("ui/ux") || title.includes("ui") || title.includes("ux") || title.includes("design") || desc.includes("design") || desc.includes("ui/ux") || desc.includes("uiux")) return "Creative";
+    if (title.includes("iot") || title.includes("hardware") || title.includes("sensor") || title.includes("maker") || desc.includes("hardware")) return "Maker";
     
-    return "Other";
+    return "Strategist";
   };
 
   const filteredTasks = mergedTasks;
@@ -454,7 +458,7 @@ export default function TasksPage() {
 
             {/* Category Filter Tabs Selector */}
             <div className="w-full sm:w-auto flex flex-wrap gap-2 sm:gap-3 bg-white/5 border border-white/5 p-1 rounded-xl">
-              {["All", "UIUX", "Cyber", "Web", "Other", "Social", "IoT", "DSA"].map((cat) => (
+              {["All", "Coder", "Social", "Creative", "Maker", "Strategist"].map((cat) => (
                 <button
                   key={cat}
                   onClick={() => handleCategoryChange(cat)}

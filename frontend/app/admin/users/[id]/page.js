@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useAdmin, TEAM_FLAGS, THEME } from "../../layout";
 
-const DOMAINS = ["Maker", "Creative", "Coder", "Strategist"];
+const DOMAINS = ["Coder", "Social", "Creative", "Maker", "Strategist"];
 const TEAMS = Object.keys(TEAM_FLAGS);
 
 function TeamBadge({ team }) {

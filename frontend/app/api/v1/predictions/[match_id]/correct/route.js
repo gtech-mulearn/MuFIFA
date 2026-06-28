@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { fetchAllSupabase, fetchInSupabase } from "@/utils/supabase";
 
 export async function GET(request, { params }) {
   try {
@@ -102,20 +103,11 @@ export async function GET(request, { params }) {
     else if (actualAway > actualHome) actualOutcome = "away_win";
 
     // 2. Fetch all predictions for this match
-    const predictionsRes = await fetch(
-      `${supabaseUrl}/rest/v1/match_predictions?match_id=eq.${matchId}&select=user_id,predicted_outcome,predicted_home_goals,predicted_away_goals&limit=5000`,
-      {
-        method: "GET",
-        headers: supabaseHeaders,
-        next: { revalidate: 0 },
-      }
+    const predictions = await fetchAllSupabase(
+      `${supabaseUrl}/rest/v1/match_predictions?match_id=eq.${matchId}&select=user_id,predicted_outcome,predicted_home_goals,predicted_away_goals`,
+      supabaseHeaders,
+      { fetchOptions: { next: { revalidate: 0 } } }
     );
-
-    if (!predictionsRes.ok) {
-      throw new Error(`Supabase predictions fetch failed: ${await predictionsRes.text()}`);
-    }
-
-    const predictions = await predictionsRes.json();
 
     const correctPredictorsRaw = [];
     for (const p of predictions) {
@@ -139,19 +131,16 @@ export async function GET(request, { params }) {
     // 3. Enrich with user registration profiles (name, team)
     let correctPredictors = [];
     const userIds = [...new Set(correctPredictorsRaw.map((p) => p.user_id).filter(Boolean))];
-    
-    if (userIds.length > 0) {
-      const formattedIds = userIds.map(id => `"${id.replace(/"/g, '\\"')}"`).join(",");
-      const userRes = await fetch(
-        `${supabaseUrl}/rest/v1/registrations?user_id=in.(${encodeURIComponent(formattedIds)})&select=user_id,name,team`,
-        {
-          headers: supabaseHeaders,
-          next: { revalidate: 0 },
-        }
-      );
 
-      if (userRes.ok) {
-        const users = await userRes.json();
+    if (userIds.length > 0) {
+      try {
+        const users = await fetchInSupabase(
+          `${supabaseUrl}/rest/v1/registrations`,
+          "user_id",
+          userIds,
+          supabaseHeaders,
+          "user_id,name,team"
+        );
         const usersMap = {};
         users.forEach((u) => {
           usersMap[u.user_id] = u;
@@ -165,8 +154,8 @@ export async function GET(request, { params }) {
             team: u?.team || null,
           };
         });
-      } else {
-        console.error("Failed to fetch registrations for correct predictors:", await userRes.text());
+      } catch (err) {
+        console.error("Failed to fetch registrations for correct predictors:", err);
         correctPredictors = correctPredictorsRaw.map((p) => ({
           ...p,
           name: "Unknown Player",
@@ -174,6 +163,7 @@ export async function GET(request, { params }) {
         }));
       }
     }
+
 
     // 4. Sort: Exact Score (+25) first, then Correct Outcome (+2), then alphabetical by player name
     correctPredictors.sort((a, b) => {

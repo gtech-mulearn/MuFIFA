@@ -666,7 +666,7 @@ export default function AdminCreateTaskPage() {
                         onClick={() => setCategoryDropdownOpen(false)}
                       />
                       <div className="absolute top-[105%] left-0 right-0 bg-white border border-slate-200 rounded-xl shadow-xl p-3 z-20 flex flex-col gap-2 max-h-60 overflow-y-auto">
-                        {["UIUX", "Cyber", "Web", "Social", "IoT", "DSA", "Other"].map((cat) => {
+                        {["Coder", "Social", "Creative", "Maker", "Strategist"].map((cat) => {
                           const selected = !taskForm.category ? [] : taskForm.category.split(",").map(c => c.trim()).filter(Boolean);
                           const isSelected = selected.includes(cat);
                           return (
@@ -721,9 +721,10 @@ export default function AdminCreateTaskPage() {
                   >
                     <option value="preview">Preview / Under Review (Hidden from Users)</option>
                     <option value="public">Public / Approved (Visible to Users)</option>
+                    <option value="disabled">Disabled / Deadline Over (Visible but Unactionable)</option>
                   </select>
                   <p className="text-[9px] text-slate-400 italic pl-1">
-                    Select &quot;Public&quot; to make this challenge live for all users, or &quot;Preview&quot; to keep it visible only under the Admin preview route.
+                    Select &quot;Public&quot; to make this challenge live for all users, &quot;Preview&quot; to keep it hidden, or &quot;Disabled&quot; to mark it as deadline over.
                   </p>
                 </div>
               </div>
@@ -1176,6 +1177,8 @@ export default function AdminCreateTaskPage() {
                             {task.compulsory && <span className="bg-rose-100 text-rose-700 text-[8px] font-bold px-1.5 py-0.5 rounded uppercase w-max">Compulsory</span>}
                             {task.visibility === "public" ? (
                               <span className="bg-emerald-100 text-emerald-700 text-[8px] font-bold px-1.5 py-0.5 rounded uppercase w-max">Public</span>
+                            ) : task.visibility === "disabled" ? (
+                              <span className="bg-rose-100 text-rose-700 text-[8px] font-bold px-1.5 py-0.5 rounded uppercase w-max">Disabled</span>
                             ) : (
                               <span className="bg-amber-100 text-amber-700 text-[8px] font-bold px-1.5 py-0.5 rounded uppercase w-max">Preview</span>
                             )}

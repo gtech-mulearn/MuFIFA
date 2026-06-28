@@ -52,3 +52,44 @@ export async function fetchAllSupabase(baseUrl, headers, opts = {}) {
 
   return allRows;
 }
+
+/**
+ * Fetch rows from Supabase where a field is `in` a set of values, batching the requests
+ * to avoid URL length limitations and the server-side row limit.
+ *
+ * @param {string} baseUrl       – The full Supabase REST URL without query params.
+ * @param {string} field         – The field to filter on (e.g. `user_id`).
+ * @param {Array} values         – The array of values to query.
+ * @param {object} headers       – Request headers.
+ * @param {string} selectFields  – Selection string (default is `*`).
+ * @returns {Promise<Array>}     – The complete list of matched rows.
+ */
+export async function fetchInSupabase(baseUrl, field, values, headers, selectFields = "*") {
+  if (!values || values.length === 0) return [];
+
+  const batchSize = 100; // safe batch size to avoid URL length issues
+  const separator = baseUrl.includes("?") ? "&" : "?";
+  let allRows = [];
+
+  for (let i = 0; i < values.length; i += batchSize) {
+    const batch = values.slice(i, i + batchSize);
+    const formattedValues = batch.map((val) => `"${String(val).replace(/"/g, '\\"')}"`).join(",");
+    const url = `${baseUrl}${separator}${field}=in.(${encodeURIComponent(formattedValues)})&select=${selectFields}`;
+
+    const res = await fetch(url, {
+      method: "GET",
+      headers,
+    });
+
+    if (!res.ok) {
+      const errText = await res.text();
+      throw new Error(`Supabase fetchIn failed (${res.status}): ${errText}`);
+    }
+
+    const rows = await res.json();
+    allRows = allRows.concat(rows);
+  }
+
+  return allRows;
+}
+

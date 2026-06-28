@@ -23,11 +23,11 @@ function buildPlayerTokenCookie(token) {
 function jsonError(status, code, message, details = null) {
   return NextResponse.json(
     { success: false, error: { code, message, details } },
-    { status }
+    { status },
   );
 }
 
-const DOMAINS = ["Maker", "Creative", "Coder", "Strategist"];
+const DOMAINS = ["Coder", "Creative", "Maker", "Strategist"];
 const TEAMS = [
   "Brazil",
   "Argentina",
@@ -57,12 +57,20 @@ const RegisterSchema = z.object({
   phone: z
     .string({ required_error: "Phone number is required" })
     .trim()
-    .regex(/^(?:\+91|91|0)?[6-9]\d{9}$/, "Please enter a valid 10-digit Indian phone number"),
+    .regex(
+      /^(?:\+91|91|0)?[6-9]\d{9}$/,
+      "Please enter a valid 10-digit Indian phone number",
+    ),
   domain: z.enum(DOMAINS, {
-    errorMap: () => ({ message: "Invalid domain selected. Must be Maker, Creative, Coder, or Strategist." }),
+    errorMap: () => ({
+      message:
+        "Invalid domain selected. Must be Maker, Creative, Coder, or Strategist.",
+    }),
   }),
   team: z.enum(TEAMS, {
-    errorMap: () => ({ message: "Invalid team selected. Must be a valid FIFA country team." }),
+    errorMap: () => ({
+      message: "Invalid team selected. Must be a valid FIFA country team.",
+    }),
   }),
   referralId: z.string().trim().optional(),
 });
@@ -103,20 +111,36 @@ export async function POST(request) {
           fieldErrors[path].push(err.message);
         });
 
-        return jsonError(400, "VALIDATION_ERROR", "Request parameters failed validation.", fieldErrors);
+        return jsonError(
+          400,
+          "VALIDATION_ERROR",
+          "Request parameters failed validation.",
+          fieldErrors,
+        );
       }
 
-      const { name, email, phone, domain, team, referralId } = validationResult.data;
+      const { name, email, phone, domain, team, referralId } =
+        validationResult.data;
       const userId = email.split("@")[0];
 
       if (action === "resend_otp") {
         const existingSession = await getOtpSession(email);
         if (!existingSession) {
-          return jsonError(400, "SESSION_EXPIRED", "OTP session has expired or does not exist. Please request a new OTP.");
+          return jsonError(
+            400,
+            "SESSION_EXPIRED",
+            "OTP session has expired or does not exist. Please request a new OTP.",
+          );
         }
         if (Date.now() < existingSession.resendAvailableAt) {
-          const secondsLeft = Math.ceil((existingSession.resendAvailableAt - Date.now()) / 1000);
-          return jsonError(429, "TOO_MANY_REQUESTS", `Please wait ${secondsLeft} seconds before requesting a new OTP.`);
+          const secondsLeft = Math.ceil(
+            (existingSession.resendAvailableAt - Date.now()) / 1000,
+          );
+          return jsonError(
+            429,
+            "TOO_MANY_REQUESTS",
+            `Please wait ${secondsLeft} seconds before requesting a new OTP.`,
+          );
         }
       }
 
@@ -129,40 +153,66 @@ export async function POST(request) {
       const emailQuery = `${supabaseUrl}/rest/v1/registrations?email=eq.${encodeURIComponent(email)}&select=id`;
       const emailRes = await fetch(emailQuery, { method: "GET", headers });
       if (!emailRes.ok) {
-        throw new Error(`Supabase duplicate check failed: ${await emailRes.text()}`);
+        throw new Error(
+          `Supabase duplicate check failed: ${await emailRes.text()}`,
+        );
       }
       const emailRows = await emailRes.json();
       if (emailRows && emailRows.length > 0) {
-        return jsonError(409, "CONFLICT_ERROR", "This email address has already been registered.");
+        return jsonError(
+          409,
+          "CONFLICT_ERROR",
+          "This email address has already been registered.",
+        );
       }
 
       // Check if user ID derived from the email prefix is already taken.
       const userQuery = `${supabaseUrl}/rest/v1/registrations?user_id=eq.${encodeURIComponent(userId)}&select=id`;
       const userRes = await fetch(userQuery, { method: "GET", headers });
       if (!userRes.ok) {
-        throw new Error(`Supabase duplicate check failed: ${await userRes.text()}`);
+        throw new Error(
+          `Supabase duplicate check failed: ${await userRes.text()}`,
+        );
       }
       const userRows = await userRes.json();
       if (userRows && userRows.length > 0) {
-        return jsonError(409, "CONFLICT_ERROR", "This email address or user ID has already been registered.");
+        return jsonError(
+          409,
+          "CONFLICT_ERROR",
+          "This email address or user ID has already been registered.",
+        );
       }
 
       // Check if this phone number is already registered.
       const phoneQuery = `${supabaseUrl}/rest/v1/registrations?phone=eq.${encodeURIComponent(phone)}&select=id`;
       const phoneRes = await fetch(phoneQuery, { method: "GET", headers });
       if (!phoneRes.ok) {
-        throw new Error(`Supabase duplicate check failed: ${await phoneRes.text()}`);
+        throw new Error(
+          `Supabase duplicate check failed: ${await phoneRes.text()}`,
+        );
       }
       const phoneRows = await phoneRes.json();
       if (phoneRows && phoneRows.length > 0) {
-        return jsonError(409, "CONFLICT_ERROR", "This phone number has already been registered.");
+        return jsonError(
+          409,
+          "CONFLICT_ERROR",
+          "This phone number has already been registered.",
+        );
       }
       const otp = crypto.randomInt(100000, 1000000).toString();
-      const session = await createOtpSession(email, { name, email, phone, domain, team, referralId }, otp);
+      const session = await createOtpSession(
+        email,
+        { name, email, phone, domain, team, referralId },
+        otp,
+      );
 
       const mailSent = await sendRegistrationOtpEmail({ email, name, otp });
       if (!mailSent) {
-        return jsonError(500, "EMAIL_SEND_FAILED", "Failed to send verification email. Please try again.");
+        return jsonError(
+          500,
+          "EMAIL_SEND_FAILED",
+          "Failed to send verification email. Please try again.",
+        );
       }
 
       return NextResponse.json({
@@ -172,7 +222,10 @@ export async function POST(request) {
           email: email,
           resendAvailableAt: session.resendAvailableAt,
           expiresAt: session.expiresAt,
-          resendAvailableInMs: Math.max(session.resendAvailableAt - Date.now(), 0),
+          resendAvailableInMs: Math.max(
+            session.resendAvailableAt - Date.now(),
+            0,
+          ),
           expiresInMs: Math.max(session.expiresAt - Date.now(), 0),
         },
       });
@@ -182,10 +235,17 @@ export async function POST(request) {
     if (action === "cancel_otp") {
       const { email } = body;
       if (!email) {
-        return jsonError(400, "BAD_REQUEST", "Email is required for cancellation.");
+        return jsonError(
+          400,
+          "BAD_REQUEST",
+          "Email is required for cancellation.",
+        );
       }
       await clearOtpSession(email);
-      return NextResponse.json({ success: true, message: "OTP session cancelled." });
+      return NextResponse.json({
+        success: true,
+        message: "OTP session cancelled.",
+      });
     }
 
     // Validate the OTP, write player data, and issue session cookies.
@@ -197,7 +257,11 @@ export async function POST(request) {
 
       const session = await getOtpSession(email);
       if (!session) {
-        return jsonError(400, "EXPIRED_OR_NOT_FOUND", "OTP session has expired or does not exist.");
+        return jsonError(
+          400,
+          "EXPIRED_OR_NOT_FOUND",
+          "OTP session has expired or does not exist.",
+        );
       }
 
       if (session.otp !== otp) {
@@ -212,18 +276,34 @@ export async function POST(request) {
 
         if (maxAttemptsReached) {
           await clearOtpSession(email);
-          return jsonError(400, "MAX_ATTEMPTS_REACHED", "Too many failed attempts. Please request a new OTP.");
+          return jsonError(
+            400,
+            "MAX_ATTEMPTS_REACHED",
+            "Too many failed attempts. Please request a new OTP.",
+          );
         }
 
         const remaining = OTP_MAX_ATTEMPTS - (updated ? updated.attempts : 0);
-        return jsonError(400, "INVALID_OTP", `Invalid OTP. ${remaining} attempts remaining.`);
+        return jsonError(
+          400,
+          "INVALID_OTP",
+          `Invalid OTP. ${remaining} attempts remaining.`,
+        );
       }
 
-      const { name, email: sessionEmail, phone, domain, team, referralId } = session.payload;
+      const {
+        name,
+        email: sessionEmail,
+        phone,
+        domain,
+        team,
+        referralId,
+      } = session.payload;
       const userId = sessionEmail.split("@")[0];
 
       // Generate random 8-character password using crypto-safe randomness
-      const chars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+      const chars =
+        "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
       const randomBuf = crypto.randomBytes(8);
       let plainPassword = "";
       for (let i = 0; i < 8; i++) {
@@ -284,15 +364,21 @@ export async function POST(request) {
         console.error("Database registration failed response:", errText);
         try {
           const errObj = JSON.parse(errText);
-          if (errObj.code === "23505" || errText.includes("duplicate") || errText.includes("unique")) {
-            let conflictMsg = "This email address, user ID, or phone number has already been registered.";
+          if (
+            errObj.code === "23505" ||
+            errText.includes("duplicate") ||
+            errText.includes("unique")
+          ) {
+            let conflictMsg =
+              "This email address, user ID, or phone number has already been registered.";
             const errMsg = errObj.message || errText;
             if (errMsg.includes("phone")) {
               conflictMsg = "This phone number has already been registered.";
             } else if (errMsg.includes("email")) {
               conflictMsg = "This email address has already been registered.";
             } else if (errMsg.includes("user_id")) {
-              conflictMsg = "This user ID/email prefix has already been registered.";
+              conflictMsg =
+                "This user ID/email prefix has already been registered.";
             }
             return jsonError(409, "CONFLICT_ERROR", conflictMsg);
           }
@@ -304,7 +390,7 @@ export async function POST(request) {
 
       const dbData = await dbRes.json();
       const player = dbData[0];
-      
+
       // Pass the generated plain-text password to the email template
       player.plainPassword = plainPassword;
 
@@ -364,9 +450,14 @@ export async function POST(request) {
             await adjustSquadPoints(supabaseUrl, supabaseKey, referrer.team, 5);
           }
 
-          console.log(`Referral bonus awarded: +5 μPoints to ${referrer.user_id}, referal count now ${newReferalCount}`);
+          console.log(
+            `Referral bonus awarded: +5 μPoints to ${referrer.user_id}, referal count now ${newReferalCount}`,
+          );
         } catch (referralErr) {
-          console.error("Referral bonus award failed (non-fatal):", referralErr);
+          console.error(
+            "Referral bonus award failed (non-fatal):",
+            referralErr,
+          );
         }
       }
 
@@ -382,13 +473,22 @@ export async function POST(request) {
       });
 
       // Strip sensitive fields before sending to client
-      const { password_hash: _ph, plainPassword: _pp, phone: _phn, referred_by: _rb, ...safePlayer } = player;
+      const {
+        password_hash: _ph,
+        plainPassword: _pp,
+        phone: _phn,
+        referred_by: _rb,
+        ...safePlayer
+      } = player;
 
-      const response = NextResponse.json({
-        success: true,
-        message: "Registration completed successfully.",
-        data: safePlayer,
-      }, { status: 201 });
+      const response = NextResponse.json(
+        {
+          success: true,
+          message: "Registration completed successfully.",
+          data: safePlayer,
+        },
+        { status: 201 },
+      );
 
       response.headers.set("Set-Cookie", buildPlayerTokenCookie(token));
       return response;
@@ -397,7 +497,11 @@ export async function POST(request) {
     return jsonError(400, "BAD_REQUEST", `Unsupported action: ${action}`);
   } catch (error) {
     console.error("[Register API] Error:", error);
-    return jsonError(500, "INTERNAL_SERVER_ERROR", "An unexpected error occurred.");
+    return jsonError(
+      500,
+      "INTERNAL_SERVER_ERROR",
+      "An unexpected error occurred.",
+    );
   }
 }
 
@@ -410,10 +514,13 @@ export async function GET(request) {
 
     const session = await getOtpSession(email);
     if (!session) {
-      return NextResponse.json({
-        success: false,
-        message: "No active OTP session found.",
-      }, { status: 404 });
+      return NextResponse.json(
+        {
+          success: false,
+          message: "No active OTP session found.",
+        },
+        { status: 404 },
+      );
     }
 
     return NextResponse.json({
@@ -422,13 +529,20 @@ export async function GET(request) {
         email: session.payload.email,
         resendAvailableAt: session.resendAvailableAt,
         expiresAt: session.expiresAt,
-        resendAvailableInMs: Math.max(session.resendAvailableAt - Date.now(), 0),
+        resendAvailableInMs: Math.max(
+          session.resendAvailableAt - Date.now(),
+          0,
+        ),
         expiresInMs: Math.max(session.expiresAt - Date.now(), 0),
         attempts: session.attempts,
       },
     });
   } catch (error) {
     console.error("[Register GET] Error:", error);
-    return jsonError(500, "INTERNAL_SERVER_ERROR", "An unexpected error occurred.");
+    return jsonError(
+      500,
+      "INTERNAL_SERVER_ERROR",
+      "An unexpected error occurred.",
+    );
   }
 }

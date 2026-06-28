@@ -55,6 +55,8 @@ export async function GET(request) {
     }
     if (team) {
       filterParts.push(`team=eq.${encodeURIComponent(team)}`);
+    } else {
+      filterParts.push(`team=neq.Test`);
     }
     if (domain) {
       filterParts.push(`domain=eq.${encodeURIComponent(domain)}`);

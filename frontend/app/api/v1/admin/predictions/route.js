@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { requireRole } from "@/utils/auth";
 import { adjustSquadPoints } from "@/utils/squad";
+import { fetchAllSupabase, fetchInSupabase } from "@/utils/supabase";
 
 export async function GET(request) {
   try {
@@ -83,26 +84,20 @@ export async function GET(request) {
     const total = totalMatch ? parseInt(totalMatch[1], 10) : 0;
 
     const hasMore = offset + predictions.length < total;
-
     // In-memory join: Fetch user profile info (name, email, team) from registrations
     let enrichedPredictions = predictions;
     const userIds = [
       ...new Set(predictions.map((p) => p.user_id).filter(Boolean)),
     ];
     if (userIds.length > 0) {
-      const formattedIds = userIds
-        .map((id) => `"${id.replace(/"/g, '\\"')}"`)
-        .join(",");
-      const userRes = await fetch(
-        `${supabaseUrl}/rest/v1/registrations?user_id=in.(${encodeURIComponent(formattedIds)})&select=id,user_id,name,email,team,mu_points`,
-        {
-          headers: supabaseHeaders,
-          next: { revalidate: 0 },
-        },
-      );
-
-      if (userRes.ok) {
-        const users = await userRes.json();
+      try {
+        const users = await fetchInSupabase(
+          `${supabaseUrl}/rest/v1/registrations`,
+          "user_id",
+          userIds,
+          supabaseHeaders,
+          "id,user_id,name,email,team,mu_points"
+        );
         const usersMap = {};
         users.forEach((u) => {
           usersMap[u.user_id] = u;
@@ -119,11 +114,8 @@ export async function GET(request) {
             mu_points: 0,
           },
         }));
-      } else {
-        console.error(
-          "Failed to fetch registrations for predictions:",
-          await userRes.text(),
-        );
+      } catch (err) {
+        console.error("Failed to fetch registrations for predictions:", err);
       }
     }
 
@@ -336,19 +328,11 @@ export async function POST(request) {
     else if (actualAway > actualHome) actualOutcome = "away_win";
 
     // 3. Fetch ALL predictions for this match (select user_id, predicted_outcome, predicted_home_goals, predicted_away_goals)
-    const predsRes = await fetch(
-      `${supabaseUrl}/rest/v1/match_predictions?match_id=eq.${matchId}&select=user_id,predicted_outcome,predicted_home_goals,predicted_away_goals&limit=5000`,
-      {
-        headers: supabaseHeaders,
-        next: { revalidate: 0 },
-      },
+    const predictions = await fetchAllSupabase(
+      `${supabaseUrl}/rest/v1/match_predictions?match_id=eq.${matchId}&select=user_id,predicted_outcome,predicted_home_goals,predicted_away_goals`,
+      supabaseHeaders,
+      { fetchOptions: { next: { revalidate: 0 } } }
     );
-
-    if (!predsRes.ok) {
-      throw new Error(`Failed to fetch predictions: ${await predsRes.text()}`);
-    }
-
-    const predictions = await predsRes.json();
 
     if (predictions.length === 0) {
       // No predictions to award, but let's mark the match as rewarded anyway
@@ -386,27 +370,19 @@ export async function POST(request) {
         ...new Set(predictions.map((p) => p.user_id).filter(Boolean)),
       ];
       if (userIds.length > 0) {
-        const formattedIds = userIds
-          .map((id) => `"${id.replace(/"/g, '\\"')}"`)
-          .join(",");
-        const userRes = await fetch(
-          `${supabaseUrl}/rest/v1/registrations?user_id=in.(${encodeURIComponent(formattedIds)})&select=id,user_id,name,email,team,mu_points`,
-          {
-            headers: supabaseHeaders,
-            next: { revalidate: 0 },
-          },
-        );
-
-        if (userRes.ok) {
-          const users = await userRes.json();
+        try {
+          const users = await fetchInSupabase(
+            `${supabaseUrl}/rest/v1/registrations`,
+            "user_id",
+            userIds,
+            supabaseHeaders,
+            "id,user_id,name,email,team,mu_points"
+          );
           users.forEach((u) => {
             usersMap[u.user_id] = u;
           });
-        } else {
-          console.error(
-            "Failed to fetch registrations for points awarding:",
-            await userRes.text(),
-          );
+        } catch (err) {
+          console.error("Failed to fetch registrations for points awarding:", err);
         }
       }
     }

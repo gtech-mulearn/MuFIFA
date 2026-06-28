@@ -23,25 +23,30 @@ export async function GET(request) {
     };
 
     // 2. Fetch all registrations (id, user_id, name, team, referred_by, mu_points, tasks)
-    const registrations = await fetchAllSupabase(
+    const allRegistrations = await fetchAllSupabase(
       `${supabaseUrl}/rest/v1/registrations?select=id,user_id,name,team,referred_by,mu_points,tasks`,
       headers,
       { fetchOptions: { next: { revalidate: 0 } } }
     );
+    const registrations = allRegistrations.filter(r => r.team !== "Test");
+
+    const nonTestUserIds = new Set(registrations.map(r => r.user_id));
 
     // 3. Fetch all task completions (user_id, task_id, points_awarded, xp_execution)
-    const completions = await fetchAllSupabase(
+    const allCompletions = await fetchAllSupabase(
       `${supabaseUrl}/rest/v1/user_completed_tasks?select=user_id,task_id,points_awarded,xp_execution`,
       headers,
       { fetchOptions: { next: { revalidate: 0 } } }
     );
+    const completions = allCompletions.filter(c => nonTestUserIds.has(c.user_id));
 
     // 4. Fetch all predictions (user_id, outcome)
-    const predictions = await fetchAllSupabase(
+    const allPredictions = await fetchAllSupabase(
       `${supabaseUrl}/rest/v1/match_predictions?select=user_id,outcome`,
       headers,
       { fetchOptions: { next: { revalidate: 0 } } }
     );
+    const predictions = allPredictions.filter(p => nonTestUserIds.has(p.user_id));
 
     // 4b. Fetch live Kuzhiundo individuals leaderboard
     let kuzhiundoApiReports = {};
@@ -72,7 +77,8 @@ export async function GET(request) {
     });
     let squads = [];
     if (squadsRes.ok) {
-      squads = await squadsRes.json();
+      const squadsData = await squadsRes.json();
+      squads = squadsData.filter(s => s.name !== "Test");
     }
 
     // 6. Aggregate Calculations

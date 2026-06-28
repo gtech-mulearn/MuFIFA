@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { fetchAllSupabase } from "@/utils/supabase";
 
 export const revalidate = 30;
 
@@ -39,22 +40,15 @@ export async function GET(request) {
       );
     }
 
-    const targetUrl = `${supabaseUrl}/rest/v1/registrations?select=user_id,team,mu_points`;
-    const res = await fetch(targetUrl, {
-      method: "GET",
-      headers: {
+    const allRegistrations = await fetchAllSupabase(
+      `${supabaseUrl}/rest/v1/registrations?select=user_id,team,mu_points`,
+      {
         apikey: supabaseKey,
         Authorization: `Bearer ${supabaseKey}`,
       },
-      next: { revalidate: 30 },
-    });
-
-    if (!res.ok) {
-      const errorText = await res.text();
-      throw new Error(`Supabase REST error: ${errorText}`);
-    }
-
-    const registrations = await res.json();
+      { fetchOptions: { next: { revalidate: 30 } } }
+    );
+    const registrations = allRegistrations.filter(r => r.team !== "Test");
 
     const squadsUrl = `${supabaseUrl}/rest/v1/squads?select=name`;
     const squadsRes = await fetch(squadsUrl, {
@@ -70,7 +64,7 @@ export async function GET(request) {
     if (squadsRes.ok) {
       const squadsData = await squadsRes.json();
       squadsData.forEach((s) => {
-        if (s.name) squadNames.push(s.name);
+        if (s.name && s.name !== "Test") squadNames.push(s.name);
       });
     }
 

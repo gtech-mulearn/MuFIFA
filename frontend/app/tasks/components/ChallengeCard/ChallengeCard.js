@@ -3,7 +3,7 @@ import Link from "next/link";
 
 export default function ChallengeCard({ task, onViewDetails, dbTasks }) {
   const isCompleted = task.completed;
-  const isLocked = task.isLocked;
+  const isLocked = task.isLocked && task.visibility !== "disabled";
 
   const [prog, setProg] = useState({ text: "0/1", pct: 0 });
 
@@ -213,13 +213,17 @@ export default function ChallengeCard({ task, onViewDetails, dbTasks }) {
     ? "border-amber-500/40 hover:border-amber-400/60 shadow-[0_0_20px_rgba(245,158,11,0.05)] hover:-translate-y-1.5 hover:shadow-[0_12px_28px_rgba(245,158,11,0.15)] cursor-pointer"
     : isLocked
       ? "border-white/5 opacity-55 select-none"
-      : "border-violet-500/35 hover:border-violet-500/50 shadow-[0_0_20px_rgba(139,92,246,0.05)] hover:-translate-y-1.5 hover:shadow-[0_12px_28px_rgba(139,92,246,0.12)] cursor-pointer";
+      : task.visibility === "disabled"
+        ? "border-rose-500/30 hover:border-rose-500/50 shadow-[0_0_20px_rgba(244,63,94,0.05)] hover:-translate-y-1.5 hover:shadow-[0_12px_28px_rgba(244,63,94,0.12)] cursor-pointer"
+        : "border-violet-500/35 hover:border-violet-500/50 shadow-[0_0_20px_rgba(139,92,246,0.05)] hover:-translate-y-1.5 hover:shadow-[0_12px_28px_rgba(139,92,246,0.12)] cursor-pointer";
 
   const glowBg = isCompleted
     ? "from-[#1c1204] to-[#040301]"
     : isLocked
       ? "from-[#07060f] to-[#04030a]"
-      : "from-[#0d0a20] to-[#04030a]";
+      : task.visibility === "disabled"
+        ? "from-[#1a0709] to-[#04030a]"
+        : "from-[#0d0a20] to-[#04030a]";
 
   return (
     <div
@@ -303,6 +307,15 @@ export default function ChallengeCard({ task, onViewDetails, dbTasks }) {
                 LOCKED (COMPLETE COMPULSORY CHALLENGES TO UNLOCK)
               </span>
             </div>
+          ) : task.visibility === "disabled" ? (
+            <div className="flex items-center gap-1.5 text-rose-500 select-none">
+              <svg className="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M9.75 9.75l4.5 4.5m0-4.5l-4.5 4.5M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              <span className="text-[8px] font-black uppercase tracking-wider leading-tight">
+                DEADLINE OVER
+              </span>
+            </div>
           ) : (
             <div className="flex flex-col gap-1">
               <div className="flex justify-between text-[8px] font-black text-slate-500 uppercase tracking-wider">
@@ -342,10 +355,12 @@ export default function ChallengeCard({ task, onViewDetails, dbTasks }) {
             className={`w-full py-3.5 text-[9px] font-black tracking-widest uppercase rounded-xl border transition-all flex items-center justify-center gap-1.5 ${
               isCompleted
                 ? "bg-[#221605] border-amber-500/35 group-hover:bg-amber-500/20 text-amber-400"
-                : "bg-gradient-to-r from-violet-600 to-indigo-600 border-transparent text-white shadow-md group-hover:from-violet-500 group-hover:to-indigo-500"
+                : task.visibility === "disabled"
+                  ? "bg-[#1f0b0d] border-rose-500/30 text-rose-400 group-hover:bg-[#2b0e11]"
+                  : "bg-gradient-to-r from-violet-600 to-indigo-600 border-transparent text-white shadow-md group-hover:from-violet-500 group-hover:to-indigo-500"
             }`}
           >
-            <span>VIEW DETAILS</span>
+            <span>{isCompleted ? "VIEW DETAILS" : task.visibility === "disabled" ? "DEADLINE OVER" : "VIEW DETAILS"}</span>
           </div>
         </div>
       )}

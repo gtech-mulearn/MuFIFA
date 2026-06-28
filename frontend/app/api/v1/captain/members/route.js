@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { verifyToken } from "@/utils/auth";
+import { fetchInSupabase } from "@/utils/supabase";
 
 const PLAYER_COOKIE = "player_token";
 
@@ -125,19 +126,18 @@ export async function GET(request) {
     const completionsCountMap = {};
     if (userIds.length > 0) {
       try {
-        const formattedIds = userIds.map((id) => `"${id}"`).join(",");
-        const compRes = await fetch(`${supabaseUrl}/rest/v1/user_completed_tasks?user_id=in.(${formattedIds})&select=user_id,task_id`, {
-          method: "GET",
+        const completions = await fetchInSupabase(
+          `${supabaseUrl}/rest/v1/user_completed_tasks`,
+          "user_id",
+          userIds,
           headers,
+          "user_id,task_id"
+        );
+        completions.forEach((c) => {
+          if (c.task_id !== 100) {
+            completionsCountMap[c.user_id] = (completionsCountMap[c.user_id] || 0) + 1;
+          }
         });
-        if (compRes.ok) {
-          const completions = await compRes.json();
-          completions.forEach((c) => {
-            if (c.task_id !== 100) {
-              completionsCountMap[c.user_id] = (completionsCountMap[c.user_id] || 0) + 1;
-            }
-          });
-        }
       } catch (err) {
         console.error("Failed to fetch completions count in members API:", err);
       }

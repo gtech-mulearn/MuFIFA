@@ -31,6 +31,7 @@ const TEAM_CODES = {
   Croatia: "hr",
   Uruguay: "uy",
   Japan: "jp",
+  Test: "un",
 };
 
 const TEAM_FLAGS = Object.fromEntries(

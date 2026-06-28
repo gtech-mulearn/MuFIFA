@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { verifyToken, requireRole } from "@/utils/auth";
 import { adjustSquadPoints } from "@/utils/squad";
+import { fetchAllSupabase, fetchInSupabase } from "@/utils/supabase";
 
 export async function POST(request) {
   try {
@@ -63,11 +64,10 @@ export async function POST(request) {
       compQuery += `&user_id=eq.${encodeURIComponent(targetUserId)}`;
     }
 
-    const compRes = await fetch(compQuery, {
-      headers: { apikey: supabaseKey, Authorization: `Bearer ${supabaseKey}` },
+    const completions = await fetchAllSupabase(compQuery, {
+      apikey: supabaseKey,
+      Authorization: `Bearer ${supabaseKey}`,
     });
-    if (!compRes.ok) throw new Error("Failed to fetch completions.");
-    const completions = await compRes.json();
 
     if (completions.length === 0) {
       return NextResponse.json({ success: true, message: "No completions found to sync.", updatedCount: 0 });
@@ -107,11 +107,20 @@ export async function POST(request) {
 
     // 6. Batch fetch all affected users in one query
     const affectedUserIds = [...new Set(completions.map(c => c.user_id))];
-    const userIdFilter = affectedUserIds.map(uid => `"${uid}"`).join(",");
-    const usersRes = await fetch(`${supabaseUrl}/rest/v1/registrations?user_id=in.(${userIdFilter})&select=id,user_id,mu_points,team`, {
-      headers: { apikey: supabaseKey, Authorization: `Bearer ${supabaseKey}` },
-    });
-    const allUsers = usersRes.ok ? await usersRes.json() : [];
+    let allUsers = [];
+    if (affectedUserIds.length > 0) {
+      try {
+        allUsers = await fetchInSupabase(
+          `${supabaseUrl}/rest/v1/registrations`,
+          "user_id",
+          affectedUserIds,
+          { apikey: supabaseKey, Authorization: `Bearer ${supabaseKey}` },
+          "id,user_id,mu_points,team"
+        );
+      } catch (err) {
+        console.error("Failed to fetch registrations for task sync:", err);
+      }
+    }
     const userMap = {};
     allUsers.forEach(u => { userMap[u.user_id] = u; });
 

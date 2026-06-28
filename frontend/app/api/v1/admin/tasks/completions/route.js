@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { requireRole } from "@/utils/auth";
+import { fetchAllSupabase } from "@/utils/supabase";
 
 export async function GET(request) {
   try {
@@ -27,27 +28,35 @@ export async function GET(request) {
       Authorization: `Bearer ${supabaseKey}`,
     };
 
+    let completions;
+    let res;
     if (limitParam) {
       const limit = parseInt(limitParam, 10);
       const page = parseInt(pageParam, 10);
       const offset = (page - 1) * limit;
       completionsUrl += `&offset=${offset}&limit=${limit}`;
       headers["Prefer"] = "count=exact";
+
+      res = await fetch(completionsUrl, {
+        headers,
+        next: { revalidate: 0 },
+      });
+
+      if (!res.ok) {
+        throw new Error(`Failed to fetch completions: ${await res.text()}`);
+      }
+
+      completions = await res.json();
+    } else {
+      completions = await fetchAllSupabase(completionsUrl, headers, {
+        fetchOptions: { next: { revalidate: 0 } },
+      });
     }
 
-    const res = await fetch(completionsUrl, {
-      headers,
-      next: { revalidate: 0 },
-    });
-
-    if (!res.ok) {
-      throw new Error(`Failed to fetch completions: ${await res.text()}`);
-    }
-
-    const completions = await res.json();
     const totalCount = limitParam
       ? parseInt(res.headers.get("content-range")?.split("/")[1] || "0", 10)
       : completions.length;
+
 
     // Map nested PostgREST response to flat objects
     const formatted = completions.map((c) => ({

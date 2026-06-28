@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { verifyToken } from "@/utils/auth";
+import { fetchAllSupabase } from "@/utils/supabase";
 
 const PLAYER_COOKIE = "player_token";
 
@@ -55,20 +56,12 @@ export async function GET(request, { params }) {
     };
 
     // Fetch all predictions for this match (only predicted_outcome needed for odds)
-    const predictionsRes = await fetch(
+    const rows = await fetchAllSupabase(
       `${supabaseUrl}/rest/v1/match_predictions?match_id=eq.${matchId}&select=predicted_outcome`,
-      {
-        method: "GET",
-        headers: supabaseHeaders,
-        next: { revalidate: 0 },
-      }
+      supabaseHeaders,
+      { fetchOptions: { next: { revalidate: 0 } } }
     );
 
-    if (!predictionsRes.ok) {
-      throw new Error(`Supabase error: ${await predictionsRes.text()}`);
-    }
-
-    const rows = await predictionsRes.json();
 
     // Check for corrupted predicted_outcome values
     const validOutcomes = ["home_win", "draw", "away_win"];

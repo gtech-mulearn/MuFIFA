@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { requireRole } from "@/utils/auth";
+import { fetchAllSupabase } from "@/utils/supabase";
 
 export async function GET(request) {
   try {
@@ -40,16 +41,12 @@ export async function GET(request) {
       Authorization: `Bearer ${supabaseKey}`,
     };
 
-    const regRes = await fetch(
-      `${supabaseUrl}/rest/v1/registrations?select=id,name,email,team,domain,mu_points,created_at`,
-      { method: "GET", headers, next: { revalidate: 0 } }
+    const allRegistrations = await fetchAllSupabase(
+      `${supabaseUrl}/rest/v1/registrations?select=id,user_id,name,email,team,domain,mu_points,created_at`,
+      headers,
+      { fetchOptions: { next: { revalidate: 0 } } }
     );
-
-    if (!regRes.ok) {
-      throw new Error(`Failed to fetch registrations: ${await regRes.text()}`);
-    }
-
-    const registrations = await regRes.json();
+    const registrations = allRegistrations.filter(r => r.team !== "Test");
 
     const squadsRes = await fetch(
       `${supabaseUrl}/rest/v1/squads?select=name,points`,
@@ -58,7 +55,8 @@ export async function GET(request) {
 
     let squads = [];
     if (squadsRes.ok) {
-      squads = await squadsRes.json();
+      const squadsData = await squadsRes.json();
+      squads = squadsData.filter(s => s.name !== "Test");
     }
 
     const tasksRes = await fetch(
@@ -70,14 +68,14 @@ export async function GET(request) {
       tasksList = await tasksRes.json();
     }
 
-    const compRes = await fetch(
-      `${supabaseUrl}/rest/v1/user_completed_tasks?select=task_id&task_id=neq.100`,
-      { method: "GET", headers, next: { revalidate: 0 } }
+    const allCompletionsList = await fetchAllSupabase(
+      `${supabaseUrl}/rest/v1/user_completed_tasks?select=task_id,user_id&task_id=neq.100`,
+      headers,
+      { fetchOptions: { next: { revalidate: 0 } } }
     );
-    let completionsList = [];
-    if (compRes.ok) {
-      completionsList = await compRes.json();
-    }
+    const nonTestUserIds = new Set(registrations.map(r => r.user_id));
+    const completionsList = allCompletionsList.filter(c => nonTestUserIds.has(c.user_id));
+
 
     const totalUsers = registrations.length;
     const teamCounts = {};

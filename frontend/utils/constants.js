@@ -11,8 +11,9 @@ export const TEAM_WHATSAPP_LINKS = {
   Croatia: "https://chat.whatsapp.com/FkLUDYocKur6EWkSCSKNaN",
   Uruguay: "https://chat.whatsapp.com/DEYKZdZ65NG15zhIaxpAcK",
   Japan: "https://chat.whatsapp.com/Ccg1WGLaize3hgcVLUqZHF",
+  Test: "#",
 };
-export const DOMAINS = ["Maker", "Creative", "Coder", "Strategist"];
+export const DOMAINS = ["Coder", "Social", "Creative", "Maker", "Strategist"];
 
 export const TEAM_FLAGS = {
   Brazil: "br",
@@ -27,6 +28,7 @@ export const TEAM_FLAGS = {
   Croatia: "hr",
   Uruguay: "uy",
   Japan: "jp",
+  Test: "un",
 };
 
 export const TEAM_FLAG_BGS = {
@@ -42,6 +44,7 @@ export const TEAM_FLAG_BGS = {
   Germany: "/playerCard/flag/germany.webp",
   France: "/playerCard/flag/france.webp",
   Croatia: "/playerCard/flag/crotia.webp",
+  Test: "/playerCard/flag/test.webp",
 };
 
 export const LEVEL_THRESHOLDS = [

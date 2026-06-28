@@ -88,7 +88,7 @@ export async function GET(request) {
     // 4. Map completions to tasks
     let visibleTasks = tasks.filter((t) => t.id !== 100);
     if (!previewParam) {
-      visibleTasks = visibleTasks.filter((t) => t.visibility === "public");
+      visibleTasks = visibleTasks.filter((t) => t.visibility === "public" || t.visibility === "disabled");
     }
 
     const processedTasks = visibleTasks.map((t) => {
@@ -179,14 +179,12 @@ export async function GET(request) {
       const title = (task.title || "").toLowerCase();
       const desc = (task.short_desc || task.description || "").toLowerCase();
       
-      if (title.includes("uiux") || title.includes("ui/ux") || title.includes("ui") || title.includes("ux") || title.includes("design") || desc.includes("design") || desc.includes("ui/ux") || desc.includes("uiux")) return "UIUX";
-      if (title.includes("cyber") || title.includes("security") || title.includes("kuzhi") || title.includes("pothole")) return "Cyber";
-      if (title.includes("web") || title.includes("website") || title.includes("frontend") || title.includes("backend") || title.includes("nextjs") || title.includes("api") || desc.includes("web")) return "Web";
       if (title.includes("social") || title.includes("discord") || title.includes("referral") || title.includes("invite") || title.includes("git") || title.includes("profile")) return "Social";
-      if (title.includes("iot") || title.includes("hardware") || title.includes("sensor")) return "IoT";
-      if (title.includes("dsa") || title.includes("leetcode") || title.includes("algorithm") || title.includes("data structure") || title.includes("codeforces") || title.includes("coding")) return "DSA";
+      if (title.includes("dsa") || title.includes("leetcode") || title.includes("algorithm") || title.includes("data structure") || title.includes("codeforces") || title.includes("coding") || title.includes("web") || title.includes("website") || title.includes("frontend") || title.includes("backend") || title.includes("nextjs") || title.includes("api") || desc.includes("web")) return "Coder";
+      if (title.includes("uiux") || title.includes("ui/ux") || title.includes("ui") || title.includes("ux") || title.includes("design") || desc.includes("design") || desc.includes("ui/ux") || desc.includes("uiux")) return "Creative";
+      if (title.includes("iot") || title.includes("hardware") || title.includes("sensor") || title.includes("maker") || desc.includes("hardware")) return "Maker";
       
-      return "Other";
+      return "Strategist";
     };
 
     // 5. Filter by category

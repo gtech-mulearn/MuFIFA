@@ -3,7 +3,7 @@ import { requireRole, hashPassword } from "@/utils/auth";
 import { z } from "zod";
 import { adjustSquadPoints } from "@/utils/squad";
 
-const DOMAINS = ["Maker", "Creative", "Coder", "Strategist"];
+const DOMAINS = ["Coder", "Social", "Creative", "Maker", "Strategist"];
 const TEAMS = [
   "Brazil",
   "Argentina",
@@ -17,6 +17,7 @@ const TEAMS = [
   "Croatia",
   "Uruguay",
   "Japan",
+  "Test",
 ];
 
 const userPatchSchema = z.object({
@@ -234,12 +235,13 @@ export async function PATCH(request, { params }) {
     const validationResult = userPatchSchema.safeParse(body);
     if (!validationResult.success) {
       const details = {};
-      validationResult.error.errors.forEach((err) => {
+      const errors = validationResult.error.issues || validationResult.error.errors || [];
+      errors.forEach((err) => {
         const field = err.path[0];
         if (!details[field]) details[field] = [];
         details[field].push(err.message);
       });
-      const firstError = validationResult.error.errors[0]?.message || "Validation failed.";
+      const firstError = errors[0]?.message || "Validation failed.";
       return NextResponse.json(
         {
           success: false,
