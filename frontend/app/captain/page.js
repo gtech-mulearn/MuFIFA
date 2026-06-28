@@ -129,13 +129,7 @@ export default function CaptainDashboard() {
     }
   };
 
-  const handleMessageClick = (memberId, phone, currentJoinedStatus) => {
-    // Automatically set whatsapp_joined to true on message click if it is currently false
-    if (!currentJoinedStatus) {
-      handleToggleWhatsApp(memberId, currentJoinedStatus);
-    }
-    window.open(`https://wa.me/${phone.replace(/[^0-9]/g, "")}`, "_blank");
-  };
+
 
   if (playerLoading) {
     return (
@@ -336,10 +330,8 @@ export default function CaptainDashboard() {
                   <tr className="border-b border-white/5 text-slate-400">
                     <th className="px-4 py-3 font-bold uppercase tracking-wider">Member Name</th>
                     <th className="px-4 py-3 font-bold uppercase tracking-wider">Username ID</th>
-                    <th className="px-4 py-3 font-bold uppercase tracking-wider">Phone Number</th>
                     <th className="px-4 py-3 font-bold uppercase tracking-wider text-center">Tasks Completed</th>
                     <th className="px-4 py-3 font-bold uppercase tracking-wider text-center">WhatsApp Group</th>
-                    <th className="px-4 py-3 font-bold uppercase tracking-wider text-right">Message</th>
                   </tr>
 
                 </thead>
@@ -373,11 +365,6 @@ export default function CaptainDashboard() {
                         @{member.user_id}
                       </td>
 
-                      {/* Phone Number */}
-                      <td className="px-4 py-3.5 font-mono text-slate-300 whitespace-nowrap">
-                        {member.phone}
-                      </td>
-
                       {/* Tasks Completed Button */}
                       <td className="px-4 py-3.5 whitespace-nowrap text-center">
                         <button
@@ -390,7 +377,6 @@ export default function CaptainDashboard() {
                           <span>{member.completed_tasks_count || 0} Tasks</span>
                         </button>
                       </td>
-
 
                       {/* Joined WhatsApp toggle */}
                       <td className="px-4 py-3.5 whitespace-nowrap text-center">
@@ -409,19 +395,6 @@ export default function CaptainDashboard() {
                             </span>
                           </label>
                         </div>
-                      </td>
-
-                      {/* Direct WhatsApp link button */}
-                      <td className="px-4 py-3.5 whitespace-nowrap text-right">
-                        <button
-                          onClick={() => handleMessageClick(member.id, member.phone, member.whatsapp_joined)}
-                          className="cursor-pointer inline-flex items-center gap-1.5 px-3 py-1.5 text-[10px] font-black uppercase tracking-wider text-white bg-emerald-600 hover:bg-emerald-500 active:bg-emerald-700 rounded-xl transition-all shadow-md hover:shadow-lg"
-                        >
-                          <svg className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 24 24">
-                            <path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946C.06 5.348 5.397.01 12.008.01c3.202.001 6.212 1.246 8.477 3.514 2.266 2.268 3.507 5.28 3.505 8.484-.004 6.657-5.34 11.997-11.953 11.997-2.005-.001-3.973-.502-5.724-1.457L0 24zm6.59-4.846c1.6.95 3.188 1.449 4.625 1.451 5.403.002 9.799-4.389 9.802-9.799.002-2.622-1.02-5.086-2.88-6.949C16.31 1.993 13.85 1.01 11.233 1.01c-5.412 0-9.805 4.39-9.808 9.8-.001 1.83.488 3.618 1.417 5.176l-.99 3.613 3.7-.97c1.51.822 2.911 1.225 4.505 1.225zm11.206-8.238c-.3-.15-1.772-.875-2.046-.975-.276-.1-.476-.15-.676.15-.2.3-.775.975-.95 1.174-.175.2-.35.225-.65.075-.3-.15-1.265-.467-2.41-1.485-.89-.795-1.49-1.778-1.665-2.078-.175-.3-.018-.462.13-.61.135-.133.3-.35.45-.525.15-.175.2-.3.3-.5s.05-.375-.025-.525c-.075-.15-.676-1.625-.926-2.225-.244-.582-.49-.5-.676-.51-.175-.01-.375-.01-.575-.01-.2 0-.525.075-.8 1.016-1.12 1.222-1.6 2.875-1.6 3.025 0 .15.5 2.223 2.1 2.9 1.6.677 2.1.527 2.95.452.85-.075 2.75-1.124 3.125-2.125.375-1 .375-1.875.25-2.075-.125-.2-.45-.3-.75-.45z"/>
-                          </svg>
-                          Message
-                        </button>
                       </td>
                     </tr>
                   ))}

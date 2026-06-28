@@ -11,6 +11,7 @@ import {
 import { sendRegistrationOtpEmail, sendRegistrationEmail } from "@/utils/email";
 import { signToken, hashPassword } from "@/utils/auth";
 import { adjustSquadPoints } from "@/utils/squad";
+import { DISPOSABLE_DOMAINS } from "@/utils/constants";
 
 const PLAYER_COOKIE = "player_token";
 
@@ -53,7 +54,19 @@ const RegisterSchema = z.object({
     .string({ required_error: "Email is required" })
     .trim()
     .email("Please enter a valid email address")
-    .toLowerCase(),
+    .toLowerCase()
+    .refine((val) => !val.includes("+"), {
+      message: "Plus addressing (using + symbols) is not allowed.",
+    })
+    .refine(
+      (val) => {
+        const domain = val.split("@")[1];
+        return !DISPOSABLE_DOMAINS.includes(domain);
+      },
+      {
+        message: "Temporary/disposable email addresses are not allowed.",
+      }
+    ),
   phone: z
     .string({ required_error: "Phone number is required" })
     .trim()

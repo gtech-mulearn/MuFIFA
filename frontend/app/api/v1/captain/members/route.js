@@ -113,7 +113,7 @@ export async function GET(request) {
     }
 
     const filterQuery = filterParts.join("&");
-    const membersQuery = `${supabaseUrl}/rest/v1/registrations?select=id,name,phone,user_id,whatsapp_joined,role&order=name.asc&${filterQuery}`;
+    const membersQuery = `${supabaseUrl}/rest/v1/registrations?select=id,name,user_id,whatsapp_joined,role&order=name.asc&${filterQuery}`;
     const membersRes = await fetch(membersQuery, { method: "GET", headers });
     if (!membersRes.ok) {
       throw new Error(`Failed to fetch team members: ${await membersRes.text()}`);
@@ -146,7 +146,6 @@ export async function GET(request) {
     const members = rawMembers.map((m) => ({
       id: m.id,
       name: m.name,
-      phone: m.phone,
       user_id: m.user_id,
       whatsapp_joined: !!m.whatsapp_joined,
       role: m.role || "player",

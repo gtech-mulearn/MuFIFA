@@ -70,7 +70,7 @@ export default function WhyJoin() {
   return (
     <section className="relative z-10 w-full max-w-7xl mx-auto px-6 md:px-12 py-16 border-t border-white/5">
       <h2 className="text-3xl md:text-4xl font-black tracking-wider mb-10 text-left text-white">
-        Why <span className="text-[#A78BFA]">µFIFA</span> Matters
+        Why <span className="text-[#A78BFA]"><span className="normal-case">µ</span>FIFA</span> Matters
       </h2>
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-stretch">

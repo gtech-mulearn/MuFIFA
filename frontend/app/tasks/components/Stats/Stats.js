@@ -25,7 +25,7 @@ export default function Stats({ activeTier, completedCount, totalCount, complete
 
         <div className="flex-1 flex flex-col gap-1.5 min-w-0">
           <span className="text-[10px] font-black uppercase tracking-[0.25em] text-violet-400">
-            µFIFA CAMPAIGN PROGRESSION
+            <span className="normal-case">µ</span>FIFA CAMPAIGN PROGRESSION
           </span>
           <div className="flex justify-between items-center text-[10px] text-slate-400 font-bold uppercase tracking-wider mt-1.5">
             <span>Level Progress</span>

@@ -110,8 +110,7 @@ export default function LoginPage() {
               Arena Access Pass
             </h1>
             <p className="text-xs text-slate-400">
-              Log in with your Email/Player ID and Password to access your
-              pass.
+              Log in with your Email/Player ID. Your password has been sent to your registered email (<strong>please check your spam/junk folder</strong> if not found).
             </p>
           </div>
 

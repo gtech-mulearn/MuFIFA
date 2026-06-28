@@ -37,7 +37,7 @@ export default function HowItWorks() {
       <h2 className="text-2xl md:text-3xl font-black tracking-wider mb-14 text-center text-white">
         HOW{" "}
         <span className="text-[#A78BFA] drop-shadow-[0_0_15px_rgba(167,139,250,0.25)]">
-          µFIFA
+          <span className="normal-case">µ</span>FIFA
         </span>{" "}
         WORKS
       </h2>

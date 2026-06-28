@@ -191,6 +191,7 @@ export default function Sidebar({ player, handleLogout }) {
             return (
               <Link
                 key={item.name}
+                id={`sidebar-item-${item.name.toLowerCase().replace("μ", "u")}`}
                 href={item.href}
                 className={`flex items-center gap-3.5 px-4 py-3 rounded-xl text-xs font-semibold tracking-wide transition-all ${
                   isActive
@@ -215,7 +216,7 @@ export default function Sidebar({ player, handleLogout }) {
       </div>
 
       <div className="flex flex-col gap-6">
-        <div className="bg-[#110e20]/80 border border-white/5 rounded-2xl p-4 backdrop-blur-md relative overflow-hidden group">
+        <div id="sidebar-item-points" className="bg-[#110e20]/80 border border-white/5 rounded-2xl p-4 backdrop-blur-md relative overflow-hidden group">
           <div className="absolute -right-4 -bottom-4 w-16 h-16 bg-violet-600/10 rounded-full blur-xl pointer-events-none" />
           <span className="text-[9px] font-black tracking-wider text-slate-500">
             μPoints Balance
@@ -231,6 +232,7 @@ export default function Sidebar({ player, handleLogout }) {
             />
           </div>
           <Link
+            id="sidebar-item-history"
             href="/points-history"
             className="inline-flex items-center gap-1 text-[9px] font-bold text-slate-200 hover:text-white mt-3.5 transition-colors"
           >

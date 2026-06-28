@@ -3,40 +3,33 @@
 import React, { useState, useEffect, Suspense } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { useRouter } from "next/navigation";
 import PlayerCard from "@/components/PlayerCard";
-import {
-  TEAM_FLAGS,
-  TEAM_WHATSAPP_LINKS,
-  TEAM_FLAG_BGS,
-  calculateLevel,
-} from "@/utils/constants";
+import { TEAM_FLAGS, TEAM_FLAG_BGS, calculateLevel } from "@/utils/constants";
 import { usePlayer } from "@/components/PlayerContext";
 
 function ProfilePageContent({ params }) {
-  const router = useRouter();
   const unwrappedParams = React.use(params);
   const id = unwrappedParams.id;
-  const { player: contextPlayer, refreshPlayer } = usePlayer();
+  const { player: currentUser, refreshPlayer } = usePlayer();
 
   const [player, setPlayer] = useState(null);
-  const [currentUser, setCurrentUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [uploading, setUploading] = useState(false);
   const [uploadError, setUploadError] = useState("");
 
-  // Edit details form state
+  // State variables containing details for profile updating.
   const [editForm, setEditForm] = useState({
     name: "",
     bio: "",
     phone: "",
     muid: "",
+    institutions: "",
   });
   const [editSaved, setEditSaved] = useState(false);
   const [editError, setEditError] = useState("");
 
-  // Reset password form state
+  // State variables containing values for password resetting.
   const [passwordForm, setPasswordForm] = useState({
     currentPassword: "",
     newPassword: "",
@@ -46,21 +39,18 @@ function ProfilePageContent({ params }) {
   const [passwordSuccess, setPasswordSuccess] = useState(false);
   const [passwordLoading, setPasswordLoading] = useState(false);
 
-  // Modal Open state
+  // State controlling detail edition modal visibility.
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [activeTab, setActiveTab] = useState("profile");
 
+  // State variables for controlling safe account deletion.
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [deleteConfirmText, setDeleteConfirmText] = useState("");
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState("");
+
   // Mock preferences state
   const [prefReminders, setPrefReminders] = useState(true);
-  const [prefSound, setPrefSound] = useState(true);
-  const [prefOvr, setPrefOvr] = useState(true);
-
-  // History state for Recent Activity
-  const [history, setHistory] = useState([]);
-
-  useEffect(() => {
-    setCurrentUser(contextPlayer);
-  }, [contextPlayer]);
 
   const isOwner = currentUser && player && currentUser.id === player.id;
 
@@ -71,11 +61,48 @@ function ProfilePageContent({ params }) {
         if (typeof window !== "undefined") {
           localStorage.removeItem("player");
         }
-        setCurrentUser(null);
         window.location.href = "/login";
       }
     } catch (err) {
       console.error("Logout request error:", err);
+    }
+  };
+
+  const handleDeleteAccount = async () => {
+    if (deleteConfirmText !== "DELETE") {
+      setDeleteError("Please type DELETE to confirm account deletion.");
+      return;
+    }
+
+    setIsDeleting(true);
+    setDeleteError("");
+
+    try {
+      const res = await fetch(
+        `/api/v1/profile/${encodeURIComponent(player.id)}`,
+        {
+          method: "DELETE",
+        },
+      );
+      const data = await res.json();
+
+      if (!res.ok || !data.success) {
+        setDeleteError(
+          data.error || "Failed to delete account. Please try again.",
+        );
+        setIsDeleting(false);
+        return;
+      }
+
+      // Success: completely wipe client storage and cookies
+      if (typeof window !== "undefined") {
+        localStorage.clear();
+      }
+      window.location.href = "/login";
+    } catch (err) {
+      console.error("Delete account error:", err);
+      setDeleteError("A network error occurred. Please try again.");
+      setIsDeleting(false);
     }
   };
 
@@ -101,6 +128,7 @@ function ProfilePageContent({ params }) {
         bio: profileData.data.bio || "",
         phone: profileData.data.phone || "",
         muid: profileData.data.muid || "",
+        institutions: profileData.data.institutions || "",
       });
     } catch (err) {
       console.error("Error fetching player profile:", err);
@@ -113,24 +141,6 @@ function ProfilePageContent({ params }) {
   useEffect(() => {
     fetchProfile();
   }, [id]);
-
-  // Fetch points history if owner
-  useEffect(() => {
-    if (isOwner) {
-      async function fetchHistory() {
-        try {
-          const res = await fetch("/api/v1/points-history");
-          const json = await res.json();
-          if (res.ok && json.success) {
-            setHistory(json.data.history || []);
-          }
-        } catch (e) {
-          console.error("Failed to load history inside profile", e);
-        }
-      }
-      fetchHistory();
-    }
-  }, [isOwner]);
 
   const handleAvatarChange = async (e) => {
     const file = e.target.files?.[0];
@@ -199,6 +209,7 @@ function ProfilePageContent({ params }) {
           bio: editForm.bio,
           phone: editForm.phone,
           muid: editForm.muid,
+          institutions: editForm.institutions,
         }),
       });
 
@@ -703,14 +714,22 @@ function ProfilePageContent({ params }) {
                 </h2>
               </div>
 
-              <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2.5 mt-1 text-xs">
+              <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2.5 mt-1 text-xs text-slate-300">
                 {player.team && (
-                  <span className="font-semibold text-slate-300 flex items-center gap-1.5">
+                  <span className="font-semibold flex items-center gap-1.5">
                     <span
                       className={`fi fi-${countryCode} rounded-sm shadow-sm scale-110`}
                     />
                     {getTeamName(player.team)}
                   </span>
+                )}
+                {player.institutions && (
+                  <>
+                    <span className="text-slate-600 hidden sm:inline">•</span>
+                    <span className="font-medium text-slate-400">
+                      {player.institutions}
+                    </span>
+                  </>
                 )}
                 {player.role && player.role !== "player" && (
                   <span
@@ -831,29 +850,6 @@ function ProfilePageContent({ params }) {
           </div>
         )}
 
-        {/* WhatsApp Group Banner if Owner */}
-        {isOwner && (
-          <div className="w-full flex justify-center mt-1 relative z-10">
-            <a
-              href={
-                TEAM_WHATSAPP_LINKS[player.team] || "https://chat.whatsapp.com/"
-              }
-              target="_blank"
-              rel="noopener noreferrer"
-              className="cursor-pointer bg-[#25D366] text-white hover:bg-[#20ba5a] w-full py-3 rounded-2xl text-[10px] font-black tracking-widest uppercase transition-all flex items-center justify-center gap-2 shadow-[0_0_15px_rgba(37,211,102,0.2)] hover:shadow-[0_0_25px_rgba(37,211,102,0.4)] hover:-translate-y-0.5 border border-white/5"
-            >
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                viewBox="0 0 32 32"
-                className="w-4.5 h-4.5 fill-current"
-              >
-                <path d="M16.004 3C8.82 3 3 8.82 3 16.004c0 2.293.598 4.532 1.734 6.504L3 29l6.676-1.706a12.95 12.95 0 0 0 6.328 1.636C23.18 28.93 29 23.11 29 15.926 29 8.82 23.18 3 16.004 3zm0 23.798a10.74 10.74 0 0 1-5.47-1.496l-.392-.232-3.96 1.01 1.056-3.86-.254-.4a10.72 10.72 0 0 1-1.646-5.816c0-5.94 4.83-10.77 10.766-10.77 2.878 0 5.584 1.12 7.617 3.154a10.69 10.69 0 0 1 3.148 7.612c0 5.94-4.83 10.798-10.766 10.798zm5.906-8.052c-.322-.16-1.904-.94-2.198-1.046-.294-.106-.508-.16-.722.16-.214.32-.83 1.046-1.018 1.26-.186.214-.374.24-.694.08-.32-.16-1.35-.498-2.572-1.586-.95-.846-1.59-1.89-1.776-2.21-.188-.32-.02-.492.14-.65.144-.144.32-.374.48-.56.16-.188.214-.32.32-.534.106-.214.054-.4-.026-.56-.08-.16-.722-1.74-.99-2.386-.26-.626-.524-.54-.722-.55l-.614-.01c-.214 0-.56.08-.854.4-.294.32-1.122 1.096-1.122 2.674 0 1.578 1.15 3.102 1.31 3.316.16.214 2.262 3.454 5.48 4.842.766.33 1.364.526 1.83.674.77.244 1.47.21 2.024.128.618-.092 1.904-.778 2.172-1.53.268-.752.268-1.396.188-1.53-.08-.132-.294-.212-.616-.372z" />
-              </svg>
-              Join {player.team} WhatsApp Group
-            </a>
-          </div>
-        )}
-
         {/* 2-Column Dashboard Body */}
         <div className="flex flex-col lg:flex-row items-stretch gap-6 w-full mt-2">
           {/* Left Column: Player FIFA Card */}
@@ -894,7 +890,7 @@ function ProfilePageContent({ params }) {
                     <span className="text-2xl font-black text-white leading-none">
                       {player.mu_points || 0}
                     </span>
-                    <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 mt-2">
+                    <span className="text-[10px] font-bold tracking-wider text-slate-400 mt-2">
                       μPoints
                     </span>
                   </div>
@@ -921,26 +917,28 @@ function ProfilePageContent({ params }) {
                   </div>
 
                   {/* Challenges Card */}
-                  <div className="bg-[#0b0c16]/60 border border-white/5 hover:border-emerald-500/30 rounded-2xl p-5 flex flex-col items-center justify-center text-center transition-all hover:scale-[1.03] duration-300 cursor-pointer">
-                    <div className="w-12 h-12 rounded-full bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center shrink-0 mb-3 shadow-[0_0_15px_rgba(16,185,129,0.15)]">
-                      <svg
-                        className="w-6 h-6 text-emerald-400"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="2.5"
-                      >
-                        <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
-                        <polyline points="22 4 12 14.01 9 11.01" />
-                      </svg>
+                  <Link href="/tasks" className="block">
+                    <div className="bg-[#0b0c16]/60 border border-white/5 hover:border-emerald-500/30 rounded-2xl p-5 flex flex-col items-center justify-center text-center transition-all hover:scale-[1.03] duration-300 cursor-pointer">
+                      <div className="w-12 h-12 rounded-full bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center shrink-0 mb-3 shadow-[0_0_15px_rgba(16,185,129,0.15)]">
+                        <svg
+                          className="w-6 h-6 text-emerald-400"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="2.5"
+                        >
+                          <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
+                          <polyline points="22 4 12 14.01 9 11.01" />
+                        </svg>
+                      </div>
+                      <span className="text-2xl font-black text-white leading-none">
+                        {player.completed_tasks_count || 0}
+                      </span>
+                      <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 mt-2">
+                        Challenges
+                      </span>
                     </div>
-                    <span className="text-2xl font-black text-white leading-none">
-                      {player.completed_tasks_count || 0}
-                    </span>
-                    <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 mt-2">
-                      Challenges
-                    </span>
-                  </div>
+                  </Link>
 
                   {/* Overall Rating Card */}
                   <div className="bg-[#0b0c16]/60 border border-white/5 hover:border-amber-500/30 rounded-2xl p-5 flex flex-col items-center justify-center text-center transition-all hover:scale-[1.03] duration-300 cursor-pointer">
@@ -1287,8 +1285,30 @@ function ProfilePageContent({ params }) {
                     </button>
                   </div>
 
-                  {/* Logout Button aligned bottom-right */}
-                  <div className="flex justify-end mt-4 border-t border-white/5 pt-4">
+                  {/* Action Buttons aligned bottom-right */}
+                  <div className="flex flex-wrap items-center justify-end gap-3 mt-4 border-t border-white/5 pt-4">
+                    <button
+                      onClick={() => setShowDeleteModal(true)}
+                      className="cursor-pointer px-6 py-2.5 bg-red-950/20 hover:bg-red-900/30 border border-red-500/20 hover:border-red-500/40 text-red-500 rounded-xl text-xs font-bold uppercase tracking-wider transition-all flex items-center gap-2 shadow-lg group"
+                    >
+                      <div className="w-7 h-7 rounded-full bg-red-500/10 flex items-center justify-center shrink-0">
+                        <svg
+                          className="w-4 h-4 text-red-500 group-hover:scale-110 transition-transform"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="2.5"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            d="M14.74 9l-.34 9m-4.78 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0"
+                          />
+                        </svg>
+                      </div>
+                      <span>Delete Account</span>
+                    </button>
+
                     <button
                       onClick={handleLogout}
                       className="cursor-pointer px-6 py-2.5 bg-[#ef4444]/5 hover:bg-[#ef4444]/10 border border-[#ef4444]/20 hover:border-[#ef4444]/40 text-red-400 rounded-xl text-xs font-bold uppercase tracking-wider transition-all flex items-center gap-2 shadow-lg group"
@@ -1459,7 +1479,8 @@ function ProfilePageContent({ params }) {
                             className="text-violet-400 hover:underline font-bold"
                           >
                             mulearn.org
-                          </a>.
+                          </a>
+                          .
                         </div>
                       </div>
                     </div>
@@ -1478,13 +1499,33 @@ function ProfilePageContent({ params }) {
                     />
                     {player?.muid && player.muid.trim() !== "" ? (
                       <span className="text-[9px] text-amber-400/80 font-bold mt-0.5 flex items-center gap-1 select-none">
-                        <span>🔒</span> Already set. If incorrect, contact an Admin.
+                        <span>🔒</span> Already set. If incorrect, contact an
+                        Admin.
                       </span>
                     ) : (
                       <span className="text-[9px] text-slate-400 mt-0.5 flex items-center gap-1 select-none">
-                        <span>⚠️</span> Once saved, this can only be edited by an Admin.
+                        <span>⚠️</span> Once saved, this can only be edited by
+                        an Admin.
                       </span>
                     )}
+                  </div>
+
+                  <div className="flex flex-col gap-1.5 sm:col-span-2">
+                    <label className="text-[9px] font-black text-slate-500 uppercase tracking-wider">
+                      Institution / Organization
+                    </label>
+                    <input
+                      type="text"
+                      value={editForm.institutions}
+                      onChange={(e) =>
+                        setEditForm((prev) => ({
+                          ...prev,
+                          institutions: e.target.value,
+                        }))
+                      }
+                      placeholder="Your college or organizations name"
+                      className="bg-white/5 border border-white/8 rounded-xl px-3 py-2.5 text-xs text-white outline-none focus:border-[#8B5CF6]/50 transition-colors"
+                    />
                   </div>
 
                   <div className="flex flex-col gap-1.5 sm:col-span-2">
@@ -1599,6 +1640,104 @@ function ProfilePageContent({ params }) {
                 </button>
               </form>
             )}
+          </div>
+        </div>
+      )}
+
+      {/* Delete Account Double Confirmation Modal */}
+      {showDeleteModal && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/85 backdrop-blur-md transition-all duration-300 animate-fade-in animate-duration-200">
+          <div className="relative w-full max-w-md bg-[#0d070b]/95 border border-red-500/20 rounded-3xl p-6 shadow-2xl flex flex-col gap-5 animate-scale-up animate-duration-200">
+            {/* Header */}
+            <div className="flex items-center gap-3 border-b border-red-500/10 pb-3">
+              <div className="w-10 h-10 rounded-full bg-red-500/10 flex items-center justify-center shrink-0">
+                <svg
+                  className="w-5 h-5 text-red-500"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2.5"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+                  />
+                </svg>
+              </div>
+              <div className="flex flex-col">
+                <h3 className="text-sm font-black text-red-500 uppercase tracking-wider">
+                  Delete Account
+                </h3>
+                <span className="text-[9px] font-bold text-slate-500 uppercase">
+                  This action is irreversible
+                </span>
+              </div>
+            </div>
+
+            {/* Warning Message */}
+            <div className="text-xs font-semibold text-slate-300 leading-relaxed flex flex-col gap-2">
+              <p>Deleting your account will permanently remove:</p>
+              <ul className="list-disc pl-4 flex flex-col gap-1 text-slate-400 text-[11px]">
+                <li>Your profile information from the innovations database</li>
+                <li>All your match predictions and prediction score history</li>
+                <li>All your completed task history and levels</li>
+              </ul>
+              <p className="text-red-400/95 font-bold mt-1 bg-red-500/5 border border-red-500/10 rounded-xl p-3">
+                ⚠️ Your squad team points ({player?.mu_points || 0} µPoints)
+                will be deducted from your squad's total score.
+              </p>
+              <p className="mt-2 text-slate-400">
+                To confirm, please type{" "}
+                <span className="font-extrabold text-red-400">DELETE</span>{" "}
+                below:
+              </p>
+            </div>
+
+            {/* Input field */}
+            <div className="flex flex-col gap-1.5">
+              <input
+                type="text"
+                placeholder="Type DELETE to confirm"
+                value={deleteConfirmText}
+                onChange={(e) => {
+                  setDeleteConfirmText(e.target.value);
+                  if (deleteError) setDeleteError("");
+                }}
+                disabled={isDeleting}
+                className="w-full px-4 py-3 bg-red-950/10 border border-red-500/20 focus:border-red-500/50 rounded-xl text-xs font-extrabold text-red-400 placeholder:text-slate-600 focus:outline-none transition-all"
+              />
+              {deleteError && (
+                <span className="text-[10px] text-red-400 font-extrabold">
+                  {deleteError}
+                </span>
+              )}
+            </div>
+
+            {/* Actions */}
+            <div className="flex items-center justify-end gap-3 mt-1">
+              <button
+                type="button"
+                onClick={() => {
+                  if (isDeleting) return;
+                  setShowDeleteModal(false);
+                  setDeleteConfirmText("");
+                  setDeleteError("");
+                }}
+                disabled={isDeleting}
+                className="cursor-pointer px-4 py-2.5 bg-white/5 border border-white/10 hover:bg-white/10 text-white rounded-xl text-xs font-bold uppercase tracking-wider transition-all disabled:opacity-50"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={handleDeleteAccount}
+                disabled={isDeleting || deleteConfirmText !== "DELETE"}
+                className="cursor-pointer px-5 py-2.5 bg-red-600 hover:bg-red-500 text-white rounded-xl text-xs font-black tracking-wider uppercase transition-all shadow-lg disabled:opacity-30 flex items-center justify-center gap-1.5"
+              >
+                {isDeleting ? "Deleting..." : "Permanently Delete"}
+              </button>
+            </div>
           </div>
         </div>
       )}

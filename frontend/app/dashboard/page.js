@@ -84,6 +84,10 @@ export default function Dashboard() {
   const [copied, setCopied] = useState(false);
   const [error, setError] = useState("");
 
+  // News States
+  const [news, setNews] = useState([]);
+  const [loadingNews, setLoadingNews] = useState(true);
+
   // Sync context player to local state (needed for referral update)
   React.useEffect(() => {
     if (contextPlayer) {
@@ -91,6 +95,67 @@ export default function Dashboard() {
     }
   }, [contextPlayer]);
 
+  // Fetch news updates
+  React.useEffect(() => {
+    async function fetchNews() {
+      try {
+        const res = await fetch("/api/v1/news");
+        const data = await res.json();
+        if (res.ok && data.success) {
+          setNews((data.data || []).slice(0, 5));
+        }
+      } catch (err) {
+        console.error("Failed to fetch news on dashboard:", err);
+      } finally {
+        setLoadingNews(false);
+      }
+    }
+    fetchNews();
+  }, []);
+  // Scroll Reference & Auto Scroll Loop
+  const scrollRef = React.useRef(null);
+
+  React.useEffect(() => {
+    const container = scrollRef.current;
+    if (!container || news.length <= 1) return;
+
+    let intervalId;
+    const autoScroll = () => {
+      const maxScroll = container.scrollHeight - container.clientHeight;
+      if (maxScroll <= 0) return;
+
+      if (container.scrollTop >= maxScroll - 1) {
+        clearInterval(intervalId);
+        setTimeout(() => {
+          container.scrollTo({ top: 0, behavior: "smooth" });
+          setTimeout(() => {
+            intervalId = setInterval(autoScroll, 40);
+          }, 1200);
+        }, 3000);
+      } else {
+        container.scrollTop += 0.8;
+      }
+    };
+
+    intervalId = setInterval(autoScroll, 40);
+
+    const handleMouseEnter = () => clearInterval(intervalId);
+    const handleMouseLeave = () => {
+      clearInterval(intervalId);
+      intervalId = setInterval(autoScroll, 40);
+    };
+
+    container.addEventListener("mouseenter", handleMouseEnter);
+    container.addEventListener("mouseleave", handleMouseLeave);
+
+    return () => {
+      clearInterval(intervalId);
+      if (container) {
+        container.removeEventListener("mouseenter", handleMouseEnter);
+        container.removeEventListener("mouseleave", handleMouseLeave);
+      }
+    };
+  }, [news]);
   const handleCreateReferral = async () => {
     setGeneratingReferral(true);
     setError("");
@@ -471,43 +536,163 @@ export default function Dashboard() {
             </div>
           </div>
 
-          {/* Column 2: Challenges List (1 column on lg screens) */}
-          <div className="flex flex-col gap-4">
-            {/* ACTIVE CHALLENGE CARD */}
-            <div className="bg-gradient-to-b from-[#131927]/90 to-[#0d101d]/90 border border-white/10 rounded-2xl p-5 backdrop-blur-md shadow-2xl flex items-center gap-4 hover:border-white/15 transition-all">
-              <div className="w-12 h-12 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center shrink-0 shadow-[0_0_15px_rgba(245,158,11,0.15)]">
-                <svg
-                  className="w-6 h-6 text-amber-400"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2.5"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    d="M12 15a7 7 0 007-7V4H5v4a7 7 0 007 7zm0 0v4m0 0H8m4 0h4m-9-8H3m18 0h-2"
-                  />
-                </svg>
-              </div>
-              <div className="flex-1 min-w-0">
-                <span className="text-[9px] font-black uppercase tracking-wider text-amber-500">
-                  Available Challenge:
-                </span>
-                <h3 className="text-sm font-extrabold text-white truncate">
-                  The Opener
-                </h3>
-
-                {/* Progress Bar */}
-                <div className="w-full bg-slate-800 h-1.5 rounded-full overflow-hidden mt-1.5">
-                  <div className="bg-gradient-to-r from-[#06b6d4] to-[#4F46E5] h-full rounded-full w-[45%]" />
-                </div>
-
-                <p className="text-[10px] text-slate-400 mt-2 font-medium">
-                  Description: Complete your first arena match.
-                </p>
-              </div>
+          {/* Column 2: News & Updates (1 column on lg screens) */}
+          <div className="bg-gradient-to-b from-[#131927]/90 to-[#0d101d]/90 border border-white/10 rounded-2xl p-6 backdrop-blur-md shadow-2xl flex flex-col gap-4 hover:border-white/15 transition-all lg:col-span-1 min-h-[380px]">
+            <div className="flex items-center justify-between border-b border-white/5 pb-3">
+              <h2 className="text-sm font-black uppercase tracking-wider text-white">
+                Arena Feed
+              </h2>
             </div>
+
+            <div
+              ref={scrollRef}
+              className="flex-1 overflow-y-auto flex flex-col gap-3.5 max-h-[340px] no-scrollbar"
+              style={{
+                scrollbarWidth: "none",
+                msOverflowStyle: "none",
+              }}
+            >
+              <style>{`
+                .no-scrollbar::-webkit-scrollbar {
+                  display: none !important;
+                }
+              `}</style>
+              {loadingNews ? (
+                <div className="flex-1 flex items-center justify-center py-10">
+                  <div className="w-5 h-5 border-2 border-violet-500 border-t-transparent rounded-full animate-spin" />
+                </div>
+              ) : news.length === 0 ? (
+                <div className="flex-1 flex flex-col items-center justify-center py-10 text-center text-xs text-slate-400">
+                  No arena announcements found.
+                </div>
+              ) : (
+                news.map((item) => (
+                  <div
+                    key={item.id}
+                    className="group/news flex flex-col gap-2.5 pb-4 border-b border-white/5 last:border-b-0 last:pb-0 last:border-none"
+                  >
+                    {/* Header: Type Name & Date */}
+                    <div className="flex items-center justify-between">
+                      <span className="text-[10px] font-black uppercase tracking-wider text-slate-400">
+                        {item.type === "task"
+                          ? "Task Release"
+                          : item.type === "video"
+                            ? "Video Release"
+                            : item.type === "info"
+                              ? "Alert"
+                              : "Info"}
+                      </span>
+                      <span className="text-[9px] text-slate-500 font-bold shrink-0">
+                        {new Date(item.created_at).toLocaleDateString()}
+                      </span>
+                    </div>
+
+                    {/* Main Image (Instagram Style) */}
+                    {item.image_url && (
+                      <div className="relative w-full rounded-lg overflow-hidden border border-white/5 bg-black/20">
+                        <img
+                          src={item.image_url}
+                          alt={item.title}
+                          className="w-full h-auto object-contain group-hover/news:scale-[1.02] transition-transform duration-500"
+                        />
+                      </div>
+                    )}
+
+                    {/* Title, Content & Action Link below the image */}
+                    <div className="flex flex-col gap-1.5 mt-0.5">
+                      <h4 className="text-xs font-black text-white group-hover/news:text-cyan-400 transition-colors leading-tight">
+                        {item.title}
+                      </h4>
+                      <p className="text-[10px] text-slate-400 leading-relaxed">
+                        {item.content}
+                      </p>
+
+                      {item.action_url && (
+                        <a
+                          href={item.action_url}
+                          target={
+                            item.action_url.startsWith("http")
+                              ? "_blank"
+                              : "_self"
+                          }
+                          rel="noopener noreferrer"
+                          className="text-[9px] font-black text-cyan-400 hover:text-cyan-300 transition-colors flex items-center gap-1 hover:underline mt-0.5 self-start"
+                        >
+                          <span>View Details</span>
+                          <svg
+                            className="w-2.5 h-2.5"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth="2.5"
+                            viewBox="0 0 24 24"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3"
+                            />
+                          </svg>
+                        </a>
+                      )}
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* Challenges Row */}
+        <div className="flex flex-col gap-4 mt-8">
+          <div className="flex items-center justify-between">
+            <h2 className="text-sm font-black uppercase tracking-[0.2em] text-white">
+              Challenges Progress
+            </h2>
+            <Link
+              href="/tasks"
+              className="text-xs font-black uppercase tracking-wider text-cyan-400 hover:text-cyan-300 transition-colors hover:underline"
+            >
+              View all challenges
+            </Link>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {/* ACTIVE CHALLENGE CARD */}
+            <Link href="/tasks" className="block cursor-pointer">
+              <div className="bg-gradient-to-b from-[#131927]/90 to-[#0d101d]/90 border border-white/10 rounded-2xl p-5 backdrop-blur-md shadow-2xl flex items-center gap-4 hover:border-white/15 transition-all">
+                <div className="w-12 h-12 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center shrink-0 shadow-[0_0_15px_rgba(245,158,11,0.15)]">
+                  <svg
+                    className="w-6 h-6 text-amber-400"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2.5"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      d="M12 15a7 7 0 007-7V4H5v4a7 7 0 007 7zm0 0v4m0 0H8m4 0h4m-9-8H3m18 0h-2"
+                    />
+                  </svg>
+                </div>
+                <div className="flex-1 min-w-0">
+                  <span className="text-[9px] font-black uppercase tracking-wider text-amber-500">
+                    Available Challenge:
+                  </span>
+                  <h3 className="text-sm font-extrabold text-white truncate">
+                    The Opener
+                  </h3>
+
+                  {/* Progress Bar */}
+                  <div className="w-full bg-slate-800 h-1.5 rounded-full overflow-hidden mt-1.5">
+                    <div className="bg-gradient-to-r from-[#06b6d4] to-[#4F46E5] h-full rounded-full w-[45%]" />
+                  </div>
+
+                  <p className="text-[10px] text-slate-400 mt-2 font-medium">
+                    Description: Complete your first arena match.
+                  </p>
+                </div>
+              </div>
+            </Link>
 
             {/* LOCKED CHALLENGE CARD 1 */}
             <div className="bg-gradient-to-b from-[#131927]/90 to-[#0d101d]/90 border border-white/10 rounded-2xl p-5 relative overflow-hidden backdrop-blur-md shadow-2xl flex items-center gap-4 hover:border-white/15 transition-all">

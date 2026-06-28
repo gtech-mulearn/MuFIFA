@@ -79,8 +79,17 @@ const ACHIEVEMENT_ICONS = {
  * Generate pseudo-random stats from a player's mu_points and name.
  * This creates consistent stats for the same player.
  */
-function generateStats(muPoints = 0, name = "", xpBreakdown = null, avgHighestXp = null) {
+function generateStats(muPoints = 0, name = "", xpBreakdown = null, avgHighestXp = null, highestXpByCategory = null) {
   if (xpBreakdown) {
+    if (highestXpByCategory) {
+      return {
+        creativity: Math.min(100, Math.round(((xpBreakdown.creativity || 0) / (highestXpByCategory.creativity || 1)) * 100)),
+        branding: Math.min(100, Math.round(((xpBreakdown.branding || 0) / (highestXpByCategory.branding || 1)) * 100)),
+        innovation: Math.min(100, Math.round(((xpBreakdown.innovation || 0) / (highestXpByCategory.innovation || 1)) * 100)),
+        teamwork: Math.min(100, Math.round(((xpBreakdown.teamwork || 0) / (highestXpByCategory.teamwork || 1)) * 100)),
+        execution: Math.min(100, Math.round(((xpBreakdown.execution || 0) / (highestXpByCategory.execution || 1)) * 100)),
+      };
+    }
     const refXp = avgHighestXp && avgHighestXp > 0 ? avgHighestXp : 38;
     return {
       creativity: Math.min(99, Math.round(((xpBreakdown.creativity || 0) / refXp) * 99)),
@@ -143,7 +152,7 @@ export default function PlayerCard({
     college: player.institution || player.college || "",
   };
 
-  const stats = generateStats(data.mu_points, data.name, player.xp_breakdown, player.avg_highest_xp);
+  const stats = generateStats(data.mu_points, data.name, player.xp_breakdown, player.avg_highest_xp, player.highest_xp_by_category);
   const ovr = calculateOVR(stats);
 
   // Get referral count from player tasks
@@ -165,7 +174,22 @@ export default function PlayerCard({
   const playerAssists = assists ?? referralCount;
   const playerChallenges = challenges ?? player.completed_tasks_count ?? Math.floor(data.mu_points / 105);
 
-  const playerPosition = DOMAIN_POSITIONS[data.domain] || "";
+  // Calculate dynamic position based on highest category XP
+  let playerPosition = DOMAIN_POSITIONS[data.domain] || "Reserve Player";
+  if (player.xp_breakdown) {
+    const xp = player.xp_breakdown;
+    const categories = [
+      { xp: xp.creativity || 0, label: "Creative Playmaker" },
+      { xp: xp.branding || 0, label: "Star Winger" },
+      { xp: xp.innovation || 0, label: "Technical Forward" },
+      { xp: xp.teamwork || 0, label: "Strategic Captain" },
+      { xp: xp.execution || 0, label: "Clinical Finisher" },
+    ];
+    categories.sort((a, b) => b.xp - a.xp);
+    if (categories[0].xp > 0) {
+      playerPosition = categories[0].label;
+    }
+  }
 
   const defaultAchievements = achievements || [
     { icon: ACHIEVEMENT_ICONS.star, label: "Design Sprint Finisher" },
@@ -321,20 +345,12 @@ export default function PlayerCard({
             <div className="pc-player-name">{data.name}</div>
 
             {/* Position Block with Neon Silhouette */}
-            <div className="pc-position-container pc-position-locked">
+            <div className="pc-position-container">
               <div className="pc-position-block">
                 <span className="pc-position-label">POSITION</span>
-                <span className="pc-position-value pc-position-blurred">
+                <span className="pc-position-value">
                   {playerPosition}
                 </span>
-              </div>
-              <div className="pc-position-lock-overlay">
-                <svg viewBox="0 0 24 24" className="pc-position-lock-icon">
-                  <path
-                    fill="currentColor"
-                    d="M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zm-6 9c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm3.1-9H8.9V6c0-1.71 1.39-3.1 3.1-3.1 1.71 0 3.1 1.39 3.1 3.1v2z"
-                  />
-                </svg>
               </div>
               <div className="pc-position-silhouette-wrapper">
                 <svg

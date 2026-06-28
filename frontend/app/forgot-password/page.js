@@ -79,7 +79,7 @@ export default function ForgotPasswordPage() {
               Recover Access Password
             </h1>
             <p className="text-xs text-slate-400">
-              Enter your registered Email and Phone Number below to receive a new password via email.
+              Enter your registered Email and Phone Number below. Your new password will be sent to your email (<strong>please check your spam/junk folder</strong> if not found).
             </p>
           </div>
 

@@ -1,21 +1,24 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { usePathname, useSearchParams } from "next/navigation";
+import { usePathname } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import Sidebar from "@/app/tasks/components/Sidebar/Sidebar";
 import { PlayerProvider, usePlayer } from "@/components/PlayerContext";
+import dynamic from "next/dynamic";
+
+const OnboardingModal = dynamic(() => import("@/components/OnboardingModal"), {
+  ssr: false,
+});
 
 export default function LayoutContent({ children }) {
   const pathname = usePathname();
-  const searchParams = useSearchParams();
-  const currentTab = searchParams ? searchParams.get("tab") : null;
   const isAdmin = pathname.startsWith("/admin");
 
-  // State for Arena layout shell
+  // State indicating whether the desktop left sidebar is collapsed.
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
 
   // Identify all routes that should render within the Arena Layout
@@ -30,8 +33,8 @@ export default function LayoutContent({ children }) {
     pathname.startsWith("/kuzhiundo") ||
     pathname.startsWith("/captain");
 
+  // Avoid rendering standard headers/footers for administration and sandbox development routes.
   if (isAdmin || pathname === "/development") {
-    // Admin and development routes render their own layout — no public chrome
     return <>{children}</>;
   }
 
@@ -101,12 +104,22 @@ function ArenaLayout({
   children,
 }) {
   const { player, loading } = usePlayer();
+  const [showOnboarding, setShowOnboarding] = useState(false);
 
   useEffect(() => {
     if (!loading && !player) {
       window.location.href = "/login";
     }
   }, [player, loading]);
+
+  useEffect(() => {
+    if (!loading && player) {
+      const onboarded = localStorage.getItem("mufifa_onboarded_v1");
+      if (!onboarded) {
+        setShowOnboarding(true);
+      }
+    }
+  }, [loading, player]);
 
   const xp = player?.xp_breakdown || {};
   const totalXp =
@@ -239,10 +252,10 @@ function ArenaLayout({
     },
   ];
 
-  // Return immersive Arena dashboard shell with collapsible fixed sidebar
+  // Render the dashboard shell wrapper with sidebar navigation and main panels.
   return (
     <div className="min-h-screen bg-[#030207] text-white flex font-sans relative overflow-hidden w-full">
-      {/* LEFT SIDEBAR (Fixed & Collapsible - Desktop only) */}
+      {/* Sidebar segment containing desktop controls and app navigation. */}
       <div
         className={`hidden md:block fixed top-0 left-0 h-screen w-64 z-40 transition-transform duration-300 ${
           sidebarCollapsed ? "md:-translate-x-full" : "md:translate-x-0"
@@ -250,7 +263,7 @@ function ArenaLayout({
       >
         <Sidebar player={player} handleLogout={handleLogout} />
 
-        {/* Floating Sidebar Toggle Button inside the sidebar */}
+        {/* Collapsible navigation drawer toggling control. */}
         <button
           onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
           className="hidden md:flex absolute top-6 left-full -translate-x-1/2 z-50 p-2.5 border border-white/5 hover:border-white/10 bg-slate-900/80 hover:bg-white/5 rounded-xl text-slate-400 hover:text-white transition-all cursor-pointer items-center justify-center shrink-0 shadow-lg shadow-black/40"
@@ -272,13 +285,13 @@ function ArenaLayout({
         </button>
       </div>
 
-      {/* RIGHT MAIN CONTAINER */}
+      {/* Content block wrapper containing primary panels. */}
       <div
         className={`flex-1 min-w-0 overflow-y-auto flex flex-col relative z-10 transition-all duration-300 pb-[calc(5rem+env(safe-area-inset-bottom,0px))] md:pb-0 ${
           sidebarCollapsed ? "md:ml-0" : "md:ml-64"
         }`}
       >
-        {/* MOBILE NAVBAR WITH PROFILE AVATAR */}
+        {/* Mobile view top header bar containing navigation shortcut anchors. */}
         <div className="md:hidden flex items-center justify-between bg-[#0b0916]/85 border-b border-white/5 py-2.5 px-4 backdrop-blur-md sticky top-0 z-40">
           <Link href="/" className="h-8 flex items-center justify-center">
             <Image
@@ -291,19 +304,21 @@ function ArenaLayout({
             />
           </Link>
 
-          {/* Profile Avatar & XP Badge on Right Side */}
+          {/* Mobile navigation layout segment wrapping total player XP level and profile avatar. */}
           <div className="flex items-center gap-3">
-            {/* XP Badge */}
-            <div className="bg-[#1c1646]/60 border border-violet-500/20 px-3 py-1.5 rounded-xl flex items-center gap-1 shadow-inner select-none">
+            {/* Player XP metrics indicator. */}
+            <div
+              id="mobile-header-xp"
+              className="bg-[#1c1646]/60 border border-violet-500/20 px-3 py-1.5 rounded-xl flex items-center gap-1 shadow-inner select-none"
+            >
               <span className="text-[9px] font-black text-violet-400 uppercase tracking-wider">
                 XP
               </span>
-              <span className="text-xs font-black text-white">
-                {totalXp}
-              </span>
+              <span className="text-xs font-black text-white">{totalXp}</span>
             </div>
 
             <Link
+              id="mobile-header-profile"
               href={`/profile/${player.user_id}`}
               className="w-9 h-9 rounded-full overflow-hidden border border-violet-500/30 hover:border-violet-500/60 flex items-center justify-center bg-[#121021] hover:scale-105 active:scale-95 transition-all select-none shadow-md"
               title="View Profile"
@@ -332,7 +347,7 @@ function ArenaLayout({
         <Footer />
       </div>
 
-      {/* MOBILE BOTTOM NAVIGATION BAR */}
+      {/* Tabbed mobile bottom shortcuts menu. */}
       <nav className="md:hidden fixed bottom-0 left-0 right-0 h-[calc(4rem+env(safe-area-inset-bottom,0px))] bg-[#0c0a18]/90 border-t border-white/5 flex items-center justify-around z-40 backdrop-blur-md pb-[env(safe-area-inset-bottom,0px)]">
         {mobileTabs.map((item) => {
           const isActive =
@@ -343,6 +358,7 @@ function ArenaLayout({
           return (
             <Link
               key={item.name}
+              id={`mobile-tab-item-${item.name.toLowerCase().replace("μ", "u")}`}
               href={item.href}
               className={`flex-1 min-w-0 flex flex-col items-center justify-center py-1.5 px-0.5 rounded-xl transition-all ${
                 isActive
@@ -355,6 +371,15 @@ function ArenaLayout({
           );
         })}
       </nav>
+
+      {showOnboarding && (
+        <OnboardingModal
+          isOpen={showOnboarding}
+          onClose={() => setShowOnboarding(false)}
+          player={player}
+          sidebarCollapsed={sidebarCollapsed}
+        />
+      )}
     </div>
   );
 }

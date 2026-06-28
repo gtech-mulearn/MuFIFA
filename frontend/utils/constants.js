@@ -11,7 +11,7 @@ export const TEAM_WHATSAPP_LINKS = {
   Croatia: "https://chat.whatsapp.com/FkLUDYocKur6EWkSCSKNaN",
   Uruguay: "https://chat.whatsapp.com/DEYKZdZ65NG15zhIaxpAcK",
   Japan: "https://chat.whatsapp.com/Ccg1WGLaize3hgcVLUqZHF",
-  Test: "#",
+  Test: "https://chat.whatsapp.com/FkLUDYocKur6EWkSCSKNaN",
 };
 export const DOMAINS = ["Coder", "Social", "Creative", "Maker", "Strategist"];
 
@@ -44,22 +44,22 @@ export const TEAM_FLAG_BGS = {
   Germany: "/playerCard/flag/germany.webp",
   France: "/playerCard/flag/france.webp",
   Croatia: "/playerCard/flag/crotia.webp",
-  Test: "/playerCard/flag/test.webp",
+  Test: "/playerCard/flag/germany.webp",
 };
 
 export const LEVEL_THRESHOLDS = [
-  0,      // Level 1
-  800,    // Level 2
-  1200,   // Level 3
-  1800,   // Level 4
-  2600,   // Level 5
-  3000,   // Level 6
-  3500,   // Level 7
-  4000,   // Level 8
-  4500,   // Level 9
-  5000,   // Level 10
-  5500,   // Level 11
-  6000    // Level 12
+  0, // Level 1
+  800, // Level 2
+  1200, // Level 3
+  1800, // Level 4
+  2600, // Level 5
+  3000, // Level 6
+  3500, // Level 7
+  4000, // Level 8
+  4500, // Level 9
+  5000, // Level 10
+  5500, // Level 11
+  6000, // Level 12
 ];
 
 export const calculateLevel = (xp) => {
@@ -88,6 +88,55 @@ export const calculateLevel = (xp) => {
     level,
     currentLevelXp,
     nextXp,
-    xpPercent: nextXp > 0 ? Math.min(Math.round((currentLevelXp / nextXp) * 100), 100) : 100,
+    xpPercent:
+      nextXp > 0
+        ? Math.min(Math.round((currentLevelXp / nextXp) * 100), 100)
+        : 100,
   };
 };
+
+export const DISPOSABLE_DOMAINS = [
+  "mailinator.com",
+  "yopmail.com",
+  "tempmail.com",
+  "temp-mail.org",
+  "temp-mail.ru",
+  "temp-mail.io",
+  "10minutemail.com",
+  "dispostable.com",
+  "sharklasers.com",
+  "guerrillamail.com",
+  "guerrillamailblock.com",
+  "guerrillamail.net",
+  "guerrillamail.org",
+  "guerrillamail.biz",
+  "getairmail.com",
+  "burnermail.io",
+  "maildrop.cc",
+  "trashmail.com",
+  "moakt.com",
+  "fakeinbox.com",
+  "generator.email",
+  "tempmailo.com",
+  "tempmail.dev",
+  "shortmail.com",
+  "inboxkitten.com",
+  "yopmail.fr",
+  "yopmail.net",
+  "cool.fr.to",
+  "jetable.org",
+  "discard.email",
+  "teleworm.us",
+  "superrito.com",
+  "melgard.me",
+  "boun.cr",
+  "duck.com",
+  "mailnull.com",
+  "mohmal.com",
+  "crazymailing.com",
+  "throwawaymail.com",
+  "owlymail.com",
+  "zillamail.com",
+  "getnada.com",
+  "disroot.org",
+];

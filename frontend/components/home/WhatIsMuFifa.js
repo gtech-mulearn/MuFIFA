@@ -32,7 +32,7 @@ export default function WhatIsMuFifa() {
         {/* Left Column: Title and Subtitle */}
         <div className="lg:col-span-4 text-left flex flex-col justify-start">
           <h2 className="text-3xl md:text-4xl font-black tracking-wider mb-4 leading-tight text-white">
-            What is <span className="text-[#A78BFA]">µFIFA</span>?
+            What is <span className="text-[#A78BFA]"><span className="normal-case">µ</span>FIFA</span>?
           </h2>
           <p className="text-sm md:text-base text-slate-400 leading-relaxed max-w-sm font-medium">
             μFIFA is a large-scale innovation movement by μLearn that turns learning 

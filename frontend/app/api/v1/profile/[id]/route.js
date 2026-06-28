@@ -1,9 +1,10 @@
 import { NextResponse } from "next/server";
 import { verifyToken } from "@/utils/auth";
+import { adjustSquadPoints } from "@/utils/squad";
 
-// Cache for avg_highest_xp. TTL: 10 minutes.
-let _avgHighestXpCache = null; // { value: number, ts: number }
-const AVG_HIGHEST_XP_TTL_MS = 600_000;
+// Cache for global stats (avg_highest_xp and highest_xp_by_category). TTL: 24 hours.
+let _globalStatsCache = null; // { avgHighestXp: number, highestXpByCategory: { ... }, ts: number }
+const GLOBAL_STATS_TTL_MS = 86_400_000; // 24 hours
 
 export async function GET(request, { params }) {
   try {
@@ -41,7 +42,7 @@ export async function GET(request, { params }) {
     }
 
     const selectFields =
-      "id,name,user_id,team,domain,mu_points,avatar_url,created_at,email,phone,referal_id,tasks,ticket_url,referred_by,bio,muid,role";
+      "id,name,user_id,team,domain,mu_points,avatar_url,created_at,email,phone,referal_id,tasks,ticket_url,referred_by,bio,muid,role,institutions";
 
     // 1. Try to find the user by user_id (username)
     let query = `${supabaseUrl}/rest/v1/registrations?user_id=eq.${encodeURIComponent(cleanId)}&select=${selectFields}&limit=1`;
@@ -202,11 +203,14 @@ export async function GET(request, { params }) {
       console.error("Failed to fetch player completed tasks for stats:", err);
     }
 
-    // Retrieve or calculate global average of student highest XP (with in-memory cache and optimized selects)
+    // Retrieve or calculate global average and category highest XP values (cached with 24-hour TTL)
     let avgHighestXp = 38;
+    let highestXpByCategory = { creativity: 1, branding: 1, innovation: 1, teamwork: 1, execution: 1 };
     const now = Date.now();
-    if (_avgHighestXpCache && now - _avgHighestXpCache.ts < AVG_HIGHEST_XP_TTL_MS) {
-      avgHighestXp = _avgHighestXpCache.value;
+
+    if (_globalStatsCache && now - _globalStatsCache.ts < GLOBAL_STATS_TTL_MS) {
+      avgHighestXp = _globalStatsCache.avgHighestXp;
+      highestXpByCategory = _globalStatsCache.highestXpByCategory;
     } else {
       try {
         const globalQuery = `${supabaseUrl}/rest/v1/user_completed_tasks?select=user_id,xp_creativity,xp_branding,xp_innovation,xp_teamwork,xp_execution`;
@@ -234,20 +238,50 @@ export async function GET(request, { params }) {
 
           const uids = Object.keys(userXpMap);
           let sumOfStudentHighest = 0;
+          let maxCreativity = 1;
+          let maxBranding = 1;
+          let maxInnovation = 1;
+          let maxTeamwork = 1;
+          let maxExecution = 1;
+
           uids.forEach((uid) => {
             const xp = userXpMap[uid];
             const highest = Math.max(xp.creativity, xp.branding, xp.innovation, xp.teamwork, xp.execution);
             sumOfStudentHighest += highest;
+
+            if (xp.creativity > maxCreativity) maxCreativity = xp.creativity;
+            if (xp.branding > maxBranding) maxBranding = xp.branding;
+            if (xp.innovation > maxInnovation) maxInnovation = xp.innovation;
+            if (xp.teamwork > maxTeamwork) maxTeamwork = xp.teamwork;
+            if (xp.execution > maxExecution) maxExecution = xp.execution;
           });
+
           avgHighestXp = uids.length > 0 ? sumOfStudentHighest / uids.length : 38;
-          _avgHighestXpCache = { value: avgHighestXp, ts: now };
+          highestXpByCategory = {
+            creativity: maxCreativity,
+            branding: maxBranding,
+            innovation: maxInnovation,
+            teamwork: maxTeamwork,
+            execution: maxExecution,
+          };
+
+          _globalStatsCache = {
+            avgHighestXp,
+            highestXpByCategory,
+            ts: now,
+          };
         }
       } catch (err) {
-        console.error("Failed to fetch global completions for avg_highest_xp:", err);
-        if (_avgHighestXpCache) avgHighestXp = _avgHighestXpCache.value;
+        console.error("Failed to fetch global completions for stats:", err);
+        if (_globalStatsCache) {
+          avgHighestXp = _globalStatsCache.avgHighestXp;
+          highestXpByCategory = _globalStatsCache.highestXpByCategory;
+        }
       }
     }
+
     responseData.avg_highest_xp = avgHighestXp;
+    responseData.highest_xp_by_category = highestXpByCategory;
 
     responseData.xp_breakdown = {
       creativity: xp_creativity,
@@ -381,7 +415,7 @@ export async function PATCH(request, { params }) {
 
     // 4. Parse request body
     const body = await request.json();
-    const { name, bio, phone, tasks, muid } = body;
+    const { name, bio, phone, tasks, muid, institutions } = body;
 
     // Build update object
     const updateData = {};
@@ -389,6 +423,7 @@ export async function PATCH(request, { params }) {
     if (bio !== undefined) updateData.bio = bio.trim();
     if (phone !== undefined) updateData.phone = phone.trim();
     if (tasks !== undefined) updateData.tasks = tasks;
+    if (institutions !== undefined) updateData.institutions = institutions.trim();
     if (muid !== undefined) {
       const cleanMuid = muid.trim();
       if (cleanMuid !== "") {
@@ -467,6 +502,184 @@ export async function PATCH(request, { params }) {
     });
   } catch (error) {
     console.error("Update player profile error:", error);
+    return NextResponse.json(
+      { success: false, error: "Internal server error" },
+      { status: 500 },
+    );
+  }
+}
+
+export async function DELETE(request, { params }) {
+  try {
+    const { id } = await params;
+
+    if (!id || !id.trim()) {
+      return NextResponse.json(
+        { success: false, error: "Player ID parameter is required." },
+        { status: 400 },
+      );
+    }
+
+    const cleanId = id.trim().startsWith("@") ? id.trim().slice(1) : id.trim();
+
+    // 1. Authenticate user
+    const cookieHeader = request.headers.get("cookie") || "";
+    const match = cookieHeader.match(/(?:^|;\s*)player_token=([^;]*)/);
+    if (!match) {
+      return NextResponse.json(
+        { success: false, error: "Authentication required." },
+        { status: 401 },
+      );
+    }
+
+    const token = match[1];
+    const decoded = verifyToken(token);
+    if (!decoded || !decoded.id) {
+      return NextResponse.json(
+        { success: false, error: "Invalid session. Please log in again." },
+        { status: 401 },
+      );
+    }
+
+    const supabaseUrl = process.env.SUPABASE_URL;
+    const supabaseKey = process.env.SUPABASE_KEY;
+
+    if (!supabaseUrl || !supabaseKey) {
+      return NextResponse.json(
+        { success: false, error: "Database credentials are not configured." },
+        { status: 503 },
+      );
+    }
+
+    // 2. Fetch the target profile to check ownership
+    const selectFields = "id,user_id,team,mu_points";
+    let query = `${supabaseUrl}/rest/v1/registrations?user_id=eq.${encodeURIComponent(cleanId)}&select=${selectFields}&limit=1`;
+    let res = await fetch(query, {
+      method: "GET",
+      headers: {
+        apikey: supabaseKey,
+        Authorization: `Bearer ${supabaseKey}`,
+      },
+    });
+
+    if (!res.ok) {
+      throw new Error(`Failed to query registrations: ${await res.text()}`);
+    }
+
+    let rows = await res.json();
+    if (!rows || rows.length === 0) {
+      // Check if it's database UUID or integer id
+      query = `${supabaseUrl}/rest/v1/registrations?id=eq.${encodeURIComponent(cleanId)}&select=${selectFields}&limit=1`;
+      res = await fetch(query, {
+        method: "GET",
+        headers: {
+          apikey: supabaseKey,
+          Authorization: `Bearer ${supabaseKey}`,
+        },
+      });
+      if (!res.ok) {
+        throw new Error(
+          `Failed to query registrations by id: ${await res.text()}`,
+        );
+      }
+      rows = await res.json();
+    }
+
+    if (!rows || rows.length === 0) {
+      return NextResponse.json(
+        { success: false, error: "Player profile not found." },
+        { status: 404 },
+      );
+    }
+
+    const profile = rows[0];
+
+    // 3. Authorization check
+    if (decoded.id !== profile.id && decoded.user_id !== profile.user_id) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: "Forbidden: You are not authorized to delete this profile.",
+        },
+        { status: 403 },
+      );
+    }
+
+    // 4. Perform database deletions:
+    // a. Delete match predictions
+    if (profile.user_id) {
+      const deletePredsRes = await fetch(
+        `${supabaseUrl}/rest/v1/match_predictions?user_id=eq.${encodeURIComponent(profile.user_id)}`,
+        {
+          method: "DELETE",
+          headers: {
+            apikey: supabaseKey,
+            Authorization: `Bearer ${supabaseKey}`,
+          },
+        }
+      );
+      if (!deletePredsRes.ok) {
+        throw new Error(`Failed to delete user predictions: ${await deletePredsRes.text()}`);
+      }
+    }
+
+    // b. Delete completed tasks
+    if (profile.user_id) {
+      const deleteTasksRes = await fetch(
+        `${supabaseUrl}/rest/v1/user_completed_tasks?user_id=eq.${encodeURIComponent(profile.user_id)}`,
+        {
+          method: "DELETE",
+          headers: {
+            apikey: supabaseKey,
+            Authorization: `Bearer ${supabaseKey}`,
+          },
+        }
+      );
+      if (!deleteTasksRes.ok) {
+        throw new Error(`Failed to delete user completed tasks: ${await deleteTasksRes.text()}`);
+      }
+    }
+
+    // c. Delete user registration
+    const deleteUserRes = await fetch(
+      `${supabaseUrl}/rest/v1/registrations?id=eq.${profile.id}`,
+      {
+        method: "DELETE",
+        headers: {
+          apikey: supabaseKey,
+          Authorization: `Bearer ${supabaseKey}`,
+        },
+      }
+    );
+    if (!deleteUserRes.ok) {
+      throw new Error(`Failed to delete user registration: ${await deleteUserRes.text()}`);
+    }
+
+    // 5. Reduce team squad points by user's points
+    if (profile.team && Number(profile.mu_points || 0) > 0) {
+      await adjustSquadPoints(
+        supabaseUrl,
+        supabaseKey,
+        profile.team,
+        -Number(profile.mu_points || 0)
+      );
+    }
+
+    // 6. Clear session cookie by expiring it
+    const response = NextResponse.json({
+      success: true,
+      message: "Account deleted successfully.",
+    });
+
+    const secure = process.env.NODE_ENV === "production" ? " Secure;" : "";
+    response.headers.set(
+      "Set-Cookie",
+      `player_token=; Path=/; HttpOnly; SameSite=Lax;${secure} Max-Age=0`
+    );
+
+    return response;
+  } catch (error) {
+    console.error("Delete player profile error:", error);
     return NextResponse.json(
       { success: false, error: "Internal server error" },
       { status: 500 },

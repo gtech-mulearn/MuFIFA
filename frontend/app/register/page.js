@@ -6,7 +6,7 @@ import { useSearchParams, useRouter } from "next/navigation";
 import BackgroundVideo from "@/components/BackgroundVideo";
 import BallLoader from "@/components/BallLoader";
 import { getBackendUrl } from "@/utils/api";
-import { DOMAINS, TEAM_FLAGS } from "@/utils/constants";
+import { DOMAINS, TEAM_FLAGS, DISPOSABLE_DOMAINS } from "@/utils/constants";
 
 const TEAMS = Object.keys(TEAM_FLAGS);
 
@@ -219,6 +219,16 @@ function RegisterForm() {
       errors.email = "Email is required.";
     } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
       errors.email = "Please enter a valid email address.";
+    } else if (formData.email.includes("+")) {
+      errors.email = "Plus addressing (using + symbols) is not allowed.";
+    } else {
+      const parts = formData.email.split("@");
+      if (parts.length === 2) {
+        const domain = parts[1].toLowerCase().trim();
+        if (DISPOSABLE_DOMAINS.includes(domain)) {
+          errors.email = "Temporary/disposable email addresses are not allowed.";
+        }
+      }
     }
 
     const cleanPhone = formData.phone.trim();
