@@ -66,6 +66,7 @@ export async function proxy(request) {
   // - API routes
   // - Static files / next assets / favicon
   // - The /development route itself
+
   if (
     pathname.startsWith("/api") ||
     pathname.startsWith("/_next") ||
