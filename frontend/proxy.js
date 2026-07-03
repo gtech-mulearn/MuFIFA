@@ -33,7 +33,7 @@ async function isTokenValid(token) {
       keyData,
       { name: "HMAC", hash: "SHA-256" },
       false,
-      ["verify"]
+      ["verify"],
     );
 
     const signatureInput = encoder.encode(`${parts[0]}.${parts[1]}`);
@@ -46,7 +46,12 @@ async function isTokenValid(token) {
       signature[i] = sigBinary.charCodeAt(i);
     }
 
-    const isValid = await crypto.subtle.verify("HMAC", key, signature, signatureInput);
+    const isValid = await crypto.subtle.verify(
+      "HMAC",
+      key,
+      signature,
+      signatureInput,
+    );
     return isValid;
   } catch (err) {
     console.error("Failed to verify token in middleware:", err);
@@ -69,7 +74,6 @@ export async function proxy(request) {
   ) {
     return NextResponse.next();
   }
-
 
   // Handle Admin routes
   if (pathname.startsWith("/admin")) {
@@ -95,8 +99,16 @@ export async function proxy(request) {
   const hasValidPlayerToken = await isTokenValid(playerToken);
 
   // Protect Player Dashboard, Tasks/Challenges, Kuzhiundo, Rewards, and Captain routes
-  const playerRoutes = ["/dashboard", "/tasks", "/kuzhiundo", "/rewards", "/captain"];
-  const isPlayerRoute = playerRoutes.some((route) => pathname.startsWith(route));
+  const playerRoutes = [
+    "/dashboard",
+    "/tasks",
+    "/kuzhiundo",
+    "/rewards",
+    "/captain",
+  ];
+  const isPlayerRoute = playerRoutes.some((route) =>
+    pathname.startsWith(route),
+  );
 
   if (isPlayerRoute) {
     if (!hasValidPlayerToken) {
