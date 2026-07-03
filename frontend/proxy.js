@@ -54,7 +54,7 @@ async function isTokenValid(token) {
   return false;
 }
 
-export async function middleware(request) {
+export async function proxy(request) {
   const { pathname } = request.nextUrl;
 
   // Bypass checks for:

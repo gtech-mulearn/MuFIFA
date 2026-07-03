@@ -41,6 +41,9 @@ export async function GET(request) {
     const search = searchParams.get("search") || "";
     const team = searchParams.get("team") || "";
     const domain = searchParams.get("domain") || "";
+    const college = searchParams.get("college") || "";
+    const sortBy = searchParams.get("sortBy") || "created_at";
+    const sortOrder = searchParams.get("sortOrder") || "desc";
 
     const offset = (page - 1) * limit;
 
@@ -61,6 +64,17 @@ export async function GET(request) {
     if (domain) {
       filterParts.push(`domain=eq.${encodeURIComponent(domain)}`);
     }
+    if (college) {
+      const cleanCollege = college.trim().replace(/[.*(),]/g, "");
+      if (cleanCollege.length > 0) {
+        filterParts.push(`institutions=ilike.*${encodeURIComponent(cleanCollege)}*`);
+      }
+    }
+
+    // Validate sortBy and sortOrder to avoid injection
+    const allowedSortFields = ["created_at", "institutions", "mu_points", "name"];
+    const cleanSortBy = allowedSortFields.includes(sortBy) ? sortBy : "created_at";
+    const cleanSortOrder = sortOrder === "asc" ? "asc" : "desc";
 
     const filterQuery = filterParts.length > 0 ? "&" + filterParts.join("&") : "";
 
@@ -70,7 +84,7 @@ export async function GET(request) {
       Prefer: "count=exact",
     };
 
-    const url = `${supabaseUrl}/rest/v1/registrations?select=id,name,email,user_id,phone,domain,team,mu_points,created_at,banned,role&order=created_at.desc&offset=${offset}&limit=${limit}${filterQuery}`;
+    const url = `${supabaseUrl}/rest/v1/registrations?select=id,name,email,user_id,phone,domain,team,mu_points,created_at,banned,role,institutions&order=${cleanSortBy}.${cleanSortOrder}&offset=${offset}&limit=${limit}${filterQuery}`;
 
     const res = await fetch(url, { method: "GET", headers, next: { revalidate: 0 } });
 

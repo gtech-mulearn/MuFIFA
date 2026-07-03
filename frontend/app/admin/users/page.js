@@ -58,8 +58,12 @@ export default function AdminUsersPage() {
   const [error, setError] = useState("");
   const [search, setSearch] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
+  const [collegeFilter, setCollegeFilter] = useState("");
+  const [debouncedCollegeFilter, setDebouncedCollegeFilter] = useState("");
   const [teamFilter, setTeamFilter] = useState("");
   const [domainFilter, setDomainFilter] = useState("");
+  const [sortBy, setSortBy] = useState("created_at");
+  const [sortOrder, setSortOrder] = useState("desc");
 
   // Debounce search input to avoid parallel race condition requests
   useEffect(() => {
@@ -69,6 +73,38 @@ export default function AdminUsersPage() {
     return () => clearTimeout(timer);
   }, [search]);
 
+  // Debounce college input to avoid parallel race condition requests
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedCollegeFilter(collegeFilter);
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [collegeFilter]);
+
+  const handleSort = (field) => {
+    if (sortBy === field) {
+      setSortOrder((prev) => (prev === "asc" ? "desc" : "asc"));
+    } else {
+      setSortBy(field);
+      if (field === "mu_points" || field === "created_at") {
+        setSortOrder("desc");
+      } else {
+        setSortOrder("asc");
+      }
+    }
+  };
+
+  const renderSortIcon = (field) => {
+    if (sortBy !== field) {
+      return <span className="ml-1 opacity-40 select-none">↕</span>;
+    }
+    return sortOrder === "asc" ? (
+      <span className="ml-1 text-sky-600 select-none">▲</span>
+    ) : (
+      <span className="ml-1 text-sky-600 select-none">▼</span>
+    );
+  };
+
   const fetchUsers = useCallback(async (page = 1) => {
     setLoading(true);
     setError("");
@@ -77,6 +113,9 @@ export default function AdminUsersPage() {
       if (debouncedSearch) params.set("search", debouncedSearch);
       if (teamFilter) params.set("team", teamFilter);
       if (domainFilter) params.set("domain", domainFilter);
+      if (debouncedCollegeFilter) params.set("college", debouncedCollegeFilter);
+      if (sortBy) params.set("sortBy", sortBy);
+      if (sortOrder) params.set("sortOrder", sortOrder);
 
       const res = await fetch(`/api/v1/admin/users?${params.toString()}`);
       const data = await res.json();
@@ -92,7 +131,7 @@ export default function AdminUsersPage() {
     } finally {
       setLoading(false);
     }
-  }, [debouncedSearch, teamFilter, domainFilter]);
+  }, [debouncedSearch, teamFilter, domainFilter, debouncedCollegeFilter, sortBy, sortOrder]);
 
   useEffect(() => {
     fetchUsers(1);
@@ -115,7 +154,15 @@ export default function AdminUsersPage() {
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           placeholder="Search by name, email, or phone"
-          className={`flex-1 min-w-[200px] rounded-xl px-4 py-2.5 text-xs transition-colors focus:outline-none ${THEME.input}`}
+          className={`flex-1 min-w-[180px] rounded-xl px-4 py-2.5 text-xs transition-colors focus:outline-none ${THEME.input}`}
+        />
+
+        <input
+          type="text"
+          value={collegeFilter}
+          onChange={(e) => setCollegeFilter(e.target.value)}
+          placeholder="Filter by college"
+          className={`flex-1 min-w-[150px] rounded-xl px-4 py-2.5 text-xs transition-colors focus:outline-none ${THEME.input}`}
         />
 
         <select
@@ -139,6 +186,25 @@ export default function AdminUsersPage() {
             <option key={d} value={d}>{d}</option>
           ))}
         </select>
+
+        <select
+          value={`${sortBy}:${sortOrder}`}
+          onChange={(e) => {
+            const [field, order] = e.target.value.split(":");
+            setSortBy(field);
+            setSortOrder(order);
+          }}
+          className={`rounded-xl px-3 py-2.5 text-xs transition-colors cursor-pointer appearance-none focus:outline-none ${THEME.input}`}
+        >
+          <option value="created_at:desc">Newest Registered</option>
+          <option value="created_at:asc">Oldest Registered</option>
+          <option value="name:asc">Name (A-Z)</option>
+          <option value="name:desc">Name (Z-A)</option>
+          <option value="institutions:asc">College (A-Z)</option>
+          <option value="institutions:desc">College (Z-A)</option>
+          <option value="mu_points:desc">Points (Highest)</option>
+          <option value="mu_points:asc">Points (Lowest)</option>
+        </select>
       </div>
 
       {error && (
@@ -161,12 +227,34 @@ export default function AdminUsersPage() {
             <table className="w-full text-xs">
               <thead>
                 <tr className="border-b border-slate-200/90 text-slate-500">
-                  <th className="text-left px-4 py-3 font-bold uppercase tracking-wider">Name</th>
+                  <th
+                    onClick={() => handleSort("name")}
+                    className="text-left px-4 py-3 font-bold uppercase tracking-wider cursor-pointer hover:bg-slate-100/50 transition-colors select-none"
+                  >
+                    <div className="flex items-center gap-1">
+                      Name {renderSortIcon("name")}
+                    </div>
+                  </th>
                   <th className="text-left px-4 py-3 font-bold uppercase tracking-wider">Email</th>
                   <th className="text-left px-4 py-3 font-bold uppercase tracking-wider">Phone</th>
+                  <th
+                    onClick={() => handleSort("institutions")}
+                    className="text-left px-4 py-3 font-bold uppercase tracking-wider cursor-pointer hover:bg-slate-100/50 transition-colors select-none"
+                  >
+                    <div className="flex items-center gap-1">
+                      College {renderSortIcon("institutions")}
+                    </div>
+                  </th>
                   <th className="text-left px-4 py-3 font-bold uppercase tracking-wider">Domain</th>
                   <th className="text-left px-4 py-3 font-bold uppercase tracking-wider">Team</th>
-                  <th className="text-right px-4 py-3 font-bold uppercase tracking-wider">Points</th>
+                  <th
+                    onClick={() => handleSort("mu_points")}
+                    className="text-right px-4 py-3 font-bold uppercase tracking-wider cursor-pointer hover:bg-slate-100/50 transition-colors select-none"
+                  >
+                    <div className="flex items-center justify-end gap-1">
+                      Points {renderSortIcon("mu_points")}
+                    </div>
+                  </th>
                   <th className="text-right px-4 py-3 font-bold uppercase tracking-wider">Actions</th>
                 </tr>
               </thead>
@@ -194,6 +282,9 @@ export default function AdminUsersPage() {
                     </td>
                     <td className="px-4 py-3 text-slate-400 whitespace-nowrap">{user.email}</td>
                     <td className="px-4 py-3 text-slate-400 font-mono whitespace-nowrap">{user.phone}</td>
+                    <td className="px-4 py-3 text-slate-600 max-w-[200px] truncate" title={user.institutions || ""}>
+                      {user.institutions || "-"}
+                    </td>
                     <td className="px-4 py-3 text-slate-600">{user.domain}</td>
                     <td className="px-4 py-3 text-slate-800 whitespace-nowrap">
                       <span className="mr-3 inline-flex align-middle">

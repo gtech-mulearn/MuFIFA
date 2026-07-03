@@ -5,9 +5,13 @@ import { z } from "zod";
 const PLAYER_COOKIE = "player_token";
 
 const predictionSchema = z.object({
-  match_id: z.string({ required_error: "match_id is required." }).min(1, "match_id is required."),
+  match_id: z
+    .string({ required_error: "match_id is required." })
+    .min(1, "match_id is required."),
   predicted_outcome: z.enum(["home_win", "draw", "away_win"], {
-    errorMap: () => ({ message: "predicted_outcome must be home_win, draw, or away_win." }),
+    errorMap: () => ({
+      message: "predicted_outcome must be home_win, draw, or away_win.",
+    }),
   }),
   predicted_home_goals: z
     .number({
@@ -43,14 +47,14 @@ export async function POST(request) {
             details: null,
           },
         },
-        { status: 503 }
+        { status: 503 },
       );
     }
 
     // a. Authenticate player via player_token cookie
     const cookieHeader = request.headers.get("cookie") || "";
     const cookieMatch = cookieHeader.match(
-      new RegExp(`(?:^|;\\s*)${PLAYER_COOKIE}=([^;]*)`)
+      new RegExp(`(?:^|;\\s*)${PLAYER_COOKIE}=([^;]*)`),
     );
 
     if (!cookieMatch) {
@@ -63,7 +67,7 @@ export async function POST(request) {
             details: null,
           },
         },
-        { status: 401 }
+        { status: 401 },
       );
     }
 
@@ -80,7 +84,7 @@ export async function POST(request) {
             details: null,
           },
         },
-        { status: 401 }
+        { status: 401 },
       );
     }
 
@@ -93,11 +97,13 @@ export async function POST(request) {
           apikey: supabaseKey,
           Authorization: `Bearer ${supabaseKey}`,
         },
-      }
+      },
     );
 
     if (!userRes.ok) {
-      throw new Error(`Failed to fetch user points check: ${await userRes.text()}`);
+      throw new Error(
+        `Failed to fetch user points check: ${await userRes.text()}`,
+      );
     }
 
     const users = await userRes.json();
@@ -114,7 +120,7 @@ export async function POST(request) {
               message: banCheck.message,
             },
           },
-          { status: 403 }
+          { status: 403 },
         );
       }
     }
@@ -127,15 +133,14 @@ export async function POST(request) {
           success: false,
           error: {
             code: "FORBIDDEN",
-            message: "You cannot place or edit predictions because your point balance is below 0.",
+            message:
+              "You cannot place or edit predictions because your point balance is below 0.",
             details: null,
           },
         },
-        { status: 403 }
+        { status: 403 },
       );
     }
-
-
 
     // b. Parse request body JSON
     let body;
@@ -151,7 +156,7 @@ export async function POST(request) {
             details: null,
           },
         },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -164,7 +169,8 @@ export async function POST(request) {
         if (!details[field]) details[field] = [];
         details[field].push(err.message);
       });
-      const firstError = result.error.errors[0]?.message || "Validation failed.";
+      const firstError =
+        result.error.errors[0]?.message || "Validation failed.";
       return NextResponse.json(
         {
           success: false,
@@ -174,7 +180,7 @@ export async function POST(request) {
             details,
           },
         },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -187,9 +193,12 @@ export async function POST(request) {
 
     // d. Check outcome/goals consistency
     const isConsistent =
-      (predicted_outcome === "home_win" && predicted_home_goals > predicted_away_goals) ||
-      (predicted_outcome === "away_win" && predicted_away_goals > predicted_home_goals) ||
-      (predicted_outcome === "draw" && predicted_home_goals === predicted_away_goals);
+      (predicted_outcome === "home_win" &&
+        predicted_home_goals > predicted_away_goals) ||
+      (predicted_outcome === "away_win" &&
+        predicted_away_goals > predicted_home_goals) ||
+      (predicted_outcome === "draw" &&
+        predicted_home_goals === predicted_away_goals);
 
     if (!isConsistent) {
       return NextResponse.json(
@@ -201,7 +210,7 @@ export async function POST(request) {
             details: null,
           },
         },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -217,7 +226,7 @@ export async function POST(request) {
           Authorization: `Bearer ${supabaseKey}`,
         },
         next: { revalidate: 0 },
-      }
+      },
     );
 
     if (!cacheRes.ok) {
@@ -236,14 +245,14 @@ export async function POST(request) {
             details: null,
           },
         },
-        { status: 404 }
+        { status: 404 },
       );
     }
 
     // f. Check match status — cache stores the full API response { matches: [...] }
     const matchData = rows[0].match_data;
     const match = matchData?.matches?.find(
-      (m) => String(m.id) === String(matchId)
+      (m) => String(m.id) === String(matchId),
     );
 
     if (!match) {
@@ -256,7 +265,7 @@ export async function POST(request) {
             details: null,
           },
         },
-        { status: 404 }
+        { status: 404 },
       );
     }
 
@@ -271,7 +280,7 @@ export async function POST(request) {
             details: null,
           },
         },
-        { status: 422 }
+        { status: 422 },
       );
     }
 
@@ -287,7 +296,7 @@ export async function POST(request) {
             details: null,
           },
         },
-        { status: 422 }
+        { status: 422 },
       );
     }
 
@@ -313,7 +322,7 @@ export async function POST(request) {
             updated_at: new Date().toISOString(),
           },
         ]),
-      }
+      },
     );
 
     if (!upsertRes.ok) {
@@ -329,7 +338,7 @@ export async function POST(request) {
         success: true,
         data: savedRow,
       },
-      { status: 200 }
+      { status: 200 },
     );
   } catch (error) {
     // i. Catch-all
@@ -343,7 +352,7 @@ export async function POST(request) {
           details: null,
         },
       },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

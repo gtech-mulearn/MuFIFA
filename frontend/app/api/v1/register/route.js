@@ -65,7 +65,7 @@ const RegisterSchema = z.object({
       },
       {
         message: "Temporary/disposable email addresses are not allowed.",
-      }
+      },
     ),
   phone: z
     .string({ required_error: "Phone number is required" })

@@ -3,10 +3,23 @@ import { requireRole, hashPassword } from "@/utils/auth";
 import { z } from "zod";
 
 const adminSchema = z.object({
-  username: z.string({ required_error: "Username is required." }).trim().min(1, "Username is required."),
-  email: z.string({ required_error: "Email is required." }).trim().email("Please enter a valid email address."),
-  password: z.string({ required_error: "Password is required." }).trim().min(6, "Password must be at least 6 characters."),
-  role: z.enum(["superadmin", "admin", "viewer", "iglead", "merch_partner"], { errorMap: () => ({ message: "Invalid role selected." }) }).optional(),
+  username: z
+    .string({ required_error: "Username is required." })
+    .trim()
+    .min(1, "Username is required."),
+  email: z
+    .string({ required_error: "Email is required." })
+    .trim()
+    .email("Please enter a valid email address."),
+  password: z
+    .string({ required_error: "Password is required." })
+    .trim()
+    .min(6, "Password must be at least 6 characters."),
+  role: z
+    .enum(["superadmin", "admin", "viewer", "iglead", "merch_partner"], {
+      errorMap: () => ({ message: "Invalid role selected." }),
+    })
+    .optional(),
 });
 
 export async function GET(request) {
@@ -22,7 +35,7 @@ export async function GET(request) {
             details: null,
           },
         },
-        { status: auth.status }
+        { status: auth.status },
       );
     }
 
@@ -38,7 +51,7 @@ export async function GET(request) {
           Authorization: `Bearer ${supabaseKey}`,
         },
         next: { revalidate: 0 },
-      }
+      },
     );
 
     if (!res.ok) {
@@ -58,7 +71,7 @@ export async function GET(request) {
           details: null,
         },
       },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
@@ -76,7 +89,7 @@ export async function POST(request) {
             details: null,
           },
         },
-        { status: auth.status }
+        { status: auth.status },
       );
     }
 
@@ -93,7 +106,7 @@ export async function POST(request) {
             details: null,
           },
         },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -105,7 +118,8 @@ export async function POST(request) {
         if (!details[field]) details[field] = [];
         details[field].push(err.message);
       });
-      const firstError = validationResult.error.errors[0]?.message || "Validation failed.";
+      const firstError =
+        validationResult.error.errors[0]?.message || "Validation failed.";
       return NextResponse.json(
         {
           success: false,
@@ -115,7 +129,7 @@ export async function POST(request) {
             details,
           },
         },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -125,24 +139,23 @@ export async function POST(request) {
     const supabaseUrl = process.env.SUPABASE_URL;
     const supabaseKey = process.env.SUPABASE_KEY;
 
-    const res = await fetch(
-      `${supabaseUrl}/rest/v1/admin_users`,
-      {
-        method: "POST",
-        headers: {
-          apikey: supabaseKey,
-          Authorization: `Bearer ${supabaseKey}`,
-          "Content-Type": "application/json",
-          Prefer: "return=representation",
-        },
-        body: JSON.stringify([{
+    const res = await fetch(`${supabaseUrl}/rest/v1/admin_users`, {
+      method: "POST",
+      headers: {
+        apikey: supabaseKey,
+        Authorization: `Bearer ${supabaseKey}`,
+        "Content-Type": "application/json",
+        Prefer: "return=representation",
+      },
+      body: JSON.stringify([
+        {
           username: username.trim(),
           email: email.trim(),
           password_hash,
           role: role || "viewer",
-        }]),
-      }
-    );
+        },
+      ]),
+    });
 
     if (!res.ok) {
       const errText = await res.text();
@@ -156,7 +169,7 @@ export async function POST(request) {
               details: null,
             },
           },
-          { status: 409 }
+          { status: 409 },
         );
       }
       throw new Error(`Supabase error: ${errText}`);
@@ -172,11 +185,14 @@ export async function POST(request) {
       created_at: created.created_at,
     };
 
-    return NextResponse.json({
-      success: true,
-      admin: adminData,
-      data: adminData,
-    }, { status: 201 });
+    return NextResponse.json(
+      {
+        success: true,
+        admin: adminData,
+        data: adminData,
+      },
+      { status: 201 },
+    );
   } catch (error) {
     console.error("Admin create error:", error);
     return NextResponse.json(
@@ -188,7 +204,7 @@ export async function POST(request) {
           details: null,
         },
       },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
@@ -206,7 +222,7 @@ export async function DELETE(request) {
             details: null,
           },
         },
-        { status: auth.status }
+        { status: auth.status },
       );
     }
 
@@ -223,7 +239,7 @@ export async function DELETE(request) {
             details: null,
           },
         },
-        { status: 503 }
+        { status: 503 },
       );
     }
 
@@ -240,7 +256,7 @@ export async function DELETE(request) {
             details: null,
           },
         },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -255,7 +271,7 @@ export async function DELETE(request) {
             details: null,
           },
         },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -273,7 +289,10 @@ export async function DELETE(request) {
       throw new Error(`Failed to delete admin: ${await res.text()}`);
     }
 
-    return NextResponse.json({ success: true, message: "Admin account deleted successfully." });
+    return NextResponse.json({
+      success: true,
+      message: "Admin account deleted successfully.",
+    });
   } catch (error) {
     console.error("Admin delete error:", error);
     return NextResponse.json(
@@ -285,7 +304,7 @@ export async function DELETE(request) {
           details: error.message,
         },
       },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
