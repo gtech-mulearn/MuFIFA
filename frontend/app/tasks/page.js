@@ -13,6 +13,68 @@ import ChallengeModal from "./components/ChallengeModal";
 import Rewards from "./components/Rewards/Rewards";
 import ComingSoonCard from "./components/ComingSoonCard";
 
+function parseMarkdown(text) {
+  if (!text) return "";
+  
+  // 1. Headers
+  let html = text
+    .replace(/^### (.*$)/gim, '<h3>$1</h3>')
+    .replace(/^## (.*$)/gim, '<h2>$1</h2>')
+    .replace(/^# (.*$)/gim, '<h1>$1</h1>');
+
+  // 2. Bold & Italics
+  html = html
+    .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+    .replace(/__(.*?)__/g, '<strong>$1</strong>')
+    .replace(/\*(.*?)\*/g, '<em>$1</em>')
+    .replace(/_(.*?)_/g, '<em>$1</em>');
+
+  // 3. Inline code
+  html = html.replace(/`(.*?)`/g, '<code>$1</code>');
+
+  // 4. Links
+  html = html.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank" rel="noopener noreferrer">$1</a>');
+
+  // 5. Unordered Lists
+  const lines = html.split('\n');
+  let inUl = false;
+  const processedLines = [];
+
+  for (let line of lines) {
+    const trimmed = line.trim();
+    if (trimmed.startsWith('- ') || trimmed.startsWith('* ')) {
+      if (!inUl) {
+        processedLines.push('<ul>');
+        inUl = true;
+      }
+      processedLines.push(`<li>${trimmed.substring(2)}</li>`);
+    } else {
+      if (inUl) {
+        processedLines.push('</ul>');
+        inUl = false;
+      }
+      processedLines.push(line);
+    }
+  }
+  if (inUl) processedLines.push('</ul>');
+
+  html = processedLines.join('\n');
+
+  // 6. Double newlines to paragraph tags
+  const blocks = html.split(/\n\n+/);
+  html = blocks.map(block => {
+    const trimmed = block.trim();
+    if (!trimmed) return "";
+    if (/^<(h\d|ul|ol|li|blockquote|div|p|pre|table)/i.test(trimmed)) {
+      return block;
+    }
+    const inner = block.replace(/\n/g, '<br />');
+    return `<p>${inner}</p>`;
+  }).join('\n');
+
+  return html;
+}
+
 export default function TasksPage() {
   const { player: contextPlayer, loading: authLoading } = usePlayer();
   const [player, setPlayer] = useState(null);
@@ -30,6 +92,7 @@ export default function TasksPage() {
   const [overallCompleted, setOverallCompleted] = useState(0);
   const [overallCompletedPoints, setOverallCompletedPoints] = useState(0);
   const [dbTasksList, setDbTasksList] = useState([]);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
 
   // Fetch referrals to double check task 1 status
   async function fetchReferrals() {
@@ -45,11 +108,16 @@ export default function TasksPage() {
   }
 
   async function fetchDbTasks(page = currentPage, category = selectedCategory) {
+    if (page > 1) {
+      setIsLoadingMore(true);
+    } else {
+      setLoading(true);
+    }
     try {
-      const res = await fetch(`/api/v1/tasks?limit=6&page=${page}&category=${category}`);
+      const res = await fetch(`/api/v1/tasks?limit=9&page=${page}&category=${category}`);
       const data = await res.json();
       if (res.ok && data.success) {
-        setDbTasksList(data.data || []);
+        setDbTasksList(prev => page === 1 ? (data.data || []) : [...prev, ...(data.data || [])]);
         if (data.pagination) {
           setTotalPages(data.pagination.totalPages || 1);
         } else {
@@ -63,6 +131,9 @@ export default function TasksPage() {
       }
     } catch (err) {
       console.error("Failed to fetch database tasks:", err);
+    } finally {
+      setLoading(false);
+      setIsLoadingMore(false);
     }
   }
 
@@ -80,12 +151,30 @@ export default function TasksPage() {
   // Fetch paginated tasks whenever page or category changes
   useEffect(() => {
     if (!player) return;
-    fetchDbTasks(currentPage, selectedCategory).finally(() => {
-      setLoading(false);
-    });
+    fetchDbTasks(currentPage, selectedCategory);
   }, [currentPage, selectedCategory, player]);
 
+  // Infinite Scroll Listener
+  useEffect(() => {
+    const handleScroll = () => {
+      if (loading || isLoadingMore || currentPage >= totalPages) return;
+
+      const threshold = 150; // pixels from the bottom
+      const totalHeight = document.documentElement.offsetHeight;
+      const windowHeight = window.innerHeight;
+      const scrollPosition = window.scrollY || window.pageYOffset || document.documentElement.scrollTop;
+
+      if (totalHeight - (windowHeight + scrollPosition) < threshold) {
+        setCurrentPage((prev) => prev + 1);
+      }
+    };
+
+    window.addEventListener("scroll", handleScroll);
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, [loading, isLoadingMore, currentPage, totalPages]);
+
   const handleCategoryChange = (cat) => {
+    setDbTasksList([]); // Clear the list immediately so we don't show stale tasks
     setSelectedCategory(cat);
     setCurrentPage(1);
   };
@@ -319,9 +408,9 @@ export default function TasksPage() {
             <span className="text-[10px] uppercase font-black tracking-wider text-violet-400">Progression Challenge (Levels):</span>
             <div className="flex flex-col gap-2 pl-2 border-l border-violet-500/30">
               {levelsData.map((lvl) => {
-                const safeDesc = DOMPurify.sanitize(lvl.description || "", {
-                  ALLOWED_TAGS: ['b', 'i', 'strong', 'em', 'span', 'code'],
-                  ALLOWED_ATTR: [],
+                const safeDesc = DOMPurify.sanitize(parseMarkdown(lvl.description || ""), {
+                  ALLOWED_TAGS: ['b', 'i', 'strong', 'em', 'span', 'code', 'a'],
+                  ALLOWED_ATTR: ['href', 'target', 'rel'],
                 });
                 return (
                   <div key={lvl.level} className="text-[11px] text-slate-300 leading-normal flex flex-col">
@@ -333,7 +422,7 @@ export default function TasksPage() {
             </div>
           </div>
         ) : dbTask.guidelines ? (() => {
-          const safe = DOMPurify.sanitize(dbTask.guidelines, {
+          const safe = DOMPurify.sanitize(parseMarkdown(dbTask.guidelines), {
             ALLOWED_TAGS: ['p', 'br', 'b', 'i', 'strong', 'em', 'ul', 'ol', 'li', 'a', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'span', 'div', 'img', 'code', 'pre', 'blockquote'],
             ALLOWED_ATTR: ['href', 'target', 'rel', 'src', 'alt', 'class', 'style'],
           });
@@ -442,6 +531,7 @@ export default function TasksPage() {
             completedCount={completedCount}
             totalCount={totalCount}
             completedPoints={overallCompletedPoints}
+            player={player}
           />
         </div>
       </div>
@@ -498,53 +588,24 @@ export default function TasksPage() {
         </div>
 
         {/* Pagination Controls */}
-        {totalPages > 1 && (
-          <div className="flex items-center justify-center gap-4 mt-8 select-none">
-            <button
-              onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
-              disabled={currentPage === 1}
-              className={`px-4 py-2 rounded-xl border text-xs font-black tracking-wider uppercase transition-all flex items-center gap-2 cursor-pointer ${
-                currentPage === 1
-                  ? "border-white/5 bg-white/2 opacity-30 cursor-not-allowed text-slate-500"
-                  : "border-violet-500/25 bg-[#110e20]/60 text-violet-400 hover:border-violet-500/50 hover:bg-violet-500/10"
-              }`}
-            >
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5" />
-              </svg>
-              <span>Prev</span>
-            </button>
-
-            <div className="flex items-center gap-1">
-              {Array.from({ length: totalPages }, (_, i) => i + 1).map((p) => (
-                <button
-                  key={p}
-                  onClick={() => setCurrentPage(p)}
-                  className={`w-8 h-8 rounded-lg text-xs font-black transition-all cursor-pointer ${
-                    currentPage === p
-                      ? "bg-violet-600 text-white shadow-md shadow-violet-600/30"
-                      : "text-slate-400 hover:text-slate-200 bg-white/5 border border-white/5 hover:bg-white/10"
-                  }`}
-                >
-                  {p}
-                </button>
-              ))}
-            </div>
-
-            <button
-              onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
-              disabled={currentPage === totalPages}
-              className={`px-4 py-2 rounded-xl border text-xs font-black tracking-wider uppercase transition-all flex items-center gap-2 cursor-pointer ${
-                currentPage === totalPages
-                  ? "border-white/5 bg-white/2 opacity-30 cursor-not-allowed text-slate-500"
-                  : "border-violet-500/25 bg-[#110e20]/60 text-violet-400 hover:border-violet-500/50 hover:bg-violet-500/10"
-              }`}
-            >
-              <span>Next</span>
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
-              </svg>
-            </button>
+        {/* Infinite Scroll Loading Status */}
+        {(isLoadingMore || currentPage < totalPages) && (
+          <div className="flex flex-col items-center justify-center gap-2 mt-8 py-4">
+            {isLoadingMore ? (
+              <>
+                <div className="w-6 h-6 rounded-full border-2 border-violet-500 border-t-transparent animate-spin" />
+                <span className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">
+                  Loading More Tasks...
+                </span>
+              </>
+            ) : (
+              <button
+                onClick={() => setCurrentPage((prev) => prev + 1)}
+                className="px-6 py-2 rounded-xl bg-white/5 border border-white/10 hover:border-white/20 text-xs font-bold uppercase tracking-wider text-slate-300 hover:text-white transition-all cursor-pointer"
+              >
+                Load More Tasks
+              </button>
+            )}
           </div>
         )}
       </div>

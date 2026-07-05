@@ -41,7 +41,7 @@ export async function GET(request) {
       Authorization: `Bearer ${supabaseKey}`,
     };
 
-        const query = `${supabaseUrl}/rest/v1/registrations?id=eq.${decoded.id}&select=id,name,user_id,email,team,domain,mu_points,avatar_url,created_at,referal_id,tasks,ticket_url,bio,muid,banned,role&limit=1`;
+        const query = `${supabaseUrl}/rest/v1/registrations?id=eq.${decoded.id}&select=id,name,user_id,email,team,domain,mu_points,avatar_url,created_at,referal_id,tasks,ticket_url,bio,muid,banned,role,whoami&limit=1`;
     const predQuery = `${supabaseUrl}/rest/v1/match_predictions?user_id=eq.${encodeURIComponent(decoded.user_id)}&limit=1`;
     const compQuery = `${supabaseUrl}/rest/v1/user_completed_tasks?user_id=eq.${encodeURIComponent(decoded.user_id)}&select=xp_creativity,xp_branding,xp_innovation,xp_teamwork,xp_execution`;
 

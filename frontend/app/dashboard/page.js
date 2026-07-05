@@ -88,6 +88,10 @@ export default function Dashboard() {
   const [news, setNews] = useState([]);
   const [loadingNews, setLoadingNews] = useState(true);
 
+  // Dynamic tasks progression states
+  const [dashboardTasks, setDashboardTasks] = useState([]);
+  const [loadingTasks, setLoadingTasks] = useState(true);
+
   // Sync context player to local state (needed for referral update)
   React.useEffect(() => {
     if (contextPlayer) {
@@ -112,6 +116,26 @@ export default function Dashboard() {
     }
     fetchNews();
   }, []);
+
+  // Fetch active challenge tasks
+  React.useEffect(() => {
+    async function fetchDashboardTasks() {
+      try {
+        const res = await fetch("/api/v1/tasks?limit=3");
+        const data = await res.json();
+        if (res.ok && data.success) {
+          setDashboardTasks(data.data || []);
+        }
+      } catch (err) {
+        console.error("Failed to fetch dashboard tasks:", err);
+      } finally {
+        setLoadingTasks(false);
+      }
+    }
+    if (player) {
+      fetchDashboardTasks();
+    }
+  }, [player]);
   // Scroll Reference & Auto Scroll Loop
   const scrollRef = React.useRef(null);
 
@@ -656,137 +680,113 @@ export default function Dashboard() {
             </Link>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {/* ACTIVE CHALLENGE CARD */}
-            <Link href="/tasks" className="block cursor-pointer">
-              <div className="bg-gradient-to-b from-[#131927]/90 to-[#0d101d]/90 border border-white/10 rounded-2xl p-5 backdrop-blur-md shadow-2xl flex items-center gap-4 hover:border-white/15 transition-all">
-                <div className="w-12 h-12 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center shrink-0 shadow-[0_0_15px_rgba(245,158,11,0.15)]">
-                  <svg
-                    className="w-6 h-6 text-amber-400"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2.5"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      d="M12 15a7 7 0 007-7V4H5v4a7 7 0 007 7zm0 0v4m0 0H8m4 0h4m-9-8H3m18 0h-2"
-                    />
-                  </svg>
-                </div>
-                <div className="flex-1 min-w-0">
-                  <span className="text-[9px] font-black uppercase tracking-wider text-amber-500">
-                    Available Challenge:
-                  </span>
-                  <h3 className="text-sm font-extrabold text-white truncate">
-                    The Opener
-                  </h3>
-
-                  {/* Progress Bar */}
-                  <div className="w-full bg-slate-800 h-1.5 rounded-full overflow-hidden mt-1.5">
-                    <div className="bg-gradient-to-r from-[#06b6d4] to-[#4F46E5] h-full rounded-full w-[45%]" />
+            {loadingTasks ? (
+              Array.from({ length: 3 }).map((_, i) => (
+                <div key={i} className="bg-gradient-to-b from-[#131927]/90 to-[#0d101d]/90 border border-white/10 rounded-2xl p-5 backdrop-blur-md shadow-2xl h-[92px] animate-pulse flex items-center gap-4">
+                  <div className="w-12 h-12 rounded-xl bg-white/5 shrink-0" />
+                  <div className="flex-1 flex flex-col gap-2">
+                    <div className="h-3 bg-white/10 w-1/3 rounded" />
+                    <div className="h-4 bg-white/10 w-2/3 rounded" />
                   </div>
-
-                  <p className="text-[10px] text-slate-400 mt-2 font-medium">
-                    Description: Complete your first arena match.
-                  </p>
                 </div>
+              ))
+            ) : dashboardTasks.length === 0 ? (
+              <div className="col-span-1 md:col-span-3 text-center py-6 text-xs text-slate-500 font-semibold uppercase tracking-wider">
+                No active challenges found.
               </div>
-            </Link>
+            ) : (
+              dashboardTasks.map((task) => {
+                const isLocked = !!task.isLocked;
+                const isCompleted = !!task.completed;
+                
+                // Calculate level counts and percentages
+                const totalLvls = (task.sub_levels || []).length;
+                const completedLvls = (task.sub_levels || []).filter(sl => sl.completed).length;
+                const progressPercent = totalLvls > 0 
+                  ? Math.round((completedLvls / totalLvls) * 100) 
+                  : (isCompleted ? 100 : 0);
 
-            {/* LOCKED CHALLENGE CARD 1 */}
-            <div className="bg-gradient-to-b from-[#131927]/90 to-[#0d101d]/90 border border-white/10 rounded-2xl p-5 relative overflow-hidden backdrop-blur-md shadow-2xl flex items-center gap-4 hover:border-white/15 transition-all">
-              <div className="w-12 h-12 rounded-xl bg-cyan-500/10 border border-cyan-500/20 flex items-center justify-center shrink-0 shadow-[0_0_15px_rgba(6,182,212,0.15)] z-10">
-                <svg
-                  className="w-5 h-5 text-cyan-400"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2.5"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    d="M16.5 10.5V6.75a4.5 4.5 0 1 0-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 0 0 2.25-2.25v-6.75a2.25 2.25 0 0 0-2.25-2.25H6.75a2.25 2.25 0 0 0-2.25 2.25v6.75a2.25 2.25 0 0 0 2.25 2.25Z"
-                  />
-                </svg>
-              </div>
-              <div className="flex-1 min-w-0 filter blur-[2.5px] select-none z-10">
-                <span className="text-[9px] font-black uppercase tracking-wider text-slate-500">
-                  Locked Challenge
-                </span>
-                <h3 className="text-sm font-extrabold text-slate-400">
-                  Tactical Drill
-                </h3>
-                <p className="text-[10px] text-slate-500 mt-1 font-medium">
-                  Description: Complete your first arena match.
-                </p>
-              </div>
+                if (isLocked) {
+                  return (
+                    <div key={task.id} className="bg-gradient-to-b from-[#131927]/90 to-[#0d101d]/90 border border-white/10 rounded-2xl p-5 relative overflow-hidden backdrop-blur-md shadow-2xl flex items-center gap-4 hover:border-white/15 transition-all">
+                      <div className="w-12 h-12 rounded-xl bg-cyan-500/10 border border-cyan-500/20 flex items-center justify-center shrink-0 shadow-[0_0_15px_rgba(6,182,212,0.15)] z-10">
+                        <svg className="w-5 h-5 text-cyan-400" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 1 0-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 0 0 2.25-2.25v-6.75a2.25 2.25 0 0 0-2.25-2.25H6.75a2.25 2.25 0 0 0-2.25 2.25v6.75a2.25 2.25 0 0 0 2.25 2.25Z" />
+                        </svg>
+                      </div>
+                      <div className="flex-1 min-w-0 filter blur-[2px] select-none z-10">
+                        <span className="text-[9px] font-black uppercase tracking-wider text-slate-500">
+                          Locked Challenge
+                        </span>
+                        <h3 className="text-sm font-extrabold text-slate-400 truncate">
+                          {task.title}
+                        </h3>
+                        <p className="text-[10px] text-slate-500 mt-1 font-medium truncate">
+                          {task.short_desc || task.description}
+                        </p>
+                      </div>
+                      <div className="absolute right-4 top-1/2 -translate-y-1/2 opacity-[0.08] pointer-events-none z-0">
+                        <svg className="w-18 h-18 text-slate-300" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 1 0-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 0 0 2.25-2.25v-6.75a2.25 2.25 0 0 0-2.25-2.25H6.75a2.25 2.25 0 0 0-2.25 2.25v6.75a2.25 2.25 0 0 0 2.25 2.25Z" />
+                        </svg>
+                      </div>
+                    </div>
+                  );
+                }
 
-              {/* Large Glass Lock SVG on the right */}
-              <div className="absolute right-4 top-1/2 -translate-y-1/2 opacity-[0.08] pointer-events-none z-0">
-                <svg
-                  className="w-18 h-18 text-slate-300"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="1.5"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    d="M16.5 10.5V6.75a4.5 4.5 0 1 0-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 0 0 2.25-2.25v-6.75a2.25 2.25 0 0 0-2.25-2.25H6.75a2.25 2.25 0 0 0-2.25 2.25v6.75a2.25 2.25 0 0 0 2.25 2.25Z"
-                  />
-                </svg>
-              </div>
-            </div>
+                return (
+                  <Link key={task.id} href="/tasks" className="block cursor-pointer">
+                    <div className={`bg-gradient-to-b from-[#131927]/90 to-[#0d101d]/90 border rounded-2xl p-5 backdrop-blur-md shadow-2xl flex items-center gap-4 transition-all ${
+                      isCompleted 
+                        ? "border-emerald-500/30 hover:border-emerald-500/50 shadow-[0_0_20px_rgba(16,185,129,0.06)]" 
+                        : "border-white/10 hover:border-white/15"
+                    }`}>
+                      <div className={`w-12 h-12 rounded-xl border flex items-center justify-center shrink-0 shadow-md ${
+                        isCompleted 
+                          ? "bg-emerald-500/10 border-emerald-500/35 text-emerald-400" 
+                          : "bg-amber-500/10 border-amber-500/20 text-amber-400"
+                      }`}>
+                        {isCompleted ? (
+                          <svg className="w-6 h-6" fill="none" stroke="currentColor" strokeWidth="3" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
+                          </svg>
+                        ) : (
+                          <svg className="w-6 h-6" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M12 15a7 7 0 007-7V4H5v4a7 7 0 007 7zm0 0v4m0 0H8m4 0h4m-9-8H3m18 0h-2" />
+                          </svg>
+                        )}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <span className={`text-[9px] font-black uppercase tracking-wider ${isCompleted ? "text-emerald-400" : "text-amber-500"}`}>
+                          {isCompleted ? "Completed:" : "Available Challenge:"}
+                        </span>
+                        <h3 className="text-sm font-extrabold text-white truncate">
+                          {task.title}
+                        </h3>
 
-            {/* LOCKED CHALLENGE CARD 2 */}
-            <div className="bg-gradient-to-b from-[#131927]/90 to-[#0d101d]/90 border border-white/10 rounded-2xl p-5 relative overflow-hidden backdrop-blur-md shadow-2xl flex items-center gap-4 hover:border-white/15 transition-all">
-              <div className="w-12 h-12 rounded-xl bg-cyan-500/10 border border-cyan-500/20 flex items-center justify-center shrink-0 shadow-[0_0_15px_rgba(6,182,212,0.15)] z-10">
-                <svg
-                  className="w-5 h-5 text-cyan-400"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2.5"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    d="M16.5 10.5V6.75a4.5 4.5 0 1 0-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 0 0 2.25-2.25v-6.75a2.25 2.25 0 0 0-2.25-2.25H6.75a2.25 2.25 0 0 0-2.25 2.25v6.75a2.25 2.25 0 0 0 2.25 2.25Z"
-                  />
-                </svg>
-              </div>
-              <div className="flex-1 min-w-0 filter blur-[2.5px] select-none z-10">
-                <span className="text-[9px] font-black uppercase tracking-wider text-slate-500">
-                  Locked Challenge
-                </span>
-                <h3 className="text-sm font-extrabold text-slate-400">
-                  Squad Dominator
-                </h3>
-                <p className="text-[10px] text-slate-500 mt-1 font-medium">
-                  Description: Complete your first arena match.
-                </p>
-              </div>
+                        {/* Progress Bar */}
+                        <div className="w-full bg-slate-800 h-1.5 rounded-full overflow-hidden mt-1.5">
+                          <div 
+                            className={`h-full rounded-full transition-all duration-500 ${
+                              isCompleted 
+                                ? "bg-emerald-500" 
+                                : "bg-gradient-to-r from-cyan-400 to-indigo-600"
+                            }`} 
+                            style={{ width: `${progressPercent}%` }}
+                          />
+                        </div>
 
-              {/* Large Glass Lock SVG on the right */}
-              <div className="absolute right-4 top-1/2 -translate-y-1/2 opacity-[0.08] pointer-events-none z-0">
-                <svg
-                  className="w-18 h-18 text-slate-300"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="1.5"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    d="M16.5 10.5V6.75a4.5 4.5 0 1 0-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 0 0 2.25-2.25v-6.75a2.25 2.25 0 0 0-2.25-2.25H6.75a2.25 2.25 0 0 0-2.25 2.25v6.75a2.25 2.25 0 0 0 2.25 2.25Z"
-                  />
-                </svg>
-              </div>
-            </div>
+                        <p className="text-[10px] text-slate-400 mt-2 font-medium truncate">
+                          {totalLvls > 0 
+                            ? `${completedLvls}/${totalLvls} Levels Complete (${progressPercent}%)` 
+                            : (isCompleted ? "Verified & Complete (100%)" : "0/1 Complete (0%)")}
+                        </p>
+                      </div>
+                    </div>
+                  </Link>
+                );
+              })
+            )}
           </div>
         </div>
       </div>

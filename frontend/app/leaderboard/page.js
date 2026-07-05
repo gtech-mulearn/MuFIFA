@@ -65,7 +65,7 @@ const INITIAL_TEAMS = TEAMS.map((team, idx) => ({
 }));
 
 export default function LeaderboardPage() {
-  const [activeTab, setActiveTab] = useState("squad"); // "squad" | "individual"
+  const [activeTab, setActiveTab] = useState("squad"); // "squad" | "individual" | "college"
 
   // Squad Standings State
   const [teamsData, setTeamsData] = useState(INITIAL_TEAMS);
@@ -81,13 +81,27 @@ export default function LeaderboardPage() {
   const [playersLoading, setPlayersLoading] = useState(false);
   const [hasMorePlayers, setHasMorePlayers] = useState(false);
 
-  // Debounce search query to reduce Supabase queries
+  // College Standings State
+  const [collegesData, setCollegesData] = useState([]);
+  const [collegesLoading, setCollegesLoading] = useState(false);
+  const [collegeSearchQuery, setCollegeSearchQuery] = useState("");
+  const [debouncedCollegeSearch, setDebouncedCollegeSearch] = useState("");
+
+  // Debounce individual search query
   useEffect(() => {
     const timer = setTimeout(() => {
       setDebouncedSearchQuery(playersSearchQuery);
     }, 450);
     return () => clearTimeout(timer);
   }, [playersSearchQuery]);
+
+  // Debounce college search query
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedCollegeSearch(collegeSearchQuery);
+    }, 450);
+    return () => clearTimeout(timer);
+  }, [collegeSearchQuery]);
 
   // Fetch Squad Stats
   useEffect(() => {
@@ -165,6 +179,24 @@ export default function LeaderboardPage() {
     }
   }, [debouncedSearchQuery, playersSortOrder, teamFilter]);
 
+  // Fetch College Standings from API
+  const fetchColleges = useCallback(async () => {
+    setCollegesLoading(true);
+    try {
+      const res = await fetch(
+        `/api/v1/leaderboard/colleges?search=${encodeURIComponent(debouncedCollegeSearch)}`,
+      );
+      const data = await res.json();
+      if (res.ok && data.success) {
+        setCollegesData(data.data);
+      }
+    } catch (err) {
+      console.error("Failed to fetch colleges:", err);
+    } finally {
+      setCollegesLoading(false);
+    }
+  }, [debouncedCollegeSearch]);
+
   // Load players on tab switch, sort order change, or query change
   useEffect(() => {
     let active = true;
@@ -179,6 +211,19 @@ export default function LeaderboardPage() {
       active = false;
     };
   }, [activeTab, fetchPlayers]);
+
+  // Load colleges on tab switch or search change
+  useEffect(() => {
+    let active = true;
+    if (activeTab === "college") {
+      Promise.resolve().then(() => {
+        if (active) fetchColleges();
+      });
+    }
+    return () => {
+      active = false;
+    };
+  }, [activeTab, fetchColleges]);
 
   // Filter Squads Client-side
   const filteredTeams = useMemo(() => {
@@ -229,12 +274,14 @@ export default function LeaderboardPage() {
         {/* HEADER */}
         <div className="relative z-10">
           <Header
-            title={activeTab === "squad" ? "SQUAD" : "INDIVIDUAL"}
+            title={activeTab === "squad" ? "SQUAD" : activeTab === "individual" ? "INDIVIDUAL" : "COLLEGE"}
             highlightedTitle="STANDINGS"
             subtitle={
               activeTab === "squad"
                 ? "Live squad points standings in the µFIFA World Cup 2026."
-                : "Real-time player rankings and scorecards."
+                : activeTab === "individual"
+                ? "Real-time player rankings and scorecards."
+                : "College-wise aggregate points and member count."
             }
           />
         </div>
@@ -243,7 +290,7 @@ export default function LeaderboardPage() {
       <div className="max-w-4xl mx-auto w-full relative z-10 flex-1 flex flex-col gap-6 px-4 md:px-8">
         {/* Tab Selection Row */}
         <div className="flex flex-col sm:flex-row items-center justify-between gap-4 no-print mt-2">
-          <div className="flex bg-black/40 border border-white/5 p-1 rounded-xl w-full max-w-sm">
+          <div className="flex bg-black/40 border border-white/5 p-1 rounded-xl w-full max-w-lg">
             <button
               onClick={() => {
                 setActiveTab("squad");
@@ -271,6 +318,20 @@ export default function LeaderboardPage() {
               }`}
             >
               Individual Standings
+            </button>
+            <button
+              onClick={() => {
+                setActiveTab("college");
+                setCollegeSearchQuery("");
+                setDebouncedCollegeSearch("");
+              }}
+              className={`flex-1 text-center py-2 text-xs font-bold uppercase tracking-wider rounded-lg transition-all cursor-pointer ${
+                activeTab === "college"
+                  ? "bg-[#06B6D4] text-white shadow-md shadow-[#06B6D4]/20"
+                  : "text-slate-400 hover:text-slate-200"
+              }`}
+            >
+              College Standings
             </button>
           </div>
 
@@ -300,6 +361,14 @@ export default function LeaderboardPage() {
                 placeholder="Search squad country..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
+                className="bg-black/40 border border-white/10 rounded-lg px-3 py-2 text-xs text-slate-200 placeholder-slate-600 focus:outline-none focus:border-[#06B6D4] w-full transition-colors"
+              />
+            ) : activeTab === "college" ? (
+              <input
+                type="text"
+                placeholder="Search college name..."
+                value={collegeSearchQuery}
+                onChange={(e) => setCollegeSearchQuery(e.target.value)}
                 className="bg-black/40 border border-white/10 rounded-lg px-3 py-2 text-xs text-slate-200 placeholder-slate-600 focus:outline-none focus:border-[#06B6D4] w-full transition-colors"
               />
             ) : (
@@ -585,6 +654,61 @@ export default function LeaderboardPage() {
               ) : (
                 <div className="py-12 mx-2 sm:mx-3 text-center text-slate-500 text-xs font-bold border border-white/5 rounded-lg bg-white/[0.005]">
                   No squad matches your search query.
+                </div>
+              )
+            ) : activeTab === "college" ? (
+              /* COLLEGE STANDINGS LIST */
+              collegesLoading && collegesData.length === 0 ? (
+                <div className="py-16 flex flex-col items-center justify-center gap-3">
+                  <div className="w-6 h-6 rounded-full border-2 border-[#06B6D4] border-t-transparent animate-spin" />
+                  <span className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">
+                    Loading Colleges...
+                  </span>
+                </div>
+              ) : collegesData.length > 0 ? (
+                collegesData.map((college) => (
+                  <div
+                    key={college.name}
+                    className="flex items-center justify-between py-3 px-2 sm:px-3 border-b border-white/5 hover:bg-white/[0.02] transition-colors group last:border-b-0 animate-in fade-in duration-200"
+                  >
+                    <div className="flex items-center gap-3 min-w-0 flex-1">
+                      {/* Rank */}
+                      <span
+                        className={`inline-flex items-center justify-center w-6 h-6 rounded-md text-[10px] font-bold border shrink-0 ${getRankStyle(college.rank)}`}
+                      >
+                        {college.rank}
+                      </span>
+
+                      {/* College Icon */}
+                      <div className="w-7 h-7 rounded-full bg-[#06B6D4]/10 border border-[#06B6D4]/20 flex items-center justify-center shrink-0">
+                        <span className="text-[10px]">🏛️</span>
+                      </div>
+
+                      {/* College Name */}
+                      <div className="flex flex-col min-w-0 text-left">
+                        <span className="text-xs sm:text-sm font-semibold text-slate-200 group-hover:text-white transition-colors truncate">
+                          {college.name}
+                        </span>
+                        <span className="text-[9px] sm:text-[10px] font-medium text-slate-500 truncate">
+                          {college.memberCount} {college.memberCount === 1 ? "player" : "players"}
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Points */}
+                    <div className="flex items-center gap-0.5 min-w-[60px] justify-end shrink-0">
+                      <span className="text-xs sm:text-base md:text-lg font-bold text-[#06B6D4]">
+                        {college.totalPoints}
+                      </span>
+                      <span className="text-[10px] sm:text-xs text-slate-500 uppercase tracking-wider font-semibold ml-0.5">
+                        pts
+                      </span>
+                    </div>
+                  </div>
+                ))
+              ) : (
+                <div className="py-12 mx-2 sm:mx-3 text-center text-slate-500 text-xs font-bold border border-white/5 rounded-lg bg-white/[0.005]">
+                  No colleges match your search query.
                 </div>
               )
             ) : /* INDIVIDUAL PLAYERS LIST */

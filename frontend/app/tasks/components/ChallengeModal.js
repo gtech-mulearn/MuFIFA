@@ -3,6 +3,68 @@ import Link from "next/link";
 import Image from "next/image";
 import DOMPurify from "dompurify";
 
+function parseMarkdown(text) {
+  if (!text) return "";
+  
+  // 1. Headers
+  let html = text
+    .replace(/^### (.*$)/gim, '<h3>$1</h3>')
+    .replace(/^## (.*$)/gim, '<h2>$1</h2>')
+    .replace(/^# (.*$)/gim, '<h1>$1</h1>');
+
+  // 2. Bold & Italics
+  html = html
+    .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+    .replace(/__(.*?)__/g, '<strong>$1</strong>')
+    .replace(/\*(.*?)\*/g, '<em>$1</em>')
+    .replace(/_(.*?)_/g, '<em>$1</em>');
+
+  // 3. Inline code
+  html = html.replace(/`(.*?)`/g, '<code>$1</code>');
+
+  // 4. Links
+  html = html.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank" rel="noopener noreferrer">$1</a>');
+
+  // 5. Unordered Lists
+  const lines = html.split('\n');
+  let inUl = false;
+  const processedLines = [];
+
+  for (let line of lines) {
+    const trimmed = line.trim();
+    if (trimmed.startsWith('- ') || trimmed.startsWith('* ')) {
+      if (!inUl) {
+        processedLines.push('<ul>');
+        inUl = true;
+      }
+      processedLines.push(`<li>${trimmed.substring(2)}</li>`);
+    } else {
+      if (inUl) {
+        processedLines.push('</ul>');
+        inUl = false;
+      }
+      processedLines.push(line);
+    }
+  }
+  if (inUl) processedLines.push('</ul>');
+
+  html = processedLines.join('\n');
+
+  // 6. Double newlines to paragraph tags
+  const blocks = html.split(/\n\n+/);
+  html = blocks.map(block => {
+    const trimmed = block.trim();
+    if (!trimmed) return "";
+    if (/^<(h\d|ul|ol|li|blockquote|div|p|pre|table)/i.test(trimmed)) {
+      return block;
+    }
+    const inner = block.replace(/\n/g, '<br />');
+    return `<p>${inner}</p>`;
+  }).join('\n');
+
+  return html;
+}
+
 const getTaskLevels = (task) => {
   if (!task) return [];
 
@@ -513,7 +575,7 @@ export default function ChallengeModal({
                 {levels.length > 0 ? (
                   <>
                     {activeLvlData.description ? (() => {
-                      const safe = DOMPurify.sanitize(activeLvlData.description, {
+                      const safe = DOMPurify.sanitize(parseMarkdown(activeLvlData.description), {
                         ALLOWED_TAGS: ['p', 'br', 'b', 'i', 'strong', 'em', 'ul', 'ol', 'li', 'a', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'span', 'div', 'img', 'code', 'pre', 'blockquote'],
                         ALLOWED_ATTR: ['href', 'target', 'rel', 'src', 'alt', 'class', 'style'],
                       });
@@ -527,9 +589,9 @@ export default function ChallengeModal({
                           Required Level Milestones:
                         </span>
                         <ul className="list-disc pl-5 space-y-2 mt-2">
-                          {activeLvlData.entries.map((entry, idx) => {
+                           {activeLvlData.entries.map((entry, idx) => {
                             const entryText = entry.name || entry;
-                            const safeEntry = DOMPurify.sanitize(entryText, {
+                            const safeEntry = DOMPurify.sanitize(parseMarkdown(entryText), {
                               ALLOWED_TAGS: ['p', 'br', 'b', 'i', 'strong', 'em', 'a', 'span', 'code'],
                               ALLOWED_ATTR: ['href', 'target', 'rel'],
                             });
@@ -545,7 +607,7 @@ export default function ChallengeModal({
                   <div className="text-sm font-medium text-slate-300 guidelines-html-container">
                     {task.guidelines ? (
                       (() => {
-                        const safe = DOMPurify.sanitize(task.guidelines, {
+                        const safe = DOMPurify.sanitize(parseMarkdown(task.guidelines), {
                           ALLOWED_TAGS: ['p', 'br', 'b', 'i', 'strong', 'em', 'ul', 'ol', 'li', 'a', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'span', 'div', 'img', 'code', 'pre', 'blockquote'],
                           ALLOWED_ATTR: ['href', 'target', 'rel', 'src', 'alt', 'class', 'style'],
                         });

@@ -1,12 +1,11 @@
 import { NextResponse } from "next/server";
 import { fetchAllSupabase } from "@/utils/supabase";
 
-export const revalidate = 30;
+export const revalidate = 3600;
 
-// In-memory cache to avoid hitting Supabase and processing the entire table on every request.
-// TTL is set to 30 seconds to align with the client-side poll interval.
-let _liveStatsCache = null; // { stats: any, ts: number }
-const LIVE_STATS_TTL_MS = 30_000;
+// Caches calculation results in memory for 1 hour to prevent scanning the entire table on every request.
+let _liveStatsCache = null;
+const LIVE_STATS_TTL_MS = 3_600_000;
 
 export async function GET(request) {
   try {
@@ -46,7 +45,7 @@ export async function GET(request) {
         apikey: supabaseKey,
         Authorization: `Bearer ${supabaseKey}`,
       },
-      { fetchOptions: { next: { revalidate: 30 } } }
+      { fetchOptions: { next: { revalidate: 3600 } } }
     );
     const registrations = allRegistrations.filter(r => r.team !== "Test");
 
@@ -57,7 +56,7 @@ export async function GET(request) {
         apikey: supabaseKey,
         Authorization: `Bearer ${supabaseKey}`,
       },
-      next: { revalidate: 30 },
+      next: { revalidate: 3600 },
     });
 
     const squadNames = [];
@@ -68,7 +67,7 @@ export async function GET(request) {
       });
     }
 
-    // Initialize counts and points map
+    // Initialize team statistics maps and temporary arrays
     const organisation_count = {};
     const squad_points = {};
     const registrationsByTeam = {};
@@ -79,7 +78,7 @@ export async function GET(request) {
       registrationsByTeam[name] = [];
     });
 
-    // Populate registration counts and group mu_points by team
+    // Count registrations and collect individual points arrays per team
     registrations.forEach((r) => {
       if (r.team) {
         organisation_count[r.team] = (organisation_count[r.team] || 0) + 1;
@@ -98,7 +97,7 @@ export async function GET(request) {
       }
     });
 
-    // Helper to calculate median
+    // Calculates the statistical median of a points list
     function calculateMedian(arr) {
       if (!arr || arr.length === 0) return 0;
       const sorted = [...arr].sort((a, b) => a - b);
@@ -109,7 +108,7 @@ export async function GET(request) {
       return (sorted[mid - 1] + sorted[mid]) / 2;
     }
 
-    // Calculate dynamic scores for each team: Median * (Active / Registered) * 100
+    // Dynamic scoring logic: scores weigh total size, participation activity, and median performance
     Object.keys(registrationsByTeam).forEach((team) => {
       const pointsArray = registrationsByTeam[team];
       const registeredCount = pointsArray.length;
@@ -146,7 +145,7 @@ export async function GET(request) {
     );
   } catch (error) {
     console.error("Next.js live-stats API error:", error);
-    // Return stale cache as fallback if it exists
+    // Serves stale cached payload as a graceful fallback during server-side database errors.
     if (_liveStatsCache) {
       return NextResponse.json(
         {

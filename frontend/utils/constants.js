@@ -11,9 +11,103 @@ export const TEAM_WHATSAPP_LINKS = {
   Croatia: "https://chat.whatsapp.com/FkLUDYocKur6EWkSCSKNaN",
   Uruguay: "https://chat.whatsapp.com/DEYKZdZ65NG15zhIaxpAcK",
   Japan: "https://chat.whatsapp.com/Ccg1WGLaize3hgcVLUqZHF",
-  Test: "https://chat.whatsapp.com/FkLUDYocKur6EWkSCSKNaN",
 };
-export const DOMAINS = ["Coder", "Social", "Creative", "Maker", "Strategist"];
+export const DOMAINS = ["Coder", "Creative", "Maker", "Strategist"];
+
+export const WHO_AM_I_OPTIONS = ["College Student", "School Student", "Other"];
+
+export const KERALA_COLLEGES = [
+  "CARMEL COLLEGE OF ENGINEERING AND TECHNOLOGY",
+  "COLLEGE OF ENGINEERING CHENGANNUR",
+  "PROVIDENCE COLLEGE OF ENGINEERING & SCHOOL OF BUSINESS CHENGANNUR",
+  "SREE BUDDHA COLLEGE OF ENGINEERING",
+  "Cochin University College of Engineering, Kuttanadu",
+  "Adi Shankara College of Engineering",
+  "Ilahia College of Engineering and Technology",
+  "Mar Elias College, Kottappady, Ernakulam",
+  "MES COLLEGE OF ENGINEERING TECHNOLOGY KUNNUKARA",
+  "MES MK MACKAR PILLAI COLLEGE FOR ADVANCED STUDIES",
+  "MUTHOOT INSTITUTE OF TECHNOLOGY & SCIENCE",
+  "Rajagiri School of Engineering and Technology",
+  "SCMS School of Engineering and Technology",
+  "SREE NARAYANA GURUKULAM COLLEGE OF ENGINEERING",
+  "TocH Institute of Science and Technology",
+  "VISAT ENGINEERING COLLEGE",
+  "Viswajyothy College of Engineering and Technology",
+  "Federal Institute of Science And Technology",
+  "JAIN (Deemed-to-be University), Kochi",
+  "GOVERNMENT ENGINEERING COLLEGE IDUKKI",
+  "MAR BASELIOS CHRISTIAN COLLEGE OF ENGINEERING & TECHNOLOGY",
+  "COLLEGE OF ENGINEERING THALASSERY",
+  "GOVERNMENT COLLEGE OF ENGINEERING KANNUR",
+  "KODIYERI BALAKRISHNAN MEMORIAL GOVERNMENT COLLEGE",
+  "College of Engineering Trikaripur",
+  "LBS COLLEGE OF ENGINEERING",
+  "COLLEGE OF ENGINEERING - KOTTARAKKARA",
+  "COLLEGE OF ENGINEERING - PATHANAPURAM",
+  "COLLEGE OF ENGINEERING KARUNAGAPPALLY",
+  "COLLEGE OF ENGINEERING PERUMON",
+  "AMAL JYOTHI COLLEGE OF ENGINEERING KANJIRAPPALLY",
+  "Kottayam Institute of Science and Technology",
+  "KRISTU JYOTI COLLEGE OF MANAGEMENT AND TECHNOLOGY",
+  "Rajiv Gandhi Institute of Technology Kottayam",
+  "SAINTGITS COLLEGE OF ENGINEERING",
+  "ST JOSEPHS COLLEGE OF ENGINEERING AND TECHNOLOGY PALAI",
+  "AWH ENGINEERING COLLEGE",
+  "College Of Applied Science IHRD, Kozhikode",
+  "COLLEGE OF ENGINEERING VADAKARA",
+  "GOVT. ENGINEERING COLLEGE - KOZHIKODE",
+  "Muhammad Abdurahiman Memorial Orphanage College",
+  "National Institute of Technology Calicut",
+  "St. Josephs College Devagiri (Autonomous)",
+  "Sree Gokulam Arts and Science College Baluserry",
+  "Al Shifa College of Arts and Science",
+  "CHMKM GOVT ARTS AND SCIENCE COLLEGE TANUR",
+  "Malabar College of Advanced Studies",
+  "MES COLLEGE OF ENGINEERING - KUTTIPPURAM",
+  "MES PONNANI COLLEGE",
+  "COLLEGE OF APPLIED SCIENCE, VADAKKENCHERRY",
+  "GOVERNMENT ENGINEERING COLLEGE SREEKRISHNAPURAM",
+  "MOUNT SEENA COLLEGE OF ARTS AND SCIENCE",
+  "NSS College of Engineering Palakkad",
+  "SREEPATHY INSTITUTE OF MANAGEMENT AND TECHNOLOGY",
+  "AHALIA SCHOOL OF ENGINEERING AND TECHNOLOGY",
+  "AL AMEEN ENGINEERING COLLEGE",
+  "COLLEGE OF ENGINEERING ARANMULA",
+  "COLLEGE OF ENGINEERING KALLOOPPARA",
+  "MUSALIAR COLLEGE OF ARTS AND SCIENCE PATHANAMTHITTA",
+  "CHRIST COLLEGE OF ENGINEERING",
+  "GOVERNMENT ENGINEERING COLLEGE THRISSUR",
+  "GOVERNMENT POLYTECHNIC COLLEGE KUNNAMKULAM",
+  "JYOTHI ENGINEERING COLLEGE",
+  "NIRMALA COLLEGE OF ARTS AND SCIENCE",
+  "NIRMALA COLLEGE OF ENGINEERING",
+  "SAHRDAYA COLLEGE OF ENGINEERING & TECHNOLOGY",
+  "THEJUS ENGINEERING COLLEGE",
+  "VIDYA ACADEMY OF SCIENCE AND TECHNOLOGY",
+  "ACE COLLEGE OF ENGINEERING",
+  "COLLEGE OF ENGINEERING MUTTATHARA",
+  "COLLEGE OF ENGINEERING TRIVANDRUM",
+  "LBS INSTITUTE OF TECHNOLOGY FOR WOMEN - POOJAPPURA",
+  "LOURDES MATHA COLLEGE OF SCIENCE AND TECHNOLOGY",
+  "MAR BASELIOS COLLEGE OF ENGINEERING AND TECHNOLOGY",
+  "MARIAN ENGINEERING COLLEGE",
+  "Mohandas College of Engineering and Technology",
+  "Muslim Association College of Engineering",
+  "RAJADHANI INSTITUTE OF ENGINEERING AND TECHNOLOGY",
+  "SREE CHITRA THIRUNAL COLLEGE OF ENGINEERING",
+  "ST. THOMAS INSTITUTE FOR SCIENCE & TECHNOLOGY",
+  "TRINITY COLLEGE OF ENGINEERING",
+  "UNIVERSITY COLLEGE OF ENGINEERING KARIAVATTOM",
+  "WMO ARTS AND SCIENCE COLLEGE",
+  "Model Engineering College",
+  "Other",
+].sort((a, b) => {
+  // Keep "Other" last, sort rest alphabetically
+  if (a === "Other") return 1;
+  if (b === "Other") return -1;
+  return a.localeCompare(b);
+});
 
 export const TEAM_FLAGS = {
   Brazil: "br",
@@ -28,7 +122,6 @@ export const TEAM_FLAGS = {
   Croatia: "hr",
   Uruguay: "uy",
   Japan: "jp",
-  Test: "un",
 };
 
 export const TEAM_FLAG_BGS = {
@@ -44,7 +137,6 @@ export const TEAM_FLAG_BGS = {
   Germany: "/playerCard/flag/germany.webp",
   France: "/playerCard/flag/france.webp",
   Croatia: "/playerCard/flag/crotia.webp",
-  Test: "/playerCard/flag/germany.webp",
 };
 
 export const LEVEL_THRESHOLDS = [

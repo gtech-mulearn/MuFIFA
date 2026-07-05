@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import Image from "next/image";
 import Header from "../tasks/components/Header/Header";
 
 // Icon components for entry types
@@ -263,9 +264,9 @@ export default function PointsHistoryPage() {
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
           {/* Total Points */}
           <div className="col-span-2 md:col-span-1 bg-gradient-to-b from-[#131927]/90 to-[#0d101d]/90 border border-white/10 rounded-2xl p-5 backdrop-blur-md shadow-xl flex items-center gap-4 hover:border-white/15 transition-all">
-            <MuCoinIcon />
+            <Image src="/mupoints.webp" alt="µPoints" width={40} height={40} className="object-contain shrink-0" />
             <div className="flex flex-col">
-              <span className="text-[9px] font-black uppercase tracking-wider text-amber-500">
+              <span className="text-[9px] font-black tracking-wider text-amber-500">
                 Total µPoints
               </span>
               <span className="text-2xl font-black text-white mt-0.5 drop-shadow-[0_0_12px_rgba(251,191,36,0.15)]">

@@ -2,9 +2,9 @@ import { NextResponse } from "next/server";
 import { verifyToken } from "@/utils/auth";
 import { adjustSquadPoints } from "@/utils/squad";
 
-// Cache for global stats (avg_highest_xp and highest_xp_by_category). TTL: 24 hours.
-let _globalStatsCache = null; // { avgHighestXp: number, highestXpByCategory: { ... }, ts: number }
-const GLOBAL_STATS_TTL_MS = 86_400_000; // 24 hours
+// Caches global stats in memory for 24 hours to optimize database lookup
+let _globalStatsCache = null;
+const GLOBAL_STATS_TTL_MS = 86_400_000;
 
 export async function GET(request, { params }) {
   try {
@@ -44,7 +44,7 @@ export async function GET(request, { params }) {
     const selectFields =
       "id,name,user_id,team,domain,mu_points,avatar_url,created_at,email,phone,referal_id,tasks,ticket_url,referred_by,bio,muid,role,institutions";
 
-    // 1. Try to find the user by user_id (username)
+    // Attempt to resolve player profile by username first
     let query = `${supabaseUrl}/rest/v1/registrations?user_id=eq.${encodeURIComponent(cleanId)}&select=${selectFields}&limit=1`;
     let res = await fetch(query, {
       method: "GET",
@@ -60,7 +60,7 @@ export async function GET(request, { params }) {
 
     let rows = await res.json();
 
-    // 2. If not found, check if cleanId could be a database ID (UUID or numeric)
+    // Fall back to checking by primary database ID if no match is found for user_id
     if (!rows || rows.length === 0) {
       const isUuid =
         /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
@@ -101,7 +101,7 @@ export async function GET(request, { params }) {
 
     const profile = rows[0];
 
-    // Fetch user rank dynamically by counting players with strictly more mu_points
+    // Compute player standings rank dynamically by counting players with more points
     let rank = 1;
     try {
       const rankQuery = `${supabaseUrl}/rest/v1/registrations?mu_points=gt.${profile.mu_points}&limit=0`;
@@ -145,7 +145,7 @@ export async function GET(request, { params }) {
 
     const responseData = { ...profile, rank };
 
-    // Fetch user predictions count
+    // Fetch user match predictions count
     let predictionsCount = 0;
     try {
       const predQuery = `${supabaseUrl}/rest/v1/match_predictions?user_id=eq.${encodeURIComponent(profile.user_id)}&limit=1`;
@@ -172,7 +172,7 @@ export async function GET(request, { params }) {
 
     responseData.predictions_count = predictionsCount;
 
-    // Fetch current user's completed tasks to sum domain XP values (fully optimized query selecting only XP columns)
+    // Fetch user completed tasks and aggregate XP per skill category
     let xp_creativity = 0;
     let xp_branding = 0;
     let xp_innovation = 0;
@@ -205,7 +205,13 @@ export async function GET(request, { params }) {
 
     // Retrieve or calculate global average and category highest XP values (cached with 24-hour TTL)
     let avgHighestXp = 38;
-    let highestXpByCategory = { creativity: 1, branding: 1, innovation: 1, teamwork: 1, execution: 1 };
+    let highestXpByCategory = {
+      creativity: 1,
+      branding: 1,
+      innovation: 1,
+      teamwork: 1,
+      execution: 1,
+    };
     const now = Date.now();
 
     if (_globalStatsCache && now - _globalStatsCache.ts < GLOBAL_STATS_TTL_MS) {
@@ -227,7 +233,13 @@ export async function GET(request, { params }) {
           completions.forEach((c) => {
             const uid = c.user_id;
             if (!userXpMap[uid]) {
-              userXpMap[uid] = { creativity: 0, branding: 0, innovation: 0, teamwork: 0, execution: 0 };
+              userXpMap[uid] = {
+                creativity: 0,
+                branding: 0,
+                innovation: 0,
+                teamwork: 0,
+                execution: 0,
+              };
             }
             userXpMap[uid].creativity += c.xp_creativity || 0;
             userXpMap[uid].branding += c.xp_branding || 0;
@@ -246,7 +258,13 @@ export async function GET(request, { params }) {
 
           uids.forEach((uid) => {
             const xp = userXpMap[uid];
-            const highest = Math.max(xp.creativity, xp.branding, xp.innovation, xp.teamwork, xp.execution);
+            const highest = Math.max(
+              xp.creativity,
+              xp.branding,
+              xp.innovation,
+              xp.teamwork,
+              xp.execution,
+            );
             sumOfStudentHighest += highest;
 
             if (xp.creativity > maxCreativity) maxCreativity = xp.creativity;
@@ -256,7 +274,8 @@ export async function GET(request, { params }) {
             if (xp.execution > maxExecution) maxExecution = xp.execution;
           });
 
-          avgHighestXp = uids.length > 0 ? sumOfStudentHighest / uids.length : 38;
+          avgHighestXp =
+            uids.length > 0 ? sumOfStudentHighest / uids.length : 38;
           highestXpByCategory = {
             creativity: maxCreativity,
             branding: maxBranding,
@@ -330,7 +349,7 @@ export async function PATCH(request, { params }) {
 
     const cleanId = id.trim().startsWith("@") ? id.trim().slice(1) : id.trim();
 
-    // 1. Authenticate user
+    // Authenticate player session from HTTP cookies
     const cookieHeader = request.headers.get("cookie") || "";
     const match = cookieHeader.match(/(?:^|;\s*)player_token=([^;]*)/);
     if (!match) {
@@ -359,7 +378,7 @@ export async function PATCH(request, { params }) {
       );
     }
 
-    // 2. Fetch the target profile to check ownership
+    // Check registration records to resolve profile ID or username
     const selectFields = "id,user_id,muid";
     let query = `${supabaseUrl}/rest/v1/registrations?user_id=eq.${encodeURIComponent(cleanId)}&select=${selectFields}&limit=1`;
     let res = await fetch(query, {
@@ -402,7 +421,7 @@ export async function PATCH(request, { params }) {
 
     const profile = rows[0];
 
-    // 3. Authorization check
+    // Restrict updates to the authenticated owner of the profile
     if (decoded.id !== profile.id && decoded.user_id !== profile.user_id) {
       return NextResponse.json(
         {
@@ -413,25 +432,31 @@ export async function PATCH(request, { params }) {
       );
     }
 
-    // 4. Parse request body
+    // Parse incoming request body fields
     const body = await request.json();
-    const { name, bio, phone, tasks, muid, institutions } = body;
+    const { name, bio, phone, tasks, muid, institutions, whoami } = body;
 
-    // Build update object
+    // Build database updates payload
     const updateData = {};
     if (name !== undefined) updateData.name = name.trim();
     if (bio !== undefined) updateData.bio = bio.trim();
     if (phone !== undefined) updateData.phone = phone.trim();
     if (tasks !== undefined) updateData.tasks = tasks;
-    if (institutions !== undefined) updateData.institutions = institutions.trim();
+    if (institutions !== undefined)
+      updateData.institutions = institutions.trim();
+    if (whoami !== undefined) updateData.whoami = whoami.trim();
     if (muid !== undefined) {
       const cleanMuid = muid.trim();
       if (cleanMuid !== "") {
         if (profile.muid && profile.muid.trim() !== "") {
           if (profile.muid.trim().toLowerCase() !== cleanMuid.toLowerCase()) {
             return NextResponse.json(
-              { success: false, error: "µID cannot be changed once set. Please contact an Admin." },
-              { status: 400 }
+              {
+                success: false,
+                error:
+                  "µID cannot be changed once set. Please contact an Admin.",
+              },
+              { status: 400 },
             );
           }
         }
@@ -449,8 +474,11 @@ export async function PATCH(request, { params }) {
           const muidRows = await muidCheckRes.json();
           if (muidRows && muidRows.length > 0) {
             return NextResponse.json(
-              { success: false, error: "This µID is already registered by another player." },
-              { status: 400 }
+              {
+                success: false,
+                error: "This µID is already registered by another player.",
+              },
+              { status: 400 },
             );
           }
         }
@@ -465,7 +493,7 @@ export async function PATCH(request, { params }) {
       );
     }
 
-    // 5. Update Database Row
+    // Apply updates to player registration record
     const patchRes = await fetch(
       `${supabaseUrl}/rest/v1/registrations?id=eq.${profile.id}`,
       {
@@ -482,7 +510,7 @@ export async function PATCH(request, { params }) {
 
     if (!patchRes.ok) {
       const errText = await patchRes.text();
-      // Handle unique constraint check (for phone)
+      // Handle unique constraint check for phone registration
       if (errText.includes("registrations_phone_key")) {
         return NextResponse.json(
           {
@@ -522,7 +550,7 @@ export async function DELETE(request, { params }) {
 
     const cleanId = id.trim().startsWith("@") ? id.trim().slice(1) : id.trim();
 
-    // 1. Authenticate user
+    // Authenticate user session from HTTP cookies
     const cookieHeader = request.headers.get("cookie") || "";
     const match = cookieHeader.match(/(?:^|;\s*)player_token=([^;]*)/);
     if (!match) {
@@ -551,7 +579,7 @@ export async function DELETE(request, { params }) {
       );
     }
 
-    // 2. Fetch the target profile to check ownership
+    // Fetch the target profile to check ownership
     const selectFields = "id,user_id,team,mu_points";
     let query = `${supabaseUrl}/rest/v1/registrations?user_id=eq.${encodeURIComponent(cleanId)}&select=${selectFields}&limit=1`;
     let res = await fetch(query, {
@@ -594,7 +622,7 @@ export async function DELETE(request, { params }) {
 
     const profile = rows[0];
 
-    // 3. Authorization check
+    // Restrict profile deletion to the authenticated owner
     if (decoded.id !== profile.id && decoded.user_id !== profile.user_id) {
       return NextResponse.json(
         {
@@ -605,8 +633,7 @@ export async function DELETE(request, { params }) {
       );
     }
 
-    // 4. Perform database deletions:
-    // a. Delete match predictions
+    // Perform database deletions for all dependent predictions, tasks, and registrations
     if (profile.user_id) {
       const deletePredsRes = await fetch(
         `${supabaseUrl}/rest/v1/match_predictions?user_id=eq.${encodeURIComponent(profile.user_id)}`,
@@ -616,14 +643,15 @@ export async function DELETE(request, { params }) {
             apikey: supabaseKey,
             Authorization: `Bearer ${supabaseKey}`,
           },
-        }
+        },
       );
       if (!deletePredsRes.ok) {
-        throw new Error(`Failed to delete user predictions: ${await deletePredsRes.text()}`);
+        throw new Error(
+          `Failed to delete user predictions: ${await deletePredsRes.text()}`,
+        );
       }
     }
 
-    // b. Delete completed tasks
     if (profile.user_id) {
       const deleteTasksRes = await fetch(
         `${supabaseUrl}/rest/v1/user_completed_tasks?user_id=eq.${encodeURIComponent(profile.user_id)}`,
@@ -633,14 +661,15 @@ export async function DELETE(request, { params }) {
             apikey: supabaseKey,
             Authorization: `Bearer ${supabaseKey}`,
           },
-        }
+        },
       );
       if (!deleteTasksRes.ok) {
-        throw new Error(`Failed to delete user completed tasks: ${await deleteTasksRes.text()}`);
+        throw new Error(
+          `Failed to delete user completed tasks: ${await deleteTasksRes.text()}`,
+        );
       }
     }
 
-    // c. Delete user registration
     const deleteUserRes = await fetch(
       `${supabaseUrl}/rest/v1/registrations?id=eq.${profile.id}`,
       {
@@ -649,23 +678,25 @@ export async function DELETE(request, { params }) {
           apikey: supabaseKey,
           Authorization: `Bearer ${supabaseKey}`,
         },
-      }
+      },
     );
     if (!deleteUserRes.ok) {
-      throw new Error(`Failed to delete user registration: ${await deleteUserRes.text()}`);
+      throw new Error(
+        `Failed to delete user registration: ${await deleteUserRes.text()}`,
+      );
     }
 
-    // 5. Reduce team squad points by user's points
+    // Rollback squad scores by subtracting this player's points
     if (profile.team && Number(profile.mu_points || 0) > 0) {
       await adjustSquadPoints(
         supabaseUrl,
         supabaseKey,
         profile.team,
-        -Number(profile.mu_points || 0)
+        -Number(profile.mu_points || 0),
       );
     }
 
-    // 6. Clear session cookie by expiring it
+    // Clear session cookie by expiring it
     const response = NextResponse.json({
       success: true,
       message: "Account deleted successfully.",
@@ -674,7 +705,7 @@ export async function DELETE(request, { params }) {
     const secure = process.env.NODE_ENV === "production" ? " Secure;" : "";
     response.headers.set(
       "Set-Cookie",
-      `player_token=; Path=/; HttpOnly; SameSite=Lax;${secure} Max-Age=0`
+      `player_token=; Path=/; HttpOnly; SameSite=Lax;${secure} Max-Age=0`,
     );
 
     return response;

@@ -6,7 +6,7 @@ if (!JWT_SECRET) {
   throw new Error("ADMIN_JWT_SECRET environment variable is required. Refusing to start with no JWT secret.");
 }
 const TOKEN_COOKIE = "admin_token";
-const TOKEN_EXPIRY = "24h";
+const TOKEN_EXPIRY = "30d";
 
 /**
  * Hash a plaintext password with bcrypt (10 salt rounds).
@@ -75,7 +75,7 @@ export function requireRole(request, ...roles) {
  * Build a Set-Cookie header string for the admin token.
  */
 export function buildTokenCookie(token) {
-  const maxAge = 24 * 60 * 60; // 24 hours in seconds
+  const maxAge = 30 * 24 * 60 * 60; // 30 days in seconds
   const secure = process.env.NODE_ENV === "production" ? " Secure;" : "";
   return `${TOKEN_COOKIE}=${token}; Path=/; HttpOnly; SameSite=Lax;${secure} Max-Age=${maxAge}`;
 }

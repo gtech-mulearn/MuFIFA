@@ -1,24 +1,16 @@
 import { NextResponse } from "next/server";
 import { fetchAllSupabase } from "@/utils/supabase";
 
-// ---------------------------------------------------------------------------
-// In-memory caches (module-scoped, persist across requests in the same process)
-// ---------------------------------------------------------------------------
+// Global rank map cache is used to calculate absolute ranks. Cached for 1 hour.
+let _rankMapCache = null;
+const RANK_MAP_TTL_MS = 3_600_000;
 
-// Rank map cache – the heaviest query (all registrations). TTL: 30 seconds.
-let _rankMapCache = null; // { map: Map, ts: number }
-const RANK_MAP_TTL_MS = 30_000;
-
-// Paginated query cache – keyed by the full Supabase query URL. TTL: 15 seconds.
-// Stores { players, totalCount, ts }.  Max 50 entries to cap memory usage.
+// Short-term cache for paginated query URLs to optimize performance. Max 50 items.
 const _queryCache = new Map();
-const QUERY_CACHE_TTL_MS = 15_000;
+const QUERY_CACHE_TTL_MS = 3_600_000;
 const QUERY_CACHE_MAX_SIZE = 50;
 
-/**
- * Retrieve or build the global rank map from Supabase.
- * Returns a Map<id, rank> (1-indexed).
- */
+// Builds an in-memory map of player IDs to their absolute point-based leaderboard ranks.
 async function getRankMap(supabaseUrl, supabaseKey) {
   const now = Date.now();
   if (_rankMapCache && now - _rankMapCache.ts < RANK_MAP_TTL_MS) {
@@ -40,7 +32,6 @@ async function getRankMap(supabaseUrl, supabaseKey) {
     });
   } catch (err) {
     console.error("Failed to build rank map:", err);
-    // Return stale cache if available
     if (_rankMapCache) return _rankMapCache.map;
   }
 
@@ -48,10 +39,7 @@ async function getRankMap(supabaseUrl, supabaseKey) {
   return rankMap;
 }
 
-/**
- * Fetch paginated players from Supabase with a short-lived cache.
- * Returns { players: Array, totalCount: number }.
- */
+// Queries a single page of players from Supabase, applying cache lookup.
 async function fetchPlayersPage(queryUrl, supabaseKey) {
   const now = Date.now();
   const cached = _queryCache.get(queryUrl);
@@ -74,7 +62,7 @@ async function fetchPlayersPage(queryUrl, supabaseKey) {
 
   const players = await res.json();
 
-  // Parse total count from Content-Range header
+  // Extract total exact count of matching records from HTTP headers
   const contentRange = res.headers.get("content-range");
   let totalCount = players.length;
   if (contentRange) {
@@ -84,7 +72,7 @@ async function fetchPlayersPage(queryUrl, supabaseKey) {
     }
   }
 
-  // Evict oldest entries when cache exceeds max size
+  // Prevent memory leaks by evicting the oldest query from the map cache
   if (_queryCache.size >= QUERY_CACHE_MAX_SIZE) {
     const oldestKey = _queryCache.keys().next().value;
     _queryCache.delete(oldestKey);
@@ -93,8 +81,6 @@ async function fetchPlayersPage(queryUrl, supabaseKey) {
   _queryCache.set(queryUrl, { players, totalCount, ts: now });
   return { players, totalCount };
 }
-
-// ---------------------------------------------------------------------------
 
 export async function GET(request) {
   try {
@@ -138,7 +124,7 @@ export async function GET(request) {
       queryUrl += `&team=neq.Test`;
     }
 
-    // Fetch paginated players and rank map in parallel
+    // Load data from page query and absolute ranking map concurrently
     const [{ players, totalCount }, rankMap] = await Promise.all([
       fetchPlayersPage(queryUrl, supabaseKey),
       getRankMap(supabaseUrl, supabaseKey),

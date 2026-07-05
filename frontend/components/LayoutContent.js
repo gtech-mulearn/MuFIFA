@@ -115,8 +115,13 @@ function ArenaLayout({
   useEffect(() => {
     if (!loading && player) {
       const onboarded = localStorage.getItem("mufifa_onboarded_v1");
-      if (!onboarded) {
+      // Also skip if the player already completed the WhoAmI step (field is set in DB)
+      const alreadyOnboarded = onboarded || player.whoami;
+      if (!alreadyOnboarded) {
         setShowOnboarding(true);
+      } else {
+        // Ensure localStorage is in sync so the modal never re-fires
+        localStorage.setItem("mufifa_onboarded_v1", "true");
       }
     }
   }, [loading, player]);

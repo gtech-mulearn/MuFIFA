@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useMemo } from "react";
 import Image from "next/image";
-import { TEAM_WHATSAPP_LINKS } from "@/utils/constants";
+import { TEAM_WHATSAPP_LINKS, WHO_AM_I_OPTIONS, KERALA_COLLEGES } from "@/utils/constants";
 
 const renderTextWithMu = (text) => {
   if (typeof text !== "string") return text;
@@ -29,6 +29,13 @@ export default function OnboardingModal({
   const [coords, setCoords] = useState(null);
   const [active, setActive] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
+
+  // Who Am I step state
+  const [whoami, setWhoami] = useState("");
+  const [college, setCollege] = useState("");
+  const [customCollege, setCustomCollege] = useState("");
+  const [collegeSearch, setCollegeSearch] = useState("");
+  const [whoamiSaving, setWhoamiSaving] = useState(false);
 
   const steps = useMemo(
     () => [
@@ -101,6 +108,19 @@ export default function OnboardingModal({
     [player?.team],
   );
 
+  // Full steps including the WhoAmI step inserted before WhatsApp
+  const allSteps = useMemo(() => {
+    const whoamiStep = {
+      title: "One Last Thing",
+      subtitle: "About You",
+      description: "Tell us a bit about yourself so we can show you in the right college leaderboard.",
+      image: "/onboarding/5.webp",
+      target: null,
+      isWhoAmI: true,
+    };
+    return [...steps.slice(0, steps.length - 1), whoamiStep, steps[steps.length - 1]];
+  }, [steps]);
+
   // Trigger entry transitions when the modal opens.
   useEffect(() => {
     if (isOpen) {
@@ -132,8 +152,8 @@ export default function OnboardingModal({
         activeElement = null;
       }
 
-      const currentStepData = steps[currentStep];
-      if (!currentStepData.target) {
+      const currentStepData = allSteps[currentStep];
+      if (!currentStepData || !currentStepData.target) {
         setCoords(null);
         return;
       }
@@ -192,12 +212,37 @@ export default function OnboardingModal({
         activeElement.classList.remove("tour-highlight");
       }
     };
-  }, [currentStep, isOpen]);
+  }, [currentStep, isOpen, allSteps]);
 
   if (!isOpen) return null;
 
-  const handleNext = () => {
-    if (currentStep < steps.length - 1) {
+  const handleNext = async () => {
+    const step = allSteps[currentStep];
+    if (step?.isWhoAmI) {
+      // Save whoami + college before advancing
+      if (whoami && player?.user_id) {
+        setWhoamiSaving(true);
+        try {
+          const institutionsValue =
+            whoami === "College Student"
+              ? college === "Other" ? customCollege.trim() : college
+              : "";
+          await fetch(`/api/v1/profile/${encodeURIComponent(player.user_id)}`, {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              whoami,
+              ...(institutionsValue ? { institutions: institutionsValue } : {}),
+            }),
+          });
+        } catch (err) {
+          console.error("WhoAmI save error:", err);
+        } finally {
+          setWhoamiSaving(false);
+        }
+      }
+    }
+    if (currentStep < allSteps.length - 1) {
       setCurrentStep(currentStep + 1);
     } else {
       handleComplete();
@@ -215,8 +260,9 @@ export default function OnboardingModal({
     onClose();
   };
 
-  const stepData = steps[currentStep];
-  const isLastStep = currentStep === steps.length - 1;
+  const stepData = allSteps[currentStep];
+  const isLastStep = currentStep === allSteps.length - 1;
+  const isWhoAmIStep = !!stepData?.isWhoAmI;
   const whatsappLink = player?.team ? TEAM_WHATSAPP_LINKS[player.team] : null;
 
   // Dynamic layout calculations
@@ -510,7 +556,7 @@ export default function OnboardingModal({
               {renderTextWithMu(stepData.subtitle)}
             </span>
             <span className="text-[9px] font-bold text-slate-500">
-              {currentStep + 1} / {steps.length}
+              {currentStep + 1} / {allSteps.length}
             </span>
           </div>
           <h3 className="text-sm font-black text-white uppercase tracking-wider mt-0.5">
@@ -520,6 +566,106 @@ export default function OnboardingModal({
             {renderTextWithMu(stepData.description)}
           </p>
         </div>
+
+        {/* Who Am I interactive section */}
+        {isWhoAmIStep && (
+          <div className="flex flex-col gap-3">
+            {/* 3-card selector */}
+            <div className="grid grid-cols-3 gap-2">
+              {WHO_AM_I_OPTIONS.map((opt) => (
+                <button
+                  key={opt}
+                  type="button"
+                  onClick={() => {
+                    setWhoami(opt);
+                    setCollege("");
+                    setCustomCollege("");
+                    setCollegeSearch("");
+                  }}
+                  className={`flex flex-col items-center justify-center gap-1.5 py-2.5 px-1 rounded-xl border text-[9px] font-bold uppercase tracking-wider transition-all cursor-pointer ${
+                    whoami === opt
+                      ? opt === "College Student"
+                        ? "bg-[#4F46E5]/20 border-[#4F46E5]/60 text-[#a5b4fc]"
+                        : opt === "School Student"
+                        ? "bg-[#06B6D4]/20 border-[#06B6D4]/60 text-[#67e8f9]"
+                        : "bg-white/10 border-white/30 text-white"
+                      : "bg-white/[0.03] border-white/10 text-slate-500 hover:border-white/20 hover:text-slate-300"
+                  }`}
+                >
+                  {/* Icon */}
+                  {opt === "College Student" && (
+                    <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M22 10v6M2 10l10-5 10 5-10 5-10-5z" />
+                      <path d="M6 12v5c0 1.657 2.686 3 6 3s6-1.343 6-3v-5" />
+                    </svg>
+                  )}
+                  {opt === "School Student" && (
+                    <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z" />
+                      <polyline points="9 22 9 12 15 12 15 22" />
+                    </svg>
+                  )}
+                  {opt === "Other" && (
+                    <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                      <circle cx="12" cy="8" r="4" />
+                      <path d="M4 20c0-4 3.582-7 8-7s8 3 8 7" />
+                    </svg>
+                  )}
+                  <span className="text-center leading-tight">
+                    {opt === "College Student" ? "College" : opt === "School Student" ? "School" : "Other"}
+                  </span>
+                </button>
+              ))}
+            </div>
+
+            {/* College picker */}
+            {whoami === "College Student" && (
+              <div className="flex flex-col gap-1.5 animate-in fade-in duration-150">
+                <input
+                  type="text"
+                  placeholder="Search colleges..."
+                  value={collegeSearch}
+                  onChange={(e) => { setCollegeSearch(e.target.value); setCollege(""); }}
+                  className="bg-black/50 border border-white/10 rounded-lg px-3 py-1.5 text-[11px] text-slate-200 placeholder-slate-600 focus:outline-none focus:border-[#4F46E5] transition-colors"
+                />
+                <div className="max-h-32 overflow-y-auto rounded-lg border border-white/10 bg-black/30">
+                  {KERALA_COLLEGES.filter((c) =>
+                    c.toLowerCase().includes(collegeSearch.toLowerCase())
+                  ).map((c) => (
+                    <button
+                      key={c}
+                      type="button"
+                      onClick={() => { setCollege(c); setCustomCollege(""); }}
+                      className={`w-full text-left px-3 py-1.5 text-[10px] border-b border-white/[0.04] last:border-b-0 cursor-pointer transition-colors ${
+                        college === c
+                          ? "text-[#a5b4fc] bg-[#4F46E5]/10 font-bold"
+                          : "text-slate-400 hover:text-white hover:bg-white/[0.03]"
+                      }`}
+                    >
+                      {c}
+                    </button>
+                  ))}
+                  {KERALA_COLLEGES.filter((c) =>
+                    c.toLowerCase().includes(collegeSearch.toLowerCase())
+                  ).length === 0 && (
+                    <div className="px-3 py-3 text-[10px] text-slate-600 text-center">
+                      No match — select &quot;Other&quot; above.
+                    </div>
+                  )}
+                </div>
+                {college === "Other" && (
+                  <input
+                    type="text"
+                    placeholder="Enter your college name..."
+                    value={customCollege}
+                    onChange={(e) => setCustomCollege(e.target.value)}
+                    className="bg-black/50 border border-white/10 rounded-lg px-3 py-1.5 text-[11px] text-slate-200 placeholder-slate-600 focus:outline-none focus:border-[#4F46E5] transition-colors animate-in fade-in duration-150"
+                  />
+                )}
+              </div>
+            )}
+          </div>
+        )}
 
         {/* Show the official team channel join CTA on the final step. */}
         {isLastStep && (
@@ -561,8 +707,10 @@ export default function OnboardingModal({
             {!isLastStep && (
               <button
                 onClick={handleNext}
-                className="px-4 py-1.5 bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-500 hover:to-indigo-500 text-white font-black text-[10px] tracking-wide uppercase rounded-lg transition-all shadow-md cursor-pointer"
+                disabled={whoamiSaving}
+                className="px-4 py-1.5 bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-500 hover:to-indigo-500 text-white font-black text-[10px] tracking-wide uppercase rounded-lg transition-all shadow-md cursor-pointer disabled:opacity-60 flex items-center gap-1.5"
               >
+                {whoamiSaving && <span className="w-2.5 h-2.5 rounded-full border-2 border-white border-t-transparent animate-spin" />}
                 Next
               </button>
             )}
