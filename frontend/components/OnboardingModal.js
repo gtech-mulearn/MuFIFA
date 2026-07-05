@@ -23,6 +23,7 @@ export default function OnboardingModal({
   isOpen,
   onClose,
   player,
+  refreshPlayer,
   sidebarCollapsed,
 }) {
   const [currentStep, setCurrentStep] = useState(0);
@@ -139,6 +140,19 @@ export default function OnboardingModal({
     return () => window.removeEventListener("resize", check);
   }, []);
 
+  // If the user is already onboarded but lacks whoami, start them directly on the whoami step.
+  useEffect(() => {
+    if (isOpen && typeof window !== "undefined") {
+      const onboarded = localStorage.getItem("mufifa_onboarded_v1");
+      if (onboarded && !player?.whoami) {
+        const index = allSteps.findIndex((s) => s.isWhoAmI);
+        if (index !== -1) {
+          setCurrentStep(index);
+        }
+      }
+    }
+  }, [isOpen, player, allSteps]);
+
   // Calculate the position of target elements dynamically to align tooltips and highlights.
   useEffect(() => {
     if (!isOpen) return;
@@ -219,15 +233,22 @@ export default function OnboardingModal({
   const handleNext = async () => {
     const step = allSteps[currentStep];
     if (step?.isWhoAmI) {
+      // Validate whoami + college
+      if (!whoami) return;
+      if (whoami === "College Student") {
+        if (!college) return;
+        if (college === "Other" && !customCollege.trim()) return;
+      }
+
       // Save whoami + college before advancing
-      if (whoami && player?.user_id) {
+      if (player?.user_id) {
         setWhoamiSaving(true);
         try {
           const institutionsValue =
             whoami === "College Student"
               ? college === "Other" ? customCollege.trim() : college
               : "";
-          await fetch(`/api/v1/profile/${encodeURIComponent(player.user_id)}`, {
+          const res = await fetch(`/api/v1/profile/${encodeURIComponent(player.user_id)}`, {
             method: "PATCH",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
@@ -235,8 +256,12 @@ export default function OnboardingModal({
               ...(institutionsValue ? { institutions: institutionsValue } : {}),
             }),
           });
+          if (res.ok && refreshPlayer) {
+            await refreshPlayer();
+          }
         } catch (err) {
           console.error("WhoAmI save error:", err);
+          return; // Do not advance on error
         } finally {
           setWhoamiSaving(false);
         }
@@ -264,6 +289,18 @@ export default function OnboardingModal({
   const isLastStep = currentStep === allSteps.length - 1;
   const isWhoAmIStep = !!stepData?.isWhoAmI;
   const whatsappLink = player?.team ? TEAM_WHATSAPP_LINKS[player.team] : null;
+
+  const isNextDisabled = useMemo(() => {
+    if (whoamiSaving) return true;
+    if (isWhoAmIStep) {
+      if (!whoami) return true;
+      if (whoami === "College Student") {
+        if (!college) return true;
+        if (college === "Other" && !customCollege.trim()) return true;
+      }
+    }
+    return false;
+  }, [whoamiSaving, isWhoAmIStep, whoami, college, customCollege]);
 
   // Dynamic layout calculations
   let tooltipStyle = {};
@@ -707,7 +744,7 @@ export default function OnboardingModal({
             {!isLastStep && (
               <button
                 onClick={handleNext}
-                disabled={whoamiSaving}
+                disabled={isNextDisabled}
                 className="px-4 py-1.5 bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-500 hover:to-indigo-500 text-white font-black text-[10px] tracking-wide uppercase rounded-lg transition-all shadow-md cursor-pointer disabled:opacity-60 flex items-center gap-1.5"
               >
                 {whoamiSaving && <span className="w-2.5 h-2.5 rounded-full border-2 border-white border-t-transparent animate-spin" />}

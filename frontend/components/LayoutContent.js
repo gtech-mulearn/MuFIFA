@@ -103,7 +103,7 @@ function ArenaLayout({
   pathname,
   children,
 }) {
-  const { player, loading } = usePlayer();
+  const { player, loading, refreshPlayer } = usePlayer();
   const [showOnboarding, setShowOnboarding] = useState(false);
 
   useEffect(() => {
@@ -116,7 +116,7 @@ function ArenaLayout({
     if (!loading && player) {
       const onboarded = localStorage.getItem("mufifa_onboarded_v1");
       // Also skip if the player already completed the WhoAmI step (field is set in DB)
-      const alreadyOnboarded = onboarded || player.whoami;
+      const alreadyOnboarded = onboarded && player.whoami;
       if (!alreadyOnboarded) {
         setShowOnboarding(true);
       } else {
@@ -382,6 +382,7 @@ function ArenaLayout({
           isOpen={showOnboarding}
           onClose={() => setShowOnboarding(false)}
           player={player}
+          refreshPlayer={refreshPlayer}
           sidebarCollapsed={sidebarCollapsed}
         />
       )}
