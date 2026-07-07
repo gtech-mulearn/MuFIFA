@@ -108,7 +108,7 @@ export async function GET(request) {
     }
 
     const selectFields =
-      "id,name,user_id,team,domain,mu_points,avatar_url,created_at";
+      "id,name,user_id,team,domain,mu_points,avatar_url,created_at,tasks";
 
     const orderDirection = sort === "asc" ? "asc" : "desc";
     let queryUrl = `${supabaseUrl}/rest/v1/registrations?select=${selectFields}&order=mu_points.${orderDirection},name.asc&limit=${limit}&offset=${offset}`;
