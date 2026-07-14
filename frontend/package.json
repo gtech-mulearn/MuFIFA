@@ -15,6 +15,7 @@
     "flag-icons": "^7.5.0",
     "html2canvas": "^1.4.1",
     "jsonwebtoken": "^9.0.3",
+    "marked": "^18.0.5",
     "next": "16.2.9",
     "nodemailer": "^9.0.0",
     "posthog-js": "^1.393.0",

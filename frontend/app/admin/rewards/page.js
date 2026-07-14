@@ -4,6 +4,25 @@ import React, { useState, useEffect, useCallback } from "react";
 import { THEME } from "../layout";
 import Link from "next/link";
 
+// Helper to parse description metadata
+const parseDescription = (descText) => {
+  if (!descText) return { mainDesc: "", metadata: {} };
+  const parts = descText.split("---");
+  const mainDesc = parts[0].trim();
+  const metadata = {};
+  if (parts.length > 1) {
+    const metaLines = parts[1].split("\n");
+    for (const line of metaLines) {
+      const separatorIdx = line.indexOf(":");
+      if (separatorIdx !== -1) {
+        const key = line.substring(0, separatorIdx).trim();
+        const value = line.substring(separatorIdx + 1).trim();
+        metadata[key] = value;
+      }
+    }
+  }
+  return { mainDesc, metadata };
+};
 
 export default function AdminRewardsPage() {
   const [rewards, setRewards] = useState([]);
@@ -22,6 +41,12 @@ export default function AdminRewardsPage() {
   const [formData, setFormData] = useState({
     title: "",
     description: "",
+    tagline: "",
+    colors: "#7C3AED, #F43F5E, #10B981, #FFFFFF, #3B82F6",
+    rating: "4.8",
+    reviews: "121",
+    delivery: "Dispatched within 24 hours. Free shipping above ₹1000.",
+    returns: "Free 30-day delivery returns.",
     tag: "",
     min_level: 1,
     min_points: 0,
@@ -109,6 +134,12 @@ export default function AdminRewardsPage() {
     setFormData({
       title: "",
       description: "",
+      tagline: "",
+      colors: "#7C3AED, #F43F5E, #10B981, #FFFFFF, #3B82F6",
+      rating: "4.8",
+      reviews: "121",
+      delivery: "Dispatched within 24 hours. Free shipping above ₹1000.",
+      returns: "Free 30-day delivery returns.",
       tag: "",
       min_level: 1,
       min_points: 0,
@@ -128,9 +159,19 @@ export default function AdminRewardsPage() {
     setEditingItem(item);
     setImageError("");
     setUploadingImage(false);
+    
+    // Parse extra metadata from description
+    const parsed = parseDescription(item.description);
+
     setFormData({
       title: item.title || "",
-      description: item.description || "",
+      description: parsed.mainDesc || "",
+      tagline: parsed.metadata.tagline || "",
+      colors: parsed.metadata.colors || "#7C3AED, #F43F5E, #10B981, #FFFFFF, #3B82F6",
+      rating: parsed.metadata.rating || "4.8",
+      reviews: parsed.metadata.reviews || "121",
+      delivery: parsed.metadata.delivery || "Dispatched within 24 hours. Free shipping above ₹1000.",
+      returns: parsed.metadata.returns || "Free 30-day delivery returns.",
       tag: item.tag || "",
       min_level: item.min_level ?? 1,
       min_points: item.min_points ?? 0,
@@ -217,6 +258,16 @@ export default function AdminRewardsPage() {
       return;
     }
 
+    // Serialize extra form metadata into description text field
+    const encodedDescription = `${formData.description}
+---
+tagline: ${formData.tagline || "Premium reward choice"}
+colors: ${formData.colors || "#7C3AED"}
+rating: ${formData.rating || "4.8"}
+reviews: ${formData.reviews || "121"}
+delivery: ${formData.delivery || "Dispatched within 24 hours"}
+returns: ${formData.returns || "Free returns availability"}`;
+
     try {
       const url = editingItem
         ? `/api/v1/admin/rewards?id=${editingItem.id}`
@@ -230,6 +281,7 @@ export default function AdminRewardsPage() {
         },
         body: JSON.stringify({
           ...formData,
+          description: encodedDescription,
           min_level: parseInt(formData.min_level, 10) || 1,
           min_points: parseInt(formData.min_points, 10) || 0,
           quantity: parseInt(formData.quantity, 10) || 0,
@@ -322,7 +374,7 @@ export default function AdminRewardsPage() {
             className="self-start sm:self-center flex items-center gap-1.5 px-4 py-2.5 text-xs font-semibold uppercase tracking-wider text-slate-700 hover:text-slate-950 bg-slate-100 hover:bg-slate-200 border border-slate-300 rounded-xl transition-all cursor-pointer shadow-sm hover:shadow-md"
           >
             <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
+              <path strokeLinecap="round" strokeLinejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
             </svg>
             View Claims
           </Link>
@@ -351,6 +403,7 @@ export default function AdminRewardsPage() {
           <button onClick={() => setSuccessMsg("")} className="text-emerald-950 font-bold hover:opacity-80">×</button>
         </div>
       )}
+
       {/* Level Choice Limits Panel */}
       <div className={`${THEME.panel} rounded-2xl p-4 flex flex-col gap-3 shadow-sm border border-slate-100`}>
         <div>
@@ -386,6 +439,7 @@ export default function AdminRewardsPage() {
           )}
         </div>
       </div>
+
       {/* Rewards Grid/Table Panel */}
       <div className={`${THEME.panel} rounded-2xl overflow-hidden`}>
         {loading ? (
@@ -623,8 +677,108 @@ export default function AdminRewardsPage() {
                 />
               </div>
 
+              {/* Advanced UI/UX Details Form (AirPods Max Redesign Options) */}
+              <div className="border-t border-slate-100 pt-3 space-y-3">
+                <span className="text-[9px] font-extrabold uppercase tracking-wider text-sky-600 block">
+                  Advanced Interface Details (AirPods Max Redesign)
+                </span>
+
+                {/* Product Tagline / Subtitle */}
+                <div>
+                  <label className="block text-[10px] font-bold uppercase tracking-wider text-slate-500 mb-1">
+                    Product Tagline / Subtitle
+                  </label>
+                  <input
+                    type="text"
+                    name="tagline"
+                    value={formData.tagline}
+                    onChange={handleInputChange}
+                    placeholder="e.g. a perfect balance of exhilarating high-fidelity audio"
+                    className={`w-full rounded-xl px-3 py-2 text-xs focus:outline-none ${THEME.input}`}
+                  />
+                </div>
+
+                {/* Colors List */}
+                <div>
+                  <label className="block text-[10px] font-bold uppercase tracking-wider text-slate-500 mb-1">
+                    Available Colors (comma separated hex/labels)
+                  </label>
+                  <input
+                    type="text"
+                    name="colors"
+                    value={formData.colors}
+                    onChange={handleInputChange}
+                    placeholder="e.g. #F43F5E, #000000, #10B981, #FFFFFF, #3B82F6"
+                    className={`w-full rounded-xl px-3 py-2 text-xs focus:outline-none ${THEME.input}`}
+                  />
+                  <span className="text-[9px] text-slate-400 block mt-0.5">
+                    Hex codes representing color options circles (e.g., `#E11D48, #000000`).
+                  </span>
+                </div>
+
+                {/* Rating & Reviews */}
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-[10px] font-bold uppercase tracking-wider text-slate-500 mb-1">
+                      Mock Rating (0 - 5)
+                    </label>
+                    <input
+                      type="text"
+                      name="rating"
+                      value={formData.rating}
+                      onChange={handleInputChange}
+                      placeholder="4.8"
+                      className={`w-full rounded-xl px-3 py-2 text-xs focus:outline-none ${THEME.input}`}
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[10px] font-bold uppercase tracking-wider text-slate-500 mb-1">
+                      Reviews Count
+                    </label>
+                    <input
+                      type="text"
+                      name="reviews"
+                      value={formData.reviews}
+                      onChange={handleInputChange}
+                      placeholder="121"
+                      className={`w-full rounded-xl px-3 py-2 text-xs focus:outline-none ${THEME.input}`}
+                    />
+                  </div>
+                </div>
+
+                {/* Delivery and Returns */}
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-[10px] font-bold uppercase tracking-wider text-slate-500 mb-1">
+                      Delivery Details
+                    </label>
+                    <input
+                      type="text"
+                      name="delivery"
+                      value={formData.delivery}
+                      onChange={handleInputChange}
+                      placeholder="Free delivery above ₹1000"
+                      className={`w-full rounded-xl px-3 py-2 text-xs focus:outline-none ${THEME.input}`}
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[10px] font-bold uppercase tracking-wider text-slate-500 mb-1">
+                      Returns Policy
+                    </label>
+                    <input
+                      type="text"
+                      name="returns"
+                      value={formData.returns}
+                      onChange={handleInputChange}
+                      placeholder="Free 30days Delivery Returns"
+                      className={`w-full rounded-xl px-3 py-2 text-xs focus:outline-none ${THEME.input}`}
+                    />
+                  </div>
+                </div>
+              </div>
+
               {/* Requirements & Quantity grid */}
-              <div className="grid grid-cols-3 gap-3">
+              <div className="grid grid-cols-3 gap-3 pt-2">
                 <div>
                   <label className="block text-[10px] font-bold uppercase tracking-wider text-slate-500 mb-1">
                     Min Level

@@ -2,67 +2,22 @@ import React, { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import DOMPurify from "dompurify";
+import { marked } from "marked";
+
+// Configure marked to handle clean breaks
+marked.setOptions({
+  breaks: true,
+  gfm: true
+});
 
 function parseMarkdown(text) {
   if (!text) return "";
-  
-  // 1. Headers
-  let html = text
-    .replace(/^### (.*$)/gim, '<h3>$1</h3>')
-    .replace(/^## (.*$)/gim, '<h2>$1</h2>')
-    .replace(/^# (.*$)/gim, '<h1>$1</h1>');
-
-  // 2. Bold & Italics
-  html = html
-    .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
-    .replace(/__(.*?)__/g, '<strong>$1</strong>')
-    .replace(/\*(.*?)\*/g, '<em>$1</em>')
-    .replace(/_(.*?)_/g, '<em>$1</em>');
-
-  // 3. Inline code
-  html = html.replace(/`(.*?)`/g, '<code>$1</code>');
-
-  // 4. Links
-  html = html.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank" rel="noopener noreferrer">$1</a>');
-
-  // 5. Unordered Lists
-  const lines = html.split('\n');
-  let inUl = false;
-  const processedLines = [];
-
-  for (let line of lines) {
-    const trimmed = line.trim();
-    if (trimmed.startsWith('- ') || trimmed.startsWith('* ')) {
-      if (!inUl) {
-        processedLines.push('<ul>');
-        inUl = true;
-      }
-      processedLines.push(`<li>${trimmed.substring(2)}</li>`);
-    } else {
-      if (inUl) {
-        processedLines.push('</ul>');
-        inUl = false;
-      }
-      processedLines.push(line);
-    }
+  try {
+    return marked.parse(text);
+  } catch (e) {
+    console.error("Markdown parsing failed:", e);
+    return text;
   }
-  if (inUl) processedLines.push('</ul>');
-
-  html = processedLines.join('\n');
-
-  // 6. Double newlines to paragraph tags
-  const blocks = html.split(/\n\n+/);
-  html = blocks.map(block => {
-    const trimmed = block.trim();
-    if (!trimmed) return "";
-    if (/^<(h\d|ul|ol|li|blockquote|div|p|pre|table)/i.test(trimmed)) {
-      return block;
-    }
-    const inner = block.replace(/\n/g, '<br />');
-    return `<p>${inner}</p>`;
-  }).join('\n');
-
-  return html;
 }
 
 const getTaskLevels = (task) => {
@@ -407,6 +362,102 @@ export default function ChallengeModal({
           : "opacity-0 pointer-events-none"
       }`}
     >
+      <style dangerouslySetInnerHTML={{ __html: `
+        .guidelines-content h1, .guidelines-html-container h1 {
+          font-size: 1.5rem !important;
+          font-weight: 900 !important;
+          margin-top: 1.5rem !important;
+          margin-bottom: 0.75rem !important;
+          color: #ffffff !important;
+          border-bottom: 1px solid rgba(255,255,255,0.08) !important;
+          padding-bottom: 0.25rem !important;
+          display: block !important;
+        }
+        .guidelines-content h2, .guidelines-html-container h2 {
+          font-size: 1.3rem !important;
+          font-weight: 850 !important;
+          margin-top: 1.25rem !important;
+          margin-bottom: 0.5rem !important;
+          color: #ffffff !important;
+          display: block !important;
+        }
+        .guidelines-content h3, .guidelines-html-container h3 {
+          font-size: 1.15rem !important;
+          font-weight: 800 !important;
+          margin-top: 1rem !important;
+          margin-bottom: 0.5rem !important;
+          color: #a78bfa !important;
+          display: block !important;
+        }
+        .guidelines-content ul, .guidelines-html-container ul {
+          list-style-type: disc !important;
+          padding-left: 1.25rem !important;
+          margin-top: 0.5rem !important;
+          margin-bottom: 0.5rem !important;
+          display: block !important;
+        }
+        .guidelines-content ol, .guidelines-html-container ol {
+          list-style-type: decimal !important;
+          padding-left: 1.25rem !important;
+          margin-top: 0.5rem !important;
+          margin-bottom: 0.5rem !important;
+          display: block !important;
+        }
+        .guidelines-content li, .guidelines-html-container li {
+          margin-top: 0.25rem !important;
+          margin-bottom: 0.25rem !important;
+          line-height: 1.5 !important;
+          display: list-item !important;
+        }
+        .guidelines-content hr, .guidelines-html-container hr {
+          border: 0 !important;
+          border-top: 1px solid rgba(255,255,255,0.12) !important;
+          margin-top: 1.25rem !important;
+          margin-bottom: 1.25rem !important;
+          display: block !important;
+        }
+        .guidelines-content p, .guidelines-html-container p {
+          margin-top: 0.5rem !important;
+          margin-bottom: 0.5rem !important;
+          line-height: 1.6 !important;
+          display: block !important;
+        }
+        .guidelines-content code, .guidelines-html-container code {
+          background-color: rgba(139,92,246,0.15) !important;
+          color: #c084fc !important;
+          padding: 0.125rem 0.25rem !important;
+          border-radius: 0.25rem !important;
+          font-family: monospace !important;
+          font-size: 0.85em !important;
+          border: 1px solid rgba(139,92,246,0.2) !important;
+          display: inline-block !important;
+        }
+        .guidelines-content pre, .guidelines-html-container pre {
+          background-color: rgba(0,0,0,0.4) !important;
+          border: 1px solid rgba(255,255,255,0.06) !important;
+          padding: 1rem !important;
+          border-radius: 0.75rem !important;
+          overflow-x: auto !important;
+          margin-top: 0.75rem !important;
+          margin-bottom: 0.75rem !important;
+          display: block !important;
+        }
+        .guidelines-content pre code, .guidelines-html-container pre code {
+          background-color: transparent !important;
+          color: inherit !important;
+          padding: 0 !important;
+          border: none !important;
+          font-size: 0.9em !important;
+          display: block !important;
+        }
+        .guidelines-content a, .guidelines-html-container a {
+          color: #a78bfa !important;
+          text-decoration: underline !important;
+        }
+        .guidelines-content a:hover, .guidelines-html-container a:hover {
+          color: #c084fc !important;
+        }
+      ` }} />
       {/* Backdrop overlay */}
       <div
         onClick={onClose}
@@ -576,7 +627,7 @@ export default function ChallengeModal({
                   <>
                     {activeLvlData.description ? (() => {
                       const safe = DOMPurify.sanitize(parseMarkdown(activeLvlData.description), {
-                        ALLOWED_TAGS: ['p', 'br', 'b', 'i', 'strong', 'em', 'ul', 'ol', 'li', 'a', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'span', 'div', 'img', 'code', 'pre', 'blockquote'],
+                        ALLOWED_TAGS: ['p', 'br', 'b', 'i', 'strong', 'em', 'ul', 'ol', 'li', 'a', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'span', 'div', 'img', 'code', 'pre', 'blockquote', 'hr'],
                         ALLOWED_ATTR: ['href', 'target', 'rel', 'src', 'alt', 'class', 'style'],
                       });
                       return <div className="text-slate-300 text-sm leading-relaxed mb-3 guidelines-html-container" dangerouslySetInnerHTML={{ __html: safe }} />;
@@ -608,7 +659,7 @@ export default function ChallengeModal({
                     {task.guidelines ? (
                       (() => {
                         const safe = DOMPurify.sanitize(parseMarkdown(task.guidelines), {
-                          ALLOWED_TAGS: ['p', 'br', 'b', 'i', 'strong', 'em', 'ul', 'ol', 'li', 'a', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'span', 'div', 'img', 'code', 'pre', 'blockquote'],
+                          ALLOWED_TAGS: ['p', 'br', 'b', 'i', 'strong', 'em', 'ul', 'ol', 'li', 'a', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'span', 'div', 'img', 'code', 'pre', 'blockquote', 'hr'],
                           ALLOWED_ATTR: ['href', 'target', 'rel', 'src', 'alt', 'class', 'style'],
                         });
                         return <div dangerouslySetInnerHTML={{ __html: safe }} />;

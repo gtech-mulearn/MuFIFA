@@ -145,6 +145,25 @@ export async function GET(request, { params }) {
 
     const responseData = { ...profile, rank };
 
+    // Fetch user merch claims to find claimed avatar frames
+    let userClaims = [];
+    try {
+      const claimsUrl = `${supabaseUrl}/rest/v1/user_merch_claims?user_id=eq.${encodeURIComponent(profile.user_id)}&select=id,merch_id,merch_items(id,title,tag,image_url,min_level,min_points)`;
+      const claimsRes = await fetch(claimsUrl, {
+        method: "GET",
+        headers: {
+          apikey: supabaseKey,
+          Authorization: `Bearer ${supabaseKey}`,
+        },
+      });
+      if (claimsRes.ok) {
+        userClaims = await claimsRes.json();
+      }
+    } catch (err) {
+      console.error("Failed to fetch user claims for profile API:", err);
+    }
+    responseData.claims = userClaims;
+
     // Fetch user match predictions count
     let predictionsCount = 0;
     try {

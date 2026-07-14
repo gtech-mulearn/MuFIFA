@@ -2,6 +2,7 @@ import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
 import Image from "next/image";
 import { calculateLevel } from "@/utils/constants";
+import Avatar from "@/components/Avatar";
 
 export default function Sidebar({ player, handleLogout }) {
   const pathname = usePathname();
@@ -22,6 +23,20 @@ export default function Sidebar({ player, handleLogout }) {
   const currentLevelXp = levelData.currentLevelXp;
   const nextLevelXp = levelData.nextXp;
   const xpPercentage = levelData.xpPercent;
+
+  let equippedFrame = "";
+  if (player && player.tasks) {
+    if (typeof player.tasks === "object") {
+      equippedFrame = player.tasks.equipped_frame || "";
+    } else if (typeof player.tasks === "string") {
+      try {
+        const parsed = JSON.parse(player.tasks);
+        equippedFrame = parsed.equipped_frame || "";
+      } catch (e) {
+        console.error("Failed to parse player tasks JSON string in Sidebar:", e);
+      }
+    }
+  }
 
   const points = player?.mu_points || 0;
 
@@ -257,20 +272,14 @@ export default function Sidebar({ player, handleLogout }) {
         <div className="flex flex-col gap-4 pt-4 border-t border-white/5">
           <div className="flex items-center gap-3">
             {/* Avatar Shield */}
-            <div className="relative w-10 h-10 rounded-full border border-white/10 bg-slate-900/60 overflow-hidden flex items-center justify-center shrink-0">
-              {player?.avatar_url ? (
-                <Image
-                  src={player.avatar_url}
-                  alt={player.name || "Avatar"}
-                  fill
-                  className="object-cover"
-                />
-              ) : (
-                <span className="text-sm font-black text-slate-300">
-                  {player?.name ? player.name[0].toUpperCase() : "P"}
-                </span>
-              )}
-            </div>
+            <Avatar
+              avatarUrl={player?.avatar_url}
+              name={player?.name}
+              equippedFrame={equippedFrame}
+              sizeClass="w-10 h-10"
+              initialsSizeClass="text-sm font-black"
+              borderClass="border border-white/10 bg-slate-900/60"
+            />
 
             <div className="flex flex-col min-w-0">
               <span className="text-[11px] font-black text-white truncate">

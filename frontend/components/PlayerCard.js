@@ -2,6 +2,7 @@
 
 import React, { useEffect, useRef, useState } from "react";
 import "./PlayerCard.css";
+import { getFrameClass, getInitials } from "./Avatar";
 
 /**
  * Mapping of team names to their flag background image paths.
@@ -155,20 +156,25 @@ export default function PlayerCard({
   const stats = generateStats(data.mu_points, data.name, player.xp_breakdown, player.avg_highest_xp, player.highest_xp_by_category);
   const ovr = calculateOVR(stats);
 
-  // Get referral count from player tasks
+  // Get referral count and equipped avatar frame from player tasks
   let referralCount = 0;
+  let equippedFrame = "";
   if (player && player.tasks) {
     if (typeof player.tasks === "object") {
       referralCount = player.tasks.referal || 0;
+      equippedFrame = player.tasks.equipped_frame || "";
     } else if (typeof player.tasks === "string") {
       try {
         const parsed = JSON.parse(player.tasks);
         referralCount = parsed.referal || 0;
+        equippedFrame = parsed.equipped_frame || "";
       } catch (e) {
         console.error("Failed to parse player tasks JSON string:", e);
       }
     }
   }
+
+  const frameClass = getFrameClass(equippedFrame);
 
   const playerGoals = goals ?? Math.floor(data.mu_points / 7);
   const playerAssists = assists ?? referralCount;
@@ -224,12 +230,6 @@ export default function PlayerCard({
     }
   }, [data.user_id]);
 
-  const getInitials = (name) => {
-    if (!name) return "";
-    const parts = name.trim().split(/\s+/);
-    if (parts.length === 1) return parts[0].substring(0, 2).toUpperCase();
-    return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
-  };
 
   const flagBg = TEAM_FLAG_BG[data.team];
   const countryCode = TEAM_COUNTRY_CODES[data.team];
@@ -237,7 +237,7 @@ export default function PlayerCard({
   return (
     <div className="player-card-wrapper">
       <div className="player-card">
-        {/* Shiny gold borders & lighting patterns */}
+        {/* Decorative gold borders, stadium overlays, and ambient glowing particles. */}
         <div className="pc-card-inner-border" />
         {flagBg && (
           <div
@@ -252,7 +252,7 @@ export default function PlayerCard({
           ))}
         </div>
 
-        {/* Header Section */}
+        {/* Header displaying the tournament trophy, title, and organization shield. */}
         <div className="pc-header">
           <img
             src="/trophy.webp"
@@ -272,7 +272,7 @@ export default function PlayerCard({
           />
         </div>
 
-        {/* Team Banner */}
+        {/* Team stats section displaying flag, custom star rating, and OVR. */}
         <div className="pc-team-banner">
           <div className="pc-team-left">
             <div className="pc-team-flag-container">
@@ -318,33 +318,43 @@ export default function PlayerCard({
           </div>
         </div>
 
-        {/* Main Content Layout */}
+        {/* Two-column layout with the avatar frame on the left and stats details on the right. */}
         <div className="pc-main-layout">
-          {/* Photo Section (Left Column) */}
+          {/* Left column container for the circular player profile avatar. */}
           <div className="pc-photo-section">
             <div className="pc-player-photo">
-              <div className="pc-avatar-frame">
-                {data.avatar_url ? (
-                  <div
-                    className="pc-avatar-img"
-                    style={{ backgroundImage: `url(${data.avatar_url})` }}
-                    aria-label={data.name}
-                    role="img"
-                  />
-                ) : (
-                  <div className="pc-avatar-placeholder-initials">
-                    {getInitials(data.name)}
-                  </div>
-                )}
+              <div
+                className={`pc-avatar-frame ${
+                  frameClass
+                    ? `${frameClass} p-[3px] !border-none !box-shadow-none`
+                    : ""
+                }`}
+              >
+                <div
+                  className="rounded-full overflow-hidden flex items-center justify-center bg-slate-900 w-full h-full"
+                >
+                  {data.avatar_url ? (
+                    <div
+                      className="pc-avatar-img rounded-full"
+                      style={{ backgroundImage: `url(${data.avatar_url})` }}
+                      aria-label={data.name}
+                      role="img"
+                    />
+                  ) : (
+                    <div className="pc-avatar-placeholder-initials rounded-full">
+                      {getInitials(data.name)}
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
           </div>
 
-          {/* Info & Stats Section (Right Column) */}
+          {/* Right column containing player details, role label, and stats bars. */}
           <div className="pc-info-section">
             <div className="pc-player-name">{data.name}</div>
 
-            {/* Position Block with Neon Silhouette */}
+            {/* Domain role description block paired with a neon player graphic. */}
             <div className="pc-position-container">
               <div className="pc-position-block">
                 <span className="pc-position-label">POSITION</span>
@@ -374,7 +384,7 @@ export default function PlayerCard({
               </div>
             </div>
 
-            {/* Stats Bars List */}
+            {/* Domain category score bars that animate on page entry. */}
             <div className="pc-stats" ref={statsRef}>
               {Object.entries(stats).map(([key, value]) => (
                 <div className="pc-stat-row" key={key}>
@@ -397,7 +407,7 @@ export default function PlayerCard({
           </div>
         </div>
 
-        {/* Bottom Stats: Goals, Assists, Challenges */}
+        {/* Horizontal breakdown of goals, assists, and completed challenges. */}
         <div className="pc-bottom-stats">
           <div className="pc-bottom-stat pc-stat-locked">
             <img
@@ -491,9 +501,9 @@ export default function PlayerCard({
           </div>
         </div>
 
-        {/* Specialization and QR Code Row */}
+        {/* Bottom row showing specialized bio statement and profile QR code. */}
         <div className="pc-spec-qr-row">
-          {/* Specialization Card (Left) */}
+          {/* User description showing selected domain and custom bio statement. */}
           <div className="pc-specialization">
             <div className="pc-spec-badge-glow">
               <div className="pc-spec-icon-wrapper">
@@ -518,7 +528,7 @@ export default function PlayerCard({
             </div>
           </div>
 
-          {/* QR Code Column (Right) */}
+          {/* Automated QR code linking back to the user's online profile. */}
           <div className="pc-qr-container">
             <div className="pc-qr-code">
               {profileUrl ? (
@@ -536,7 +546,7 @@ export default function PlayerCard({
           </div>
         </div>
 
-        {/* Achievements Section */}
+        {/* Unlocked user badges in a custom hexagonal grid layout. */}
         <div className="pc-achievements">
           <div className="pc-achievements-title">ACHIEVEMENTS</div>
           <div className="pc-achievements-grid">
@@ -548,7 +558,7 @@ export default function PlayerCard({
                     alt={ach.label}
                     className="pc-achievement-icon"
                   />
-                  {/* Status Indicator (padlock locked) */}
+                  {/* Padlock indicator representing the lock state of this achievement. */}
                   <div className="pc-achievement-lock-status pc-lock-locked">
                     <svg viewBox="0 0 24 24" className="pc-lock-icon">
                       <path
@@ -564,7 +574,7 @@ export default function PlayerCard({
           </div>
         </div>
 
-        {/* Footer */}
+        {/* Footer containing player score, event tagline, and spinning football asset. */}
         <div className="pc-footer">
           <div className="pc-footer-number">
             {String(data.mu_points % 100).padStart(2, "0")}

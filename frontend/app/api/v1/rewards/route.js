@@ -111,7 +111,7 @@ export async function POST(request) {
 
     // 2. Parse request body
     const body = await request.json();
-    const { merch_id } = body;
+    const { merch_id, status } = body;
     if (!merch_id) {
       return NextResponse.json({ success: false, error: "Merchandise ID is required." }, { status: 400 });
     }
@@ -240,6 +240,7 @@ export async function POST(request) {
       body: JSON.stringify({
         user_id: userId,
         merch_id: merchIdInt,
+        status: status || "",
       }),
     });
     if (!insertClaimRes.ok) {

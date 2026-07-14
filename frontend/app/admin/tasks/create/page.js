@@ -7,14 +7,14 @@ export default function AdminCreateTaskPage() {
   const admin = useAdmin();
   const isViewer = admin?.role === "viewer";
 
-  // State for Tasks list
+  // Active tasks loaded from the backend, along with loading states and category selectors.
   const [tasks, setTasks] = useState([]);
   const [loadingTasks, setLoadingTasks] = useState(true);
   const [taskError, setTaskError] = useState("");
   const [taskSuccess, setTaskSuccess] = useState("");
   const [categoryDropdownOpen, setCategoryDropdownOpen] = useState(false);
 
-  // Form: Create Task
+  // State payload reflecting fields required to define or update a parent task.
   const [taskForm, setTaskForm] = useState({
     id: "",
     title: "",
@@ -38,7 +38,7 @@ export default function AdminCreateTaskPage() {
     visibility: "preview",
   });
 
-  // Progression Levels System State
+  // Progression system tracking sub-levels configuration, tabs, and rewards.
   const [hasLevels, setHasLevels] = useState(false);
   const [activeAdminLvlTab, setActiveAdminLvlTab] = useState(1);
   const [adminLevels, setAdminLevels] = useState([
@@ -160,11 +160,11 @@ export default function AdminCreateTaskPage() {
     }
   };
 
-  // Editing states
+  // Flags indicating whether we are updating an existing task or creating a new one.
   const [isEditing, setIsEditing] = useState(false);
   const [editingTaskId, setEditingTaskId] = useState(null);
 
-  // Fetch all tasks from DB
+  // Load tasks from the backend database including draft previews.
   const fetchTasks = useCallback(async () => {
     setLoadingTasks(true);
     setTaskError("");
@@ -187,7 +187,7 @@ export default function AdminCreateTaskPage() {
     fetchTasks();
   }, [fetchTasks]);
 
-  // Submit Create / Update Task
+  // Process task creation or updating, handling levels insertion if enabled.
   const handleCreateTask = async (e) => {
     e.preventDefault();
     if (isViewer) return;
@@ -326,7 +326,7 @@ export default function AdminCreateTaskPage() {
       }
     }
 
-    // Try to load dynamic levels from database first
+    // Retrieve dynamic sub-levels associated with the task directly from local state.
     const childTasks = tasks.filter((t) => t.parent_id === task.id).sort((a, b) => a.id - b.id);
     let hasLvlJson = false;
     let loadedLevels = [];
@@ -365,7 +365,7 @@ export default function AdminCreateTaskPage() {
         };
       });
     } else if (task.guidelines && task.guidelines.trim().startsWith("{\"levels\":")) {
-      // Legacy JSON fallback
+      // Fallback parsing for legacy progression format stringified in guidelines.
       try {
         const parsed = JSON.parse(task.guidelines);
         if (parsed && Array.isArray(parsed.levels)) {
@@ -442,7 +442,7 @@ export default function AdminCreateTaskPage() {
       visibility: task.visibility || "preview",
     });
     
-    // Smooth scroll to form
+    // Scroll view to focus on the edit panel form.
     const formElement = document.getElementById("task-form-panel");
     if (formElement) {
       formElement.scrollIntoView({ behavior: "smooth" });
@@ -491,7 +491,7 @@ export default function AdminCreateTaskPage() {
       </div>
 
       <div className="grid grid-cols-1 xl:grid-cols-2 gap-6 items-start">
-        {/* LEFT COLUMN: CREATE/UPDATE FORM */}
+        {/* Left column holding the creation and update details editor. */}
         <div className="flex flex-col gap-6">
           <div id="task-form-panel" className={`${THEME.panel} rounded-2xl p-6 flex flex-col gap-5`}>
             <div className="border-b border-slate-100 pb-3 flex justify-between items-center">
@@ -522,7 +522,7 @@ export default function AdminCreateTaskPage() {
             )}
 
             <form onSubmit={handleCreateTask} className="flex flex-col gap-5 text-xs">
-              {/* SECTION 1: BASIC DETAILS */}
+              {/* Section containing core details like name, parent link, description, and logo. */}
               <div className="border border-slate-200/80 bg-slate-50/50 p-4 rounded-xl flex flex-col gap-4">
                 <span className="text-[10px] font-black uppercase tracking-widest text-sky-700 border-b border-slate-200/50 pb-1.5 block">
                   1. Basic Details
@@ -729,79 +729,81 @@ export default function AdminCreateTaskPage() {
                 </div>
               </div>
 
-              {/* SECTION 2: VERIFICATION & ACTIONS */}
-              <div className="border border-slate-200/80 bg-slate-50/50 p-4 rounded-xl flex flex-col gap-4">
-                <span className="text-[10px] font-black uppercase tracking-widest text-sky-700 border-b border-slate-200/50 pb-1.5 block">
-                  2. Verification & Action Buttons
-                </span>
+              {!hasLevels && (
+                /* Configures verification options and redirection urls. */
+                <div className="border border-slate-200/80 bg-slate-50/50 p-4 rounded-xl flex flex-col gap-4">
+                  <span className="text-[10px] font-black uppercase tracking-widest text-sky-700 border-b border-slate-200/50 pb-1.5 block">
+                    2. Verification & Action Buttons
+                  </span>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div className="flex flex-col gap-1.5">
-                    <label className="text-[10px] font-black uppercase tracking-wider text-slate-500">
-                      Verification Method
-                    </label>
-                    <select
-                      value={taskForm.verificationType}
-                      onChange={(e) => setTaskForm({ ...taskForm, verificationType: e.target.value })}
-                      className={`rounded-xl px-3 py-2.5 cursor-pointer focus:outline-none ${THEME.input}`}
-                    >
-                      <option value="none">Manual Admin Review (Standard)</option>
-                      <option value="referral">Referral Check (At least 1 referral)</option>
-                      <option value="profile">Profile Completion & Prediction Check</option>
-                      <option value="kuzhiundo">Kuzhiyundo Pothole Mapping Check</option>
-                      <option value="points">Squad Synergy Points Check (Accumulate 20+ points)</option>
-                      <option value="discord api">Discord API (Automated Hashtag check)</option>
-                      <option value="custom">Legacy Custom Fallback</option>
-                    </select>
-                  </div>
-
-                  {taskForm.verificationType === "discord api" ? (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div className="flex flex-col gap-1.5">
                       <label className="text-[10px] font-black uppercase tracking-wider text-slate-500">
-                        Discord Hashtag (Required)
+                        Verification Method
+                      </label>
+                      <select
+                        value={taskForm.verificationType}
+                        onChange={(e) => setTaskForm({ ...taskForm, verificationType: e.target.value })}
+                        className={`rounded-xl px-3 py-2.5 cursor-pointer focus:outline-none ${THEME.input}`}
+                      >
+                        <option value="none">Manual Admin Review (Standard)</option>
+                        <option value="referral">Referral Check (At least 1 referral)</option>
+                        <option value="profile">Profile Completion & Prediction Check</option>
+                        <option value="kuzhiundo">Kuzhiyundo Pothole Mapping Check</option>
+                        <option value="points">Squad Synergy Points Check (Accumulate 20+ points)</option>
+                        <option value="discord api">Discord API (Automated Hashtag check)</option>
+                        <option value="custom">Legacy Custom Fallback</option>
+                      </select>
+                    </div>
+
+                    {taskForm.verificationType === "discord api" ? (
+                      <div className="flex flex-col gap-1.5">
+                        <label className="text-[10px] font-black uppercase tracking-wider text-slate-500">
+                          Discord Hashtag (Required)
+                        </label>
+                        <input
+                          type="text"
+                          value={taskForm.discordHashtag}
+                          onChange={(e) => setTaskForm({ ...taskForm, discordHashtag: e.target.value })}
+                          placeholder="e.g. #hackathon"
+                          className={`rounded-xl px-4 py-2.5 focus:outline-none ${THEME.input}`}
+                        />
+                      </div>
+                    ) : (
+                      <div className="flex flex-col justify-end text-[10px] text-slate-400 italic pl-1 pb-1">
+                        Verification requires admin review or custom event logs triggers.
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div className="flex flex-col gap-1.5">
+                      <label className="text-[10px] font-black uppercase tracking-wider text-slate-500">
+                        Action Button Label
                       </label>
                       <input
                         type="text"
-                        value={taskForm.discordHashtag}
-                        onChange={(e) => setTaskForm({ ...taskForm, discordHashtag: e.target.value })}
-                        placeholder="e.g. #hackathon"
+                        value={taskForm.action_label}
+                        onChange={(e) => setTaskForm({ ...taskForm, action_label: e.target.value })}
                         className={`rounded-xl px-4 py-2.5 focus:outline-none ${THEME.input}`}
                       />
                     </div>
-                  ) : (
-                    <div className="flex flex-col justify-end text-[10px] text-slate-400 italic pl-1 pb-1">
-                      Verification requires admin review or custom event logs triggers.
+                    <div className="flex flex-col gap-1.5">
+                      <label className="text-[10px] font-black uppercase tracking-wider text-slate-500">
+                        Action URL / Link
+                      </label>
+                      <input
+                        type="text"
+                        value={taskForm.action_url}
+                        onChange={(e) => setTaskForm({ ...taskForm, action_url: e.target.value })}
+                        className={`rounded-xl px-4 py-2.5 focus:outline-none ${THEME.input}`}
+                      />
                     </div>
-                  )}
-                </div>
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div className="flex flex-col gap-1.5">
-                    <label className="text-[10px] font-black uppercase tracking-wider text-slate-500">
-                      Action Button Label
-                    </label>
-                    <input
-                      type="text"
-                      value={taskForm.action_label}
-                      onChange={(e) => setTaskForm({ ...taskForm, action_label: e.target.value })}
-                      className={`rounded-xl px-4 py-2.5 focus:outline-none ${THEME.input}`}
-                    />
-                  </div>
-                  <div className="flex flex-col gap-1.5">
-                    <label className="text-[10px] font-black uppercase tracking-wider text-slate-500">
-                      Action URL / Link
-                    </label>
-                    <input
-                      type="text"
-                      value={taskForm.action_url}
-                      onChange={(e) => setTaskForm({ ...taskForm, action_url: e.target.value })}
-                      className={`rounded-xl px-4 py-2.5 focus:outline-none ${THEME.input}`}
-                    />
                   </div>
                 </div>
-              </div>
+              )}
 
-              {/* SECTION 3: PROGRESSION LEVELS SYSTEM */}
+              {/* Handles sub-levels list configuration and individual level rewards. */}
               <div className="border border-slate-200/80 bg-slate-50/50 p-4 rounded-xl flex flex-col gap-4">
                 <div className="flex justify-between items-center border-b border-slate-200/50 pb-1.5">
                   <span className="text-[10px] font-black uppercase tracking-widest text-sky-700 block">
@@ -820,7 +822,7 @@ export default function AdminCreateTaskPage() {
                 </div>
 
                 {!hasLevels ? (
-                  /* Standard Mode Fields */
+                  /* Input fields for single-tier standard tasks without progressive sub-levels. */
                   <div className="flex flex-col gap-4">
                     <div className="flex flex-col gap-1.5">
                       <div className="flex justify-between">
@@ -898,13 +900,13 @@ export default function AdminCreateTaskPage() {
                       </div>
                     </div>
                   </div>
-                ) : (                   /* Levels Editor Mode */
+                ) : (                   /* Editor system for defining multiple progressive tiers. */
                   <div className="flex flex-col gap-4">
                     <div className="bg-violet-50/50 border border-violet-200 text-violet-800 text-[11px] p-3 rounded-xl">
                       <strong>Progression System Active:</strong> Guidelines field is managed through levels configuration below. Each level will be stored in the database as a separate task linked to this challenge.
                     </div>
 
-                    {/* Level Selector Tabs */}
+                    {/* Tab options to switch between level parameters. */}
                     <div className="flex flex-wrap items-center gap-2 border-b border-slate-200 pb-2">
                       {adminLevels.map((lvl, index) => (
                         <div key={lvl.level} className="flex items-center gap-1">
@@ -940,7 +942,7 @@ export default function AdminCreateTaskPage() {
                       </button>
                     </div>
 
-                    {/* Active Level Form Fields */}
+                    {/* Details input form for the active level. */}
                     {(() => {
                       const activeLvl = adminLevels[activeAdminLvlTab - 1] || adminLevels[0] || {};
                       return (
@@ -993,7 +995,7 @@ export default function AdminCreateTaskPage() {
                             />
                           </div>
 
-                          {/* Verification mechanism per level */}
+                          {/* Specific verification method details for this level. */}
                           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 border-t border-slate-100 pt-3">
                             <div className="flex flex-col gap-1">
                               <label className="text-[9px] uppercase font-bold text-slate-500">Verification Method</label>
@@ -1050,7 +1052,7 @@ export default function AdminCreateTaskPage() {
                             </div>
                           </div>
 
-                          {/* Level rewards - MuPoints and all XP options */}
+                          {/* Points and XP awards given upon level completion. */}
                           <div className="border-t border-dashed border-slate-200 pt-3">
                             <span className="text-[9px] font-black uppercase tracking-wider text-slate-400 mb-2 block">Level Points & XP Setup</span>
                             <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
@@ -1138,7 +1140,7 @@ export default function AdminCreateTaskPage() {
           </div>
         </div>
 
-        {/* RIGHT COLUMN: ACTIVE PROGRESSION TASKS */}
+        {/* Right column listing current tasks loaded from database. */}
         <div className="flex flex-col gap-6">
           <div className={`${THEME.panel} rounded-2xl overflow-hidden`}>
             <div className="p-6 border-b border-slate-100">

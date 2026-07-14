@@ -1,7 +1,9 @@
 import Link from "next/link";
 import Image from "next/image";
 
-export default function Rewards() {
+export default function Rewards({ player }) {
+  const points = player?.mu_points || 0;
+
   return (
     <div className="flex flex-col gap-4 mt-6">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
@@ -35,7 +37,7 @@ export default function Rewards() {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-12 gap-5 items-stretch mt-2">
-        {/* REWARD 1: μPoints */}
+        {/* REWARD 1: μPoints Balance */}
         <div className="md:col-span-4 bg-[#110e20]/60 border border-white/5 rounded-2xl p-4 flex items-center gap-4 shadow-md">
           <Image
             src="/mupoints.webp"
@@ -46,37 +48,31 @@ export default function Rewards() {
           />
           <div className="flex flex-col">
             <span className="text-xl font-black text-white leading-none">
-              250+
+              {points}
             </span>
-            <span className="text-[9px] font-black tracking-wider text-slate-500 mt-1">
-              μPoints Available
+            <span className="text-[9px] font-black tracking-wider text-slate-500 mt-1 uppercase">
+              Your μPoints Balance
             </span>
           </div>
         </div>
 
-        {/* REWARD 2: Arena Ticket */}
+        {/* REWARD 2: Exclusive Merchandise */}
         <div className="md:col-span-4 bg-[#110e20]/60 border border-white/5 rounded-2xl p-4 flex items-center gap-4 shadow-md">
           <div className="w-12 h-12 rounded-xl bg-violet-500/10 border border-violet-500/20 flex items-center justify-center shadow-[0_0_15px_rgba(139,92,246,0.15)] shrink-0">
-            <svg
-              className="w-6 h-6 text-violet-400"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                d="M16.5 6v.75m0 3v.75m0 3v.75m0 3V18m-9-12v.75m0 3v.75m0 3v.75m0 3V18M3 6h18M3 18h18M3 6.75A1.75 1.75 0 014.75 5h14.5A1.75 1.75 0 0121 6.75v10.5a1.75 1.75 0 01-1.75 1.75H4.75A1.75 1.75 0 013 17.25V6.75z"
-              />
-            </svg>
+            <Image
+              src="/rewards/tshirt.webp"
+              alt="T-Shirts"
+              width={26}
+              height={26}
+              className="object-contain shrink-0"
+            />
           </div>
           <div className="flex flex-col">
             <span className="text-xl font-black text-white leading-none">
-              1
+              3
             </span>
             <span className="text-[9px] font-black uppercase tracking-wider text-slate-500 mt-1">
-              Arena Pass Ticket
+              ZYCOZ Tees Available
             </span>
           </div>
         </div>
@@ -89,7 +85,7 @@ export default function Rewards() {
               μFIFA Store
             </span>
             <span className="text-[9px] font-black text-white uppercase tracking-wide leading-tight mt-1 max-w-[150px]">
-              Redeem jerseys, tickets, and elite goodies!
+              Redeem exclusive oversized tees and premium gear!
             </span>
           </div>
           <div className="w-10 h-10 rounded-xl bg-violet-600/10 border border-violet-500/20 flex items-center justify-center text-violet-400 shadow-[0_0_15px_rgba(139,92,246,0.15)] shrink-0 z-10 group-hover:scale-105 transition-transform duration-300">

@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
+import { marked } from "marked";
+import DOMPurify from "dompurify";
 
 export default function ChallengeCard({ task, onViewDetails, dbTasks }) {
   const isCompleted = task.completed;
@@ -260,7 +262,19 @@ export default function ChallengeCard({ task, onViewDetails, dbTasks }) {
             {task.title}
           </h3>
           <p className="text-[12px] text-slate-400 font-medium leading-relaxed mt-0.5 min-h-[56px] max-h-[56px] overflow-hidden">
-            {task.shortDesc}
+            {(() => {
+              const raw = task.shortDesc || "";
+              try {
+                const html = marked.parseInline(raw);
+                const safe = DOMPurify.sanitize(html, {
+                  ALLOWED_TAGS: ["b", "i", "strong", "em", "span", "code", "a"],
+                  ALLOWED_ATTR: ["href", "target", "rel"]
+                });
+                return <span dangerouslySetInnerHTML={{ __html: safe }} />;
+              } catch (e) {
+                return <span>{raw}</span>;
+              }
+            })()}
           </p>
         </div>
       </div>
