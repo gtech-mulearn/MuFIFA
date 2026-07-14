@@ -3,7 +3,13 @@ import { getNewUserEmailHtml } from "./mailServer/newUserTemplate";
 import { getOtpEmailHtml } from "./mailServer/otpTemplate";
 import { TEAM_FLAGS, TEAM_WHATSAPP_LINKS } from "./constants";
 
+// Cached transporter singleton — reusing a pooled SMTP connection across all requests
+// avoids the TCP/SSL handshake overhead that causes SES timeouts under concurrent load.
+let _transporter = null;
+
 function getTransporter() {
+  if (_transporter) return _transporter;
+
   const host = process.env.SMTP_HOST;
   const port = parseInt(process.env.SMTP_PORT || "587", 10);
   const user = process.env.SMTP_USER;
@@ -16,12 +22,17 @@ function getTransporter() {
     return null;
   }
 
-  return nodemailer.createTransport({
+  _transporter = nodemailer.createTransport({
     host,
     port,
     secure: port === 465,
     auth: { user, pass },
+    pool: true,       // Keep persistent connections alive instead of opening a new socket per email.
+    maxConnections: 5, // Limit concurrent SMTP connections to avoid overwhelming SES.
+    maxMessages: 100,  // Send up to 100 messages per connection before cycling.
   });
+
+  return _transporter;
 }
 
 export async function sendRegistrationOtpEmail({ email, name, otp }) {

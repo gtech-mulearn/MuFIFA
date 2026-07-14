@@ -33,7 +33,8 @@ async function deleteOldOtps() {
 }
 
 export async function createOtpSession(email, payload, otp) {
-  await deleteOldOtps();
+  // Fire cleanup in the background — do not block the player's request waiting for a DELETE query.
+  deleteOldOtps();
 
   const key = normalizeEmail(email);
   const now = Date.now();
@@ -76,7 +77,8 @@ export async function createOtpSession(email, payload, otp) {
 }
 
 export async function getOtpSession(email) {
-  await deleteOldOtps();
+  // Cleanup is a background concern — don't make the player wait for a DELETE round-trip.
+  deleteOldOtps();
 
   const key = normalizeEmail(email);
 
