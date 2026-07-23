@@ -162,7 +162,6 @@ export default function TasksPage() {
   };
 
   const isTask1Completed = isDbTaskCompleted(1);
-  const hasPredictions = (player?.predictions_count || 0) > 0;
   const isTask2Completed = isDbTaskCompleted(2);
 
   const isTask3Completed = isDbTaskCompleted(3);
@@ -203,12 +202,6 @@ export default function TasksPage() {
       if (!isProfileComplete) {
         setVerifyError(
           "Profile details incomplete. Please ensure bio, avatar image, and µID (µLearn ID) are updated on your profile.",
-        );
-        setVerifyingTaskId(null);
-        return;
-      } else if (!hasPredictions) {
-        setVerifyError(
-          "Prediction not found. Please ensure you have made at least 1 prediction on any match.",
         );
         setVerifyingTaskId(null);
         return;

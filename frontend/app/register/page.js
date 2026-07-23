@@ -6,9 +6,9 @@ import { useSearchParams, useRouter } from "next/navigation";
 import BackgroundVideo from "@/components/BackgroundVideo";
 import BallLoader from "@/components/BallLoader";
 import { getBackendUrl } from "@/utils/api";
-import { DOMAINS, TEAM_FLAGS, DISPOSABLE_DOMAINS, WHO_AM_I_OPTIONS, KERALA_COLLEGES } from "@/utils/constants";
+import { DOMAINS, TEAM_FLAGS, AVAILABLE_TEAMS, DISPOSABLE_DOMAINS, WHO_AM_I_OPTIONS, KERALA_COLLEGES } from "@/utils/constants";
 
-const TEAMS = Object.keys(TEAM_FLAGS);
+const TEAMS = AVAILABLE_TEAMS;
 
 function Select({
   value,

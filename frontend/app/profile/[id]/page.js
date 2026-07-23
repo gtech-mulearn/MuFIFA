@@ -172,6 +172,9 @@ function ProfilePageContent({ params }) {
         handleEditSubmit={profile.handleEditSubmit}
         claimedFrames={profile.claimedFrames}
         player={profile.player}
+        uploading={profile.uploading}
+        uploadError={profile.uploadError}
+        handleAvatarChange={profile.handleAvatarChange}
         passwordForm={profile.passwordForm}
         setPasswordForm={profile.setPasswordForm}
         passwordError={profile.passwordError}

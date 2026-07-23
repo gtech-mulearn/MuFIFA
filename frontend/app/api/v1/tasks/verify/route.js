@@ -221,32 +221,6 @@ export async function POST(request) {
           { status: 400 },
         );
       }
-
-      // Check predictions
-      const predQuery = `${supabaseUrl}/rest/v1/match_predictions?user_id=eq.${encodeURIComponent(userId)}&select=id`;
-      const predRes = await fetch(predQuery, {
-        headers: {
-          apikey: supabaseKey,
-          Authorization: `Bearer ${supabaseKey}`,
-          Prefer: "count=exact",
-        },
-      });
-      if (!predRes.ok)
-        throw new Error(`Failed to check predictions: ${await predRes.text()}`);
-      const predCount = parseInt(
-        predRes.headers.get("content-range")?.split("/")[1] || "0",
-        10,
-      );
-      if (predCount < 1) {
-        return NextResponse.json(
-          {
-            success: false,
-            error:
-              "Prediction not found. Please ensure you have made at least 1 prediction on any match.",
-          },
-          { status: 400 },
-        );
-      }
     } else if (verificationMethod === "kuzhiundo") {
       // Kuzhiyundo Challenge Pothole Mapping verification
       const uuid = player.id; // MuFIFA registration UUID is the player.id

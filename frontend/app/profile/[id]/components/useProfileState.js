@@ -296,15 +296,18 @@ export function useProfileState(id, currentUser, refreshPlayer) {
 
   const handleAvatarChange = useCallback(async (e) => {
     const file = e.target.files?.[0];
+    const inputElement = e.target;
     if (!file) return;
 
-    const allowedTypes = ["image/jpeg", "image/png", "image/webp", "image/gif"];
-    if (!allowedTypes.includes(file.type)) {
-      setUploadError("Only JPEG, PNG, WEBP, and GIF images are allowed.");
+    const isImage = file.type ? file.type.startsWith("image/") : /\.(jpe?g|png|webp|gif|svg|avif|bmp)$/i.test(file.name);
+    if (!isImage) {
+      setUploadError("Only image files (JPEG, PNG, WEBP, GIF, etc.) are allowed.");
+      if (inputElement) inputElement.value = "";
       return;
     }
-    if (file.size > 3 * 1024 * 1024) {
-      setUploadError("Image must be under 3MB.");
+    if (file.size > 5 * 1024 * 1024) {
+      setUploadError("Image must be under 5MB.");
+      if (inputElement) inputElement.value = "";
       return;
     }
 
@@ -334,6 +337,7 @@ export function useProfileState(id, currentUser, refreshPlayer) {
       console.error("Avatar upload error:", err);
       setUploadError("A connection error occurred. Please try again.");
     } finally {
+      if (inputElement) inputElement.value = "";
       setUploading(false);
     }
   }, [isOwner, refreshPlayer]);
@@ -501,6 +505,7 @@ export function useProfileState(id, currentUser, refreshPlayer) {
     uploading,
     uploadError,
     setUploadError,
+    handleAvatarChange,
     editForm,
     setEditForm,
     editSaved,

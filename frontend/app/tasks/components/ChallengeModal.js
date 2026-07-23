@@ -262,7 +262,7 @@ export default function ChallengeModal({
       if (v === "custom" || v === "referral" || v === "profile" || v === "kuzhiundo" || v === "points") {
         let desc = "Automated check via website action.";
         if (v === "referral") desc = "Automated check of your referred players.";
-        if (v === "profile") desc = "Automated check of profile completeness & prediction.";
+        if (v === "profile") desc = "Automated check of profile completeness.";
         if (v === "kuzhiundo") desc = "Automated check of Kuzhiyundo pothole submissions.";
         if (v === "points") desc = "Automated check of accumulated μPoints.";
 

@@ -40,7 +40,7 @@ export async function GET(request) {
     }
 
     const allRegistrations = await fetchAllSupabase(
-      `${supabaseUrl}/rest/v1/registrations?select=user_id,team,mu_points`,
+      `${supabaseUrl}/rest/v1/registrations?select=team,mu_points`,
       {
         apikey: supabaseKey,
         Authorization: `Bearer ${supabaseKey}`,
@@ -89,14 +89,6 @@ export async function GET(request) {
       }
     });
 
-    const referral_analytics = {};
-    registrations.forEach((r) => {
-      if (r.user_id) {
-        referral_analytics[r.user_id] =
-          (referral_analytics[r.user_id] || 0) + 1;
-      }
-    });
-
     // Calculates the statistical median of a points list
     function calculateMedian(arr) {
       if (!arr || arr.length === 0) return 0;
@@ -129,7 +121,6 @@ export async function GET(request) {
 
     const statsPayload = {
       organisation_count,
-      referral_analytics,
       squad_points,
     };
 
@@ -141,7 +132,12 @@ export async function GET(request) {
         response: statsPayload,
         data: statsPayload,
       },
-      { status: 200 },
+      {
+        status: 200,
+        headers: {
+          "Cache-Control": "public, s-maxage=60, stale-while-revalidate=300",
+        },
+      },
     );
   } catch (error) {
     console.error("Next.js live-stats API error:", error);

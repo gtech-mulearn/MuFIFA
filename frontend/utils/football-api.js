@@ -32,7 +32,7 @@ export async function fetchMatches() {
     {
       method: "GET",
       headers: supabaseHeaders,
-      next: { revalidate: 0 },
+      next: { revalidate: 300 },
     }
   );
 
@@ -78,7 +78,7 @@ export async function _fetchFromApi(apiKey) {
     {
       method: "GET",
       headers: { "X-Auth-Token": apiKey },
-      next: { revalidate: 0 },
+      next: { revalidate: 300 },
     }
   );
 
