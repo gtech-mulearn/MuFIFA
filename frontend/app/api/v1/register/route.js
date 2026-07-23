@@ -11,7 +11,7 @@ import {
 import { sendRegistrationOtpEmail, sendRegistrationEmail } from "@/utils/email";
 import { signToken, hashPassword } from "@/utils/auth";
 import { adjustSquadPoints } from "@/utils/squad";
-import { DISPOSABLE_DOMAINS } from "@/utils/constants";
+import { DISPOSABLE_DOMAINS, AVAILABLE_TEAMS } from "@/utils/constants";
 
 const PLAYER_COOKIE = "player_token";
 
@@ -29,20 +29,7 @@ function jsonError(status, code, message, details = null) {
 }
 
 const DOMAINS = ["Coder", "Creative", "Maker", "Strategist"];
-const TEAMS = [
-  "Brazil",
-  "Argentina",
-  "Portugal",
-  "Germany",
-  "France",
-  "England",
-  "Spain",
-  "Netherlands",
-  "Belgium",
-  "Croatia",
-  "Uruguay",
-  "Japan",
-];
+const TEAMS = AVAILABLE_TEAMS;
 
 const RegisterSchema = z.object({
   name: z

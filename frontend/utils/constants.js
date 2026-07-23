@@ -110,6 +110,8 @@ export const KERALA_COLLEGES = [
   return a.localeCompare(b);
 });
 
+export const ELIMINATED_TEAMS = ["Croatia", "Netherlands", "Uruguay", "Belgium"];
+
 export const TEAM_FLAGS = {
   Brazil: "br",
   Argentina: "ar",
@@ -124,6 +126,10 @@ export const TEAM_FLAGS = {
   Uruguay: "uy",
   Japan: "jp",
 };
+
+export const AVAILABLE_TEAMS = Object.keys(TEAM_FLAGS).filter(
+  (team) => !ELIMINATED_TEAMS.includes(team)
+);
 
 export const TEAM_FLAG_BGS = {
   Argentina: "/playerCard/flag/argentina.webp",

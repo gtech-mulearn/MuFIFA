@@ -4,6 +4,8 @@ import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { getBackendUrl } from "../utils/api";
 
+import { ELIMINATED_TEAMS } from "@/utils/constants";
+
 const FLAGS = {
   Brazil: "br",
   Argentina: "ar",
@@ -37,6 +39,7 @@ export default function Leaderboard() {
 
   useEffect(() => {
     const fetchStats = async () => {
+      if (typeof document !== "undefined" && document.hidden) return;
       try {
         const res = await fetch(getBackendUrl("live-stats"));
         const data = await res.json();
@@ -88,9 +91,24 @@ export default function Leaderboard() {
 
     fetchStats();
 
-    // Poll the stats route every 30 seconds
+    // Poll the stats route every 30 seconds only when page is visible
     const interval = setInterval(fetchStats, 30000);
-    return () => clearInterval(interval);
+
+    const handleVisibilityChange = () => {
+      if (typeof document !== "undefined" && !document.hidden) {
+        fetchStats();
+      }
+    };
+    if (typeof document !== "undefined") {
+      document.addEventListener("visibilitychange", handleVisibilityChange);
+    }
+
+    return () => {
+      clearInterval(interval);
+      if (typeof document !== "undefined") {
+        document.removeEventListener("visibilitychange", handleVisibilityChange);
+      }
+    };
   }, []);
 
   // Simulation loop for mock data when live database stats are empty or offline
@@ -185,67 +203,77 @@ export default function Leaderboard() {
 
       {/* Leaderboard Rankings List */}
       <div className="flex flex-col gap-2">
-        {teamsData.map((team) => (
-          <div
-            key={team.name}
-            className="flex items-center justify-between p-2.5 rounded-xl border border-white/5 bg-white/[0.005] hover:bg-white/[0.02] transition-colors group"
-          >
-            <div className="flex items-center gap-3">
-              <div className="flex items-center gap-1.5">
-                <span
-                  className={`inline-flex items-center justify-center w-6 h-6 rounded-lg text-[10px] font-bold border ${getRankStyle(team.rank)}`}
-                >
-                  {team.rank}
-                </span>
-                <div className="w-2.5 flex items-center justify-center">
-                  {team.rankTrend === "up" && (
-                    <span
-                      className="text-[#00E676] text-[9px] drop-shadow-[0_0_2px_#00E676]"
-                      aria-label="Rank increased"
-                    >
-                      ▲
-                    </span>
-                  )}
-                  {team.rankTrend === "down" && (
-                    <span
-                      className="text-[#4F46E5] text-[9px] drop-shadow-[0_0_2px_#4F46E5]"
-                      aria-label="Rank decreased"
-                    >
-                      ▼
-                    </span>
-                  )}
-                  {team.rankTrend === "stable" && (
-                    <span
-                      className="text-slate-700 text-[7px]"
-                      aria-label="Rank stable"
-                    >
-                      •
-                    </span>
-                  )}
+        {teamsData.map((team) => {
+          const isEliminated = ELIMINATED_TEAMS.includes(team.name);
+          return (
+            <div
+              key={team.name}
+              className={`flex items-center justify-between p-2.5 rounded-xl border border-white/5 bg-white/[0.005] hover:bg-white/[0.02] transition-colors group ${
+                isEliminated ? "opacity-60" : ""
+              }`}
+            >
+              <div className="flex items-center gap-3">
+                <div className="flex items-center gap-1.5">
+                  <span
+                    className={`inline-flex items-center justify-center w-6 h-6 rounded-lg text-[10px] font-bold border ${getRankStyle(team.rank)}`}
+                  >
+                    {team.rank}
+                  </span>
+                  <div className="w-2.5 flex items-center justify-center">
+                    {team.rankTrend === "up" && (
+                      <span
+                        className="text-[#00E676] text-[9px] drop-shadow-[0_0_2px_#00E676]"
+                        aria-label="Rank increased"
+                      >
+                        ▲
+                      </span>
+                    )}
+                    {team.rankTrend === "down" && (
+                      <span
+                        className="text-[#4F46E5] text-[9px] drop-shadow-[0_0_2px_#4F46E5]"
+                        aria-label="Rank decreased"
+                      >
+                        ▼
+                      </span>
+                    )}
+                    {team.rankTrend === "stable" && (
+                      <span
+                        className="text-slate-700 text-[7px]"
+                        aria-label="Rank stable"
+                      >
+                        •
+                      </span>
+                    )}
+                  </div>
                 </div>
+
+                <span className="text-xs font-semibold text-slate-200 group-hover:text-white transition-colors flex items-center gap-1.5">
+                  <span
+                    className={`fi fi-${team.flag} rounded-sm shadow-sm border border-white/10 shrink-0`}
+                    style={{ width: "18px", height: "13.5px" }}
+                    role="img"
+                    aria-label={`${team.name} flag`}
+                  />
+                  <span>{team.name}</span>
+                  {isEliminated && (
+                    <span className="text-[7.5px] font-extrabold text-red-400 bg-red-500/10 border border-red-500/20 px-1 py-0.2 rounded uppercase tracking-wider ml-1">
+                      Eliminated
+                    </span>
+                  )}
+                </span>
               </div>
 
-              <span className="text-xs font-semibold text-slate-200 group-hover:text-white transition-colors flex items-center gap-1.5">
-                <span
-                  className={`fi fi-${team.flag} rounded-sm shadow-sm border border-white/10 shrink-0`}
-                  style={{ width: "18px", height: "13.5px" }}
-                  role="img"
-                  aria-label={`${team.name} flag`}
-                />
-                <span>{team.name}</span>
-              </span>
+              <div className="flex items-center gap-1.5">
+                <span className="text-xs font-bold text-[#06B6D4]">
+                  {team.points}
+                </span>
+                <span className="text-[8px] text-slate-500 uppercase tracking-wider">
+                  pts
+                </span>
+              </div>
             </div>
-
-            <div className="flex items-center gap-1.5">
-              <span className="text-xs font-bold text-[#06B6D4]">
-                {team.points}
-              </span>
-              <span className="text-[8px] text-slate-500 uppercase tracking-wider">
-                pts
-              </span>
-            </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
 
       {/* Detailed Standings Link */}

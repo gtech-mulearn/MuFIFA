@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useMemo } from "react";
 import Image from "next/image";
 import { getBackendUrl } from "@/utils/api";
+import { ELIMINATED_TEAMS } from "@/utils/constants";
 import { TEAMS, FLAGS, getSquadPhoto, getSquadPhotoFront, getRankStyle } from "../utils";
 
 export default function SquadStandings({ dbStatus, setDbStatus }) {
@@ -23,6 +24,7 @@ export default function SquadStandings({ dbStatus, setDbStatus }) {
 
   useEffect(() => {
     const fetchStats = async () => {
+      if (typeof document !== "undefined" && document.hidden) return;
       try {
         const res = await fetch(getBackendUrl("live-stats"));
         const data = await res.json();
@@ -69,7 +71,22 @@ export default function SquadStandings({ dbStatus, setDbStatus }) {
 
     fetchStats();
     const interval = setInterval(fetchStats, 30000);
-    return () => clearInterval(interval);
+
+    const handleVisibilityChange = () => {
+      if (typeof document !== "undefined" && !document.hidden) {
+        fetchStats();
+      }
+    };
+    if (typeof document !== "undefined") {
+      document.addEventListener("visibilitychange", handleVisibilityChange);
+    }
+
+    return () => {
+      clearInterval(interval);
+      if (typeof document !== "undefined") {
+        document.removeEventListener("visibilitychange", handleVisibilityChange);
+      }
+    };
   }, [setDbStatus]);
 
   const filteredTeams = useMemo(() => {
@@ -248,7 +265,9 @@ export default function SquadStandings({ dbStatus, setDbStatus }) {
           (searchQuery ? filteredTeams : filteredTeams.slice(3)).map((team) => (
             <div
               key={team.name}
-              className="flex items-center justify-between py-3 px-2 sm:px-3 border-b border-white/5 hover:bg-white/[0.02] transition-colors group last:border-b-0"
+              className={`flex items-center justify-between py-3 px-2 sm:px-3 border-b border-white/5 hover:bg-white/[0.02] transition-colors group last:border-b-0 ${
+                ELIMINATED_TEAMS.includes(team.name) ? "opacity-60" : ""
+              }`}
             >
               <div className="flex items-center gap-3">
                 <span
@@ -292,6 +311,11 @@ export default function SquadStandings({ dbStatus, setDbStatus }) {
                     aria-label={`${team.name} flag`}
                   />
                   <span>{team.name}</span>
+                  {ELIMINATED_TEAMS.includes(team.name) && (
+                    <span className="text-[9px] font-extrabold text-red-400 bg-red-500/10 border border-red-500/20 px-1.5 py-0.5 rounded uppercase tracking-wider">
+                      Eliminated
+                    </span>
+                  )}
                 </span>
               </div>
 

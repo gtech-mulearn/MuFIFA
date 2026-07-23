@@ -12,6 +12,9 @@ export default function ProfileEditModal({
   handleEditSubmit,
   claimedFrames,
   player,
+  uploading,
+  uploadError,
+  handleAvatarChange,
   passwordForm,
   setPasswordForm,
   passwordError,
@@ -56,11 +59,10 @@ export default function ProfileEditModal({
             onClick={() => {
               setActiveTab("profile");
             }}
-            className={`pb-1.5 text-[10px] font-black uppercase tracking-widest border-b-2 transition-all cursor-pointer shrink-0 ${
-              activeTab === "profile"
-                ? "border-violet-500 text-white"
-                : "border-transparent text-slate-500 hover:text-slate-300"
-            }`}
+            className={`pb-1.5 text-[10px] font-black uppercase tracking-widest border-b-2 transition-all cursor-pointer shrink-0 ${activeTab === "profile"
+              ? "border-violet-500 text-white"
+              : "border-transparent text-slate-500 hover:text-slate-300"
+              }`}
           >
             Profile Info
           </button>
@@ -68,11 +70,10 @@ export default function ProfileEditModal({
             onClick={() => {
               setActiveTab("password");
             }}
-            className={`pb-1.5 text-[10px] font-black uppercase tracking-widest border-b-2 transition-all cursor-pointer shrink-0 ${
-              activeTab === "password"
-                ? "border-emerald-500 text-white"
-                : "border-transparent text-slate-500 hover:text-slate-300"
-            }`}
+            className={`pb-1.5 text-[10px] font-black uppercase tracking-widest border-b-2 transition-all cursor-pointer shrink-0 ${activeTab === "password"
+              ? "border-emerald-500 text-white"
+              : "border-transparent text-slate-500 hover:text-slate-300"
+              }`}
           >
             Security
           </button>
@@ -81,6 +82,60 @@ export default function ProfileEditModal({
         {/* TAB CONTENT: PROFILE INFO */}
         {activeTab === "profile" && (
           <form onSubmit={handleEditSubmit} className="flex flex-col gap-4">
+            {/* Avatar Upload Section */}
+            <div className="flex flex-col gap-2 p-3 bg-white/5 border border-white/10 rounded-2xl">
+              <label className="text-[9px] font-black text-slate-400 uppercase tracking-wider">
+                Profile Avatar
+              </label>
+              <div className="flex items-center gap-4">
+                {player?.avatar_url ? (
+                  <img
+                    src={player.avatar_url}
+                    alt="Avatar preview"
+                    className="w-12 h-12 rounded-full object-cover border border-white/20"
+                  />
+                ) : (
+                  <div className="w-12 h-12 rounded-full bg-violet-600/30 border border-violet-500/40 flex items-center justify-center text-xs font-bold text-white uppercase">
+                    {player?.name?.substring(0, 2) || "FC"}
+                  </div>
+                )}
+                <div className="flex flex-col gap-1">
+                  <label
+                    htmlFor="modal-avatar-upload"
+                    className="cursor-pointer inline-flex items-center gap-2 px-3 py-1.5 bg-violet-600 hover:bg-violet-500 text-white text-xs font-bold rounded-xl transition-all shadow-md active:scale-95"
+                  >
+                    {uploading ? (
+                      <>
+                        <span className="w-3.5 h-3.5 rounded-full border-2 border-white border-t-transparent animate-spin" />
+                        <span>Uploading...</span>
+                      </>
+                    ) : (
+                      <>
+                        <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5" />
+                        </svg>
+                        <span>Choose Image</span>
+                      </>
+                    )}
+                  </label>
+                  <input
+                    id="modal-avatar-upload"
+                    type="file"
+                    accept="image/*"
+                    onChange={handleAvatarChange}
+                    className="sr-only"
+                    disabled={uploading}
+                  />
+                  <span className="text-[9px] text-slate-400">Max size 5MB (JPG, PNG, WEBP, GIF)</span>
+                </div>
+              </div>
+              {uploadError && (
+                <div className="text-[10px] font-bold text-rose-400 mt-1">
+                  {uploadError}
+                </div>
+              )}
+            </div>
+
             <h4 className="text-[10px] font-black uppercase text-violet-400 tracking-wider">
               Edit Personal Info
             </h4>
@@ -197,32 +252,6 @@ export default function ProfileEditModal({
                   placeholder="Your college or organizations name"
                   className="bg-white/5 border border-white/8 rounded-xl px-3 py-2.5 text-xs text-white outline-none focus:border-[#8B5CF6]/50 transition-colors"
                 />
-              </div>
-
-              <div className="flex flex-col gap-1.5 sm:col-span-2">
-                <label className="text-[9px] font-black text-slate-500 uppercase tracking-wider">
-                  Avatar Border Decoration
-                </label>
-                <select
-                  value={editForm.equippedFrame || ""}
-                  onChange={(e) =>
-                    setEditForm((prev) => ({
-                      ...prev,
-                      equippedFrame: e.target.value,
-                    }))
-                  }
-                  className="bg-[#120f26]/80 border border-white/8 rounded-xl px-3 py-2.5 text-xs text-white outline-none focus:border-[#8B5CF6]/50 transition-colors cursor-pointer"
-                >
-                  <option value="">None (Default)</option>
-                  {claimedFrames.map((frameName) => (
-                    <option key={frameName} value={frameName}>
-                      {frameName}
-                    </option>
-                  ))}
-                </select>
-                <span className="text-[8px] text-slate-400 mt-0.5">
-                  Earn and claim Profile Decorations from the Marketplace to customize your avatar!
-                </span>
               </div>
 
               <div className="flex flex-col gap-1.5 sm:col-span-2">

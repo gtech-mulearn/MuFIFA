@@ -45,37 +45,39 @@ export default function ProfileBanner({
           />
 
           {isOwner && (
-            <label
-              htmlFor="banner-avatar-upload"
-              className="absolute bottom-0 right-0 w-8 h-8 bg-[#8B5CF6] hover:bg-[#7C3AED] text-white flex items-center justify-center rounded-full cursor-pointer shadow-lg border-2 border-[#090715] transition-all transform hover:scale-110 active:scale-95"
-              title="Edit Avatar"
-            >
-              {uploading ? (
-                <span className="w-4 h-4 rounded-full border-2 border-white border-t-transparent animate-spin" />
-              ) : (
-                <svg
-                  className="w-4 h-4"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2.5"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0115.75 21H5.25A2.25 2.25 0 013 18.75V8.25A2.25 2.25 0 015.25 6H10"
-                  />
-                </svg>
-              )}
+            <>
+              <label
+                htmlFor="banner-avatar-upload"
+                className="absolute bottom-0 right-0 z-20 w-8 h-8 bg-[#8B5CF6] hover:bg-[#7C3AED] text-white flex items-center justify-center rounded-full cursor-pointer shadow-lg border-2 border-[#090715] transition-all transform hover:scale-110 active:scale-95"
+                title="Edit Avatar"
+              >
+                {uploading ? (
+                  <span className="w-4 h-4 rounded-full border-2 border-white border-t-transparent animate-spin" />
+                ) : (
+                  <svg
+                    className="w-4 h-4"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2.5"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0115.75 21H5.25A2.25 2.25 0 013 18.75V8.25A2.25 2.25 0 015.25 6H10"
+                    />
+                  </svg>
+                )}
+              </label>
               <input
                 id="banner-avatar-upload"
                 type="file"
                 accept="image/*"
                 onChange={handleAvatarChange}
-                className="hidden"
+                className="sr-only"
                 disabled={uploading}
               />
-            </label>
+            </>
           )}
         </div>
 
