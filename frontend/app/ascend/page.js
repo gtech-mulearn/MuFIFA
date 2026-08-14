@@ -8,6 +8,8 @@ import SubmissionCard from "./components/SubmissionCard";
 import RegistrationModal from "./components/RegistrationModal";
 
 
+import { isPastDeadline } from "@/utils/ascendDeadline";
+
 // Circular Spotlight Lens Rocket Loader & Reveal Animation
 function RocketCurtainRaiser({ onComplete }) {
   const [active, setActive] = useState(true);
@@ -339,9 +341,67 @@ export default function AscendPage() {
     );
   }
 
-  const displayedTasks = tasks.filter((task) => {
+  const isInitialQualificationTask = (task) => {
+    if (!task) return false;
+    if (task.is_initial) return true;
+    const title = (task.title || "").toLowerCase();
+    const desc = (task.description || "").toLowerCase();
+    return (
+      title.includes("initial qualification") ||
+      title.includes("qualification task") ||
+      desc.includes("initial qualification") ||
+      desc.includes("qualification task")
+    );
+  };
+
+  // Find user submission for initial qualification task
+  const initialTaskSubmission = submissions.find((sub) => {
+    const taskForSub =
+      sub.ascend_tasks ||
+      tasks.find((t) => Number(t.id) === Number(sub.task_id));
+    return isInitialQualificationTask(taskForSub);
+  });
+
+  const initialTaskObj = tasks.find(isInitialQualificationTask);
+  const initialTaskExists = Boolean(initialTaskObj);
+
+  // Calculate if initial task was submitted after deadline
+  const isSubmittedAfterDeadline = (() => {
+    if (!initialTaskSubmission || !initialTaskSubmission.submitted_at) return false;
+    const relatedTask =
+      initialTaskSubmission.ascend_tasks ||
+      tasks.find((t) => Number(t.id) === Number(initialTaskSubmission.task_id));
+    return isPastDeadline(initialTaskSubmission.submitted_at, relatedTask?.deadline);
+  })();
+
+  // Initial qualification deadline gating ONLY applies if an initial task actually exists
+  const isInitialDeadlinePassed = initialTaskExists
+    ? isPastDeadline(new Date(), initialTaskObj.deadline)
+    : false;
+
+  const isSubmissionLate = (sub) => {
+    if (!sub || !sub.submitted_at) return false;
+    const taskObj =
+      sub.ascend_tasks ||
+      tasks.find((t) => Number(t.id) === Number(sub.task_id));
+    return isPastDeadline(sub.submitted_at, taskObj?.deadline);
+  };
+
+  const validSubmissions = submissions.filter((sub) => !isSubmissionLate(sub));
+  const hasSubmittedInitial = Boolean(initialTaskSubmission);
+
+  // Filter tasks based on domain and initial task submission status
+  const domainFilteredTasks = tasks.filter((task) => {
     if (!registered || !userRegistration?.primary_domain) return true;
     return task.domain === userRegistration.primary_domain;
+  });
+
+  const displayedTasks = domainFilteredTasks.filter((task) => {
+    // If user submitted initial qualification task on time, ONLY show next tasks (exclude initial task)
+    if (hasSubmittedInitial && !isSubmittedAfterDeadline) {
+      return !isInitialQualificationTask(task);
+    }
+    return true;
   });
 
   return (
@@ -520,7 +580,7 @@ export default function AscendPage() {
                 activeTab === "submissions" ? "text-white" : "text-slate-400 hover:text-white"
               }`}
             >
-              <span>MY SUBMISSIONS ({submissions.length})</span>
+              <span>MY SUBMISSIONS ({validSubmissions.length})</span>
               {activeTab === "submissions" && (
                 <div className="absolute bottom-0 inset-x-0 h-0.5 bg-white rounded-full transition-all duration-300" />
               )}
@@ -542,6 +602,46 @@ export default function AscendPage() {
                       Loading Ascend Bounties...
                     </span>
                   </div>
+                ) : isSubmittedAfterDeadline ? (
+                  <div className="py-12 px-6 sm:px-8 bg-[#0f090b]/90 border border-rose-500/20 rounded-2xl flex flex-col items-center justify-center gap-3.5 text-center shadow-[0_0_35px_rgba(244,63,94,0.08)] backdrop-blur-md">
+                    <div className="w-10 h-10 rounded-xl bg-rose-500/10 border border-rose-500/30 flex items-center justify-center text-rose-400">
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                      </svg>
+                    </div>
+                    <div className="flex flex-col items-center gap-1 max-w-lg">
+                      <h3 className="text-sm font-black text-rose-400 uppercase tracking-widest">
+                        Task Submission Blocked
+                      </h3>
+                      <p className="text-xs font-semibold text-slate-300 leading-relaxed mt-0.5">
+                        Your task wasn't uploaded as it's submitted after the deadline
+                      </p>
+                    </div>
+                    <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-rose-500/10 border border-rose-500/20 text-rose-400/90 text-[11px] font-mono tracking-wide mt-1">
+                      <span className="w-1.5 h-1.5 rounded-full bg-rose-400 animate-pulse" />
+                      <span>Deadline: August 12, 2026</span>
+                    </div>
+                  </div>
+                ) : !hasSubmittedInitial && isInitialDeadlinePassed ? (
+                  <div className="py-12 px-6 sm:px-8 bg-[#0d0b07]/90 border border-amber-500/20 rounded-2xl flex flex-col items-center justify-center gap-3.5 text-center shadow-[0_0_35px_rgba(245,158,11,0.08)] backdrop-blur-md">
+                    <div className="w-10 h-10 rounded-xl bg-amber-500/10 border border-amber-500/30 flex items-center justify-center text-amber-400">
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                    </div>
+                    <div className="flex flex-col items-center gap-1 max-w-lg">
+                      <h3 className="text-sm font-black text-amber-400 uppercase tracking-widest">
+                        Initial Qualification Closed
+                      </h3>
+                      <p className="text-xs font-semibold text-slate-300 leading-relaxed mt-0.5">
+                        The deadline or time for initial task is over. See you in the next season!
+                      </p>
+                    </div>
+                    <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-500/10 border border-amber-500/20 text-amber-400/90 text-[11px] font-mono tracking-wide mt-1">
+                      <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse" />
+                      <span>Deadline: August 12, 2026</span>
+                    </div>
+                  </div>
                 ) : displayedTasks.length === 0 ? (
                   <div className="py-20 text-center bg-[#0c0c12] border border-white/10 rounded-3xl p-8 flex flex-col items-center gap-3 shadow-xl">
                     <div className="w-12 h-12 rounded-2xl bg-violet-500/10 border border-violet-500/20 flex items-center justify-center text-violet-300 mb-1">
@@ -550,13 +650,19 @@ export default function AscendPage() {
                       </svg>
                     </div>
                     <p className="text-white font-extrabold text-base">
-                      No Active Bounties Available for {userRegistration?.primary_domain || "your domain"}
+                      {hasSubmittedInitial
+                        ? "Initial Qualification Task Completed!"
+                        : `No Active Bounties Available for ${userRegistration?.primary_domain || "your domain"}`}
                     </p>
                     <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-amber-500/10 border border-amber-500/20 text-amber-300 text-xs font-bold mt-1">
                       <svg className="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                       </svg>
-                      <span>Initial qualification will be out at 1pm.</span>
+                      <span>
+                        {hasSubmittedInitial
+                          ? "Next stage bounties will be out soon."
+                          : "Initial qualification will be out at 1pm."}
+                      </span>
                     </div>
                   </div>
                 ) : (
@@ -581,21 +687,21 @@ export default function AscendPage() {
 
             {activeTab === "submissions" && (
               <div className="flex flex-col gap-4">
-                {submissions.length === 0 ? (
+                {validSubmissions.length === 0 ? (
                   <div className="py-20 text-center bg-[#0c0c12] border border-white/10 rounded-3xl p-8 flex flex-col items-center gap-3">
                     <div className="w-12 h-12 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center text-slate-400">
                       <svg className="w-6 h-6" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                       </svg>
                     </div>
-                    <p className="text-white font-black text-lg">No Active Submissions</p>
+                    <p className="text-white font-black text-lg">No Active Submissions under Evaluation</p>
                     <p className="text-xs text-slate-400 max-w-sm leading-relaxed">
                       Select an available bounty task, build your solution, and submit your deliverable URL.
                     </p>
                   </div>
                 ) : (
                   <div className="flex flex-col gap-4">
-                    {submissions.map((sub) => (
+                    {validSubmissions.map((sub) => (
                       <SubmissionCard
                         key={sub.id || sub.submitted_at}
                         submission={sub}

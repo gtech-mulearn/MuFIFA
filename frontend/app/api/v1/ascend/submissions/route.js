@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { verifyToken } from "@/utils/auth";
+import { isPastDeadline } from "@/utils/ascendDeadline";
 
 const PLAYER_COOKIE = "player_token";
 
@@ -93,6 +94,37 @@ export async function POST(request) {
       "Content-Type": "application/json",
       Prefer: "resolution=merge-duplicates,return=representation",
     };
+
+    // Check task deadline
+    const taskFetchRes = await fetch(
+      `${supabaseUrl}/rest/v1/ascend_tasks?id=eq.${encodeURIComponent(task_id)}&select=*`,
+      { method: "GET", headers: { apikey: supabaseKey, Authorization: `Bearer ${supabaseKey}` } }
+    );
+    if (!taskFetchRes.ok) {
+      return NextResponse.json(
+        { success: false, error: "Failed to verify task deadline details" },
+        { status: 500 }
+      );
+    }
+
+    const taskArr = await taskFetchRes.json();
+    if (!taskArr || taskArr.length === 0) {
+      return NextResponse.json(
+        { success: false, error: "Task not found." },
+        { status: 404 }
+      );
+    }
+
+    const taskObj = taskArr[0];
+    if (isPastDeadline(new Date(), taskObj.deadline)) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: "Your task wasn't uploaded as it's submitted after the deadline",
+        },
+        { status: 400 }
+      );
+    }
 
     const payload = {
       task_id: Number(task_id),

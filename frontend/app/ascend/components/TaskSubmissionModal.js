@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { isPastDeadline as checkPastDeadline } from "@/utils/ascendDeadline";
 
 export default function TaskSubmissionModal({ selectedTask, onClose, onSuccess }) {
   const [submissionUrl, setSubmissionUrl] = useState("");
@@ -7,9 +8,16 @@ export default function TaskSubmissionModal({ selectedTask, onClose, onSuccess }
   const [submitError, setSubmitError] = useState("");
   const [submitSuccess, setSubmitSuccess] = useState("");
 
+  const isPastDeadline = checkPastDeadline(new Date(), selectedTask?.deadline);
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!selectedTask) return;
+
+    if (isPastDeadline) {
+      setSubmitError("Your task wasn't uploaded as it's submitted after the deadline");
+      return;
+    }
 
     setSubmittingTask(true);
     setSubmitError("");
@@ -36,7 +44,7 @@ export default function TaskSubmissionModal({ selectedTask, onClose, onSuccess }
           onClose();
         }, 1500);
       } else {
-        setSubmitError(data.error || "Failed to submit solution.");
+        setSubmitError(data.error || "Your task wasn't uploaded as it's submitted after the deadline");
       }
     } catch (err) {
       setSubmitError("Network error submitting solution.");

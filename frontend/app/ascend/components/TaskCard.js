@@ -1,4 +1,5 @@
 import React from "react";
+import { getDeadlineCutoff } from "@/utils/ascendDeadline";
 
 export default function TaskCard({ task, submitted, onSelectTask }) {
   const initials = (task.company_name || "Co")
@@ -96,13 +97,11 @@ export default function TaskCard({ task, submitted, onSelectTask }) {
             />
           </svg>
           <span>
-            {task.deadline
-              ? `Deadline: ${new Date(task.deadline).toLocaleDateString("en-US", {
-                  month: "short",
-                  day: "numeric",
-                  year: "numeric",
-                })}`
-              : "Deadline: Aug 18, 2026"}
+            Deadline: {getDeadlineCutoff(task.deadline).toLocaleDateString("en-US", {
+              month: "short",
+              day: "numeric",
+              year: "numeric",
+            })}
           </span>
         </div>
 

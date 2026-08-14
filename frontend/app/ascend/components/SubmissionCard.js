@@ -1,4 +1,5 @@
 import React from "react";
+import { isPastDeadline } from "@/utils/ascendDeadline";
 
 export default function SubmissionCard({ submission }) {
   const company = submission.ascend_tasks?.company_name || "Company Partner";
@@ -59,6 +60,33 @@ export default function SubmissionCard({ submission }) {
             </a>
           </div>
         )}
+
+        {submission.submitted_at && (() => {
+          const isLateSub = isPastDeadline(submission.submitted_at, submission.ascend_tasks?.deadline);
+          const formattedDate = new Date(submission.submitted_at).toLocaleString("en-US", {
+            month: "short",
+            day: "numeric",
+            year: "numeric",
+            hour: "2-digit",
+            minute: "2-digit",
+          });
+
+          return (
+            <div className="flex items-center gap-2 text-xs">
+              <span className="text-slate-400 font-extrabold uppercase text-[10px]">
+                Submitted:
+              </span>
+              <span className={`font-mono text-[11px] ${isLateSub ? "text-rose-400 font-bold" : "text-slate-300"}`}>
+                {formattedDate}
+              </span>
+              {isLateSub && (
+                <span className="px-1.5 py-0.5 rounded bg-rose-500/20 text-rose-400 border border-rose-500/30 text-[9px] font-bold uppercase tracking-wider">
+                  Submitted Late
+                </span>
+              )}
+            </div>
+          );
+        })()}
 
         {submission.notes && (
           <div className="text-xs text-slate-300 bg-white/5 p-3 rounded-xl border border-white/10 space-y-1">

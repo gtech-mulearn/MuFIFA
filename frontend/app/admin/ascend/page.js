@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import { THEME } from "../layout";
+import { isPastDeadline } from "@/utils/ascendDeadline";
 
 const DOMAINS = ["Coder", "Creative", "Management", "Maker"];
 
@@ -642,6 +643,7 @@ export default function AdminAscendPage() {
                     <th className="py-3 px-4">Company & Task</th>
                     <th className="py-3 px-4">Domain</th>
                     <th className="py-3 px-4">Submission & Notes</th>
+                    <th className="py-3 px-4 text-center">Submitted Time</th>
                     <th className="py-3 px-4 text-center">Score / 10</th>
                     <th className="py-3 px-4 text-center">Status</th>
                     <th className="py-3 px-4 text-right">Action</th>
@@ -654,8 +656,29 @@ export default function AdminAscendPage() {
                     const taskTitle = sub.ascend_tasks?.title || `Task #${sub.task_id}`;
                     const taskDomain = sub.ascend_tasks?.domain || "Coder";
 
+                    const submittedDate = sub.submitted_at ? new Date(sub.submitted_at) : null;
+                    const isLate = submittedDate
+                      ? isPastDeadline(sub.submitted_at, sub.ascend_tasks?.deadline)
+                      : false;
+                    const formattedTime = submittedDate
+                      ? submittedDate.toLocaleString("en-US", {
+                          month: "short",
+                          day: "numeric",
+                          year: "numeric",
+                          hour: "2-digit",
+                          minute: "2-digit",
+                        })
+                      : "N/A";
+
                     return (
-                      <tr key={sub.id} className="hover:bg-slate-50/80 transition-colors">
+                      <tr
+                        key={sub.id}
+                        className={`transition-colors ${
+                          isLate
+                            ? "bg-rose-50/70 hover:bg-rose-100/70 border-l-4 border-l-rose-500"
+                            : "hover:bg-slate-50/80"
+                        }`}
+                      >
                         <td className="py-3 px-4 font-bold text-slate-800">
                           <div>{studentName}</div>
                           <span className="text-[10px] text-slate-400 font-normal">{sub.user_id}</span>
@@ -689,6 +712,22 @@ export default function AdminAscendPage() {
                               </svg>
                               <span>{sub.notes}</span>
                             </div>
+                          )}
+                        </td>
+                        <td className="py-3 px-4 text-center">
+                          {isLate ? (
+                            <div className="inline-flex flex-col items-center gap-0.5">
+                              <span className="px-2 py-0.5 rounded-md bg-rose-600 text-white font-extrabold text-[9px] uppercase tracking-wider shadow-xs">
+                                LATE SUBMISSION
+                              </span>
+                              <span className="text-[11px] font-mono text-rose-700 font-bold mt-0.5">
+                                {formattedTime}
+                              </span>
+                            </div>
+                          ) : (
+                            <span className="text-[11px] font-mono text-slate-600 font-semibold bg-slate-100 px-2 py-1 rounded-md">
+                              {formattedTime}
+                            </span>
                           )}
                         </td>
                         <td className="py-3 px-4 text-center">
@@ -972,12 +1011,45 @@ export default function AdminAscendPage() {
             </p>
 
             <div className="mt-4 p-3.5 bg-slate-50 rounded-xl border border-slate-200 text-xs flex flex-col gap-2">
-              <div className="font-bold text-slate-800">
-                {selectedSubmission.registrations?.name || selectedSubmission.user_id}
+              <div className="flex items-center justify-between">
+                <div className="font-bold text-slate-800">
+                  {selectedSubmission.registrations?.name || selectedSubmission.user_id}
+                </div>
+                {selectedSubmission.submitted_at && (() => {
+                  const isModalSubLate = isPastDeadline(
+                    selectedSubmission.submitted_at,
+                    selectedSubmission.ascend_tasks?.deadline
+                  );
+                  return (
+                    <span
+                      className={`px-2 py-0.5 rounded-full text-[10px] font-extrabold ${
+                        isModalSubLate
+                          ? "bg-rose-100 text-rose-700 border border-rose-300"
+                          : "bg-emerald-100 text-emerald-700 border border-emerald-300"
+                      }`}
+                    >
+                      {isModalSubLate ? "Submitted Late" : "Submitted On Time"}
+                    </span>
+                  );
+                })()}
               </div>
               <div className="text-indigo-600 font-semibold">
                 {selectedSubmission.ascend_tasks?.company_name} — {selectedSubmission.ascend_tasks?.title}
               </div>
+              {selectedSubmission.submitted_at && (
+                <div className="text-[11px] text-slate-500 font-mono">
+                  Submitted At:{" "}
+                  <strong className="text-slate-800 font-bold">
+                    {new Date(selectedSubmission.submitted_at).toLocaleString("en-US", {
+                      month: "short",
+                      day: "numeric",
+                      year: "numeric",
+                      hour: "2-digit",
+                      minute: "2-digit",
+                    })}
+                  </strong>
+                </div>
+              )}
               <a
                 href={selectedSubmission.submission_url}
                 target="_blank"
